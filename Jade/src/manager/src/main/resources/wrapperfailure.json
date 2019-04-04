@@ -1,0 +1,51 @@
+{
+    "nodes": [
+        {
+            "id": "node1",
+            "wrappers": [
+                "Postgres"
+            ],
+            "bindings": [
+            ]
+        },
+        {
+            "id": "node2",
+            "wrappers": [
+                "Flask"
+            ],
+            "bindings": [
+                {
+                    "toNode": "node1",
+                    "fromWrapper": "Flask",
+                    "toWrapper": "Postgres"
+                }
+            ]
+        },
+        {
+            "id": "node3",
+            "wrappers": [
+                "Flask"
+            ],
+            "bindings": [
+                {
+                    "toNode": "node1",
+                    "fromWrapper": "Flask",
+                    "toWrapper": "Postgres"
+                }
+            ]
+        },
+        {
+            "id": "node4",
+            "wrappers": [
+                "Flask"
+            ],
+            "bindings": [
+                {
+                    "toNode": "node1",
+                    "fromWrapper": "Flask",
+                    "toWrapper": "Postgres"
+                }
+            ]
+        }
+    ]
+}

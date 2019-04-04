@@ -1,0 +1,2 @@
+[DEBUG] [03/31/2019 13:54:50.614] [Node-akka.actor.default-dispatcher-4] [akka://Node/user/Node] received handled message Heartbeat() from Actor[akka.tcp://Manager@172.17.0.4:2551/temp/$U]
+[DEBUG] [03/31/2019 13:54:55.615] [Node-akka.actor.default-dispatcher-3] [akka://Node/user/Node] received handled message Heartbeat() from Actor[akka.tcp://Manager@172.17.0.4:2551/temp/$X]
