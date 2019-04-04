@@ -1,0 +1,55 @@
+[0m[[0m[0minfo[0m] [0m[0m:: delivering :: node#node_2.12;0.1 :: 0.1 :: release :: Sun Mar 31 18:52:56 CEST 2019[0m
+[0m[[0m[0mdebug[0m] [0m[0m	options = status=release pubdate=Sun Mar 31 18:52:56 CEST 2019 validate=true resolveDynamicRevisions=true merge=true resolveId=null pubBranch=null[0m
+[0m[[0m[0minfo[0m] [0m[0m	delivering ivy file to /Users/niels/Projects/egjns/node/target/scala-2.12/ivy-0.1.xml[0m
+[0m[[0m[0mdebug[0m] [0m[0m	deliver done (8ms)[0m
+[0m[[0m[0mdebug[0m] [0m[0mlocal do not support transaction. ivy pattern does not use revision as a directory[0m
+[0m[[0m[0mdebug[0m] [0m[0m/Users/niels/.ivy2/local/node/node_2.12/0.1/poms/node_2.12.pom already exists, nothing done[0m
+[0m[[0m[33mwarn[0m] [0m[0mAttempting to overwrite /Users/niels/.ivy2/local/node/node_2.12/0.1/poms/node_2.12.pom (non-SNAPSHOT)[0m
+[0m[[0m[33mwarn[0m] [0m[0m	You need to remove it from the cache manually to take effect.[0m
+[0m[[0m[0mdebug[0m] [0m[0m/Users/niels/.ivy2/local/node/node_2.12/0.1/poms/node_2.12.pom.sha1 already exists, nothing done[0m
+[0m[[0m[33mwarn[0m] [0m[0mAttempting to overwrite /Users/niels/.ivy2/local/node/node_2.12/0.1/poms/node_2.12.pom.sha1 (non-SNAPSHOT)[0m
+[0m[[0m[33mwarn[0m] [0m[0m	You need to remove it from the cache manually to take effect.[0m
+[0m[[0m[0mdebug[0m] [0m[0m/Users/niels/.ivy2/local/node/node_2.12/0.1/poms/node_2.12.pom.md5 already exists, nothing done[0m
+[0m[[0m[33mwarn[0m] [0m[0mAttempting to overwrite /Users/niels/.ivy2/local/node/node_2.12/0.1/poms/node_2.12.pom.md5 (non-SNAPSHOT)[0m
+[0m[[0m[33mwarn[0m] [0m[0m	You need to remove it from the cache manually to take effect.[0m
+[0m[[0m[0minfo[0m] [0m[0m	published node_2.12 to /Users/niels/.ivy2/local/node/node_2.12/0.1/poms/node_2.12.pom[0m
+[0m[[0m[0mdebug[0m] [0m[0m/Users/niels/.ivy2/local/node/node_2.12/0.1/jars/node_2.12.jar already exists, nothing done[0m
+[0m[[0m[33mwarn[0m] [0m[0mAttempting to overwrite /Users/niels/.ivy2/local/node/node_2.12/0.1/jars/node_2.12.jar (non-SNAPSHOT)[0m
+[0m[[0m[33mwarn[0m] [0m[0m	You need to remove it from the cache manually to take effect.[0m
+[0m[[0m[0mdebug[0m] [0m[0m/Users/niels/.ivy2/local/node/node_2.12/0.1/jars/node_2.12.jar.sha1 already exists, nothing done[0m
+[0m[[0m[33mwarn[0m] [0m[0mAttempting to overwrite /Users/niels/.ivy2/local/node/node_2.12/0.1/jars/node_2.12.jar.sha1 (non-SNAPSHOT)[0m
+[0m[[0m[33mwarn[0m] [0m[0m	You need to remove it from the cache manually to take effect.[0m
+[0m[[0m[0mdebug[0m] [0m[0m/Users/niels/.ivy2/local/node/node_2.12/0.1/jars/node_2.12.jar.md5 already exists, nothing done[0m
+[0m[[0m[33mwarn[0m] [0m[0mAttempting to overwrite /Users/niels/.ivy2/local/node/node_2.12/0.1/jars/node_2.12.jar.md5 (non-SNAPSHOT)[0m
+[0m[[0m[33mwarn[0m] [0m[0m	You need to remove it from the cache manually to take effect.[0m
+[0m[[0m[0minfo[0m] [0m[0m	published node_2.12 to /Users/niels/.ivy2/local/node/node_2.12/0.1/jars/node_2.12.jar[0m
+[0m[[0m[0mdebug[0m] [0m[0m/Users/niels/.ivy2/local/node/node_2.12/0.1/srcs/node_2.12-sources.jar already exists, nothing done[0m
+[0m[[0m[33mwarn[0m] [0m[0mAttempting to overwrite /Users/niels/.ivy2/local/node/node_2.12/0.1/srcs/node_2.12-sources.jar (non-SNAPSHOT)[0m
+[0m[[0m[33mwarn[0m] [0m[0m	You need to remove it from the cache manually to take effect.[0m
+[0m[[0m[0mdebug[0m] [0m[0m/Users/niels/.ivy2/local/node/node_2.12/0.1/srcs/node_2.12-sources.jar.sha1 already exists, nothing done[0m
+[0m[[0m[33mwarn[0m] [0m[0mAttempting to overwrite /Users/niels/.ivy2/local/node/node_2.12/0.1/srcs/node_2.12-sources.jar.sha1 (non-SNAPSHOT)[0m
+[0m[[0m[33mwarn[0m] [0m[0m	You need to remove it from the cache manually to take effect.[0m
+[0m[[0m[0mdebug[0m] [0m[0m/Users/niels/.ivy2/local/node/node_2.12/0.1/srcs/node_2.12-sources.jar.md5 already exists, nothing done[0m
+[0m[[0m[33mwarn[0m] [0m[0mAttempting to overwrite /Users/niels/.ivy2/local/node/node_2.12/0.1/srcs/node_2.12-sources.jar.md5 (non-SNAPSHOT)[0m
+[0m[[0m[33mwarn[0m] [0m[0m	You need to remove it from the cache manually to take effect.[0m
+[0m[[0m[0minfo[0m] [0m[0m	published node_2.12 to /Users/niels/.ivy2/local/node/node_2.12/0.1/srcs/node_2.12-sources.jar[0m
+[0m[[0m[0mdebug[0m] [0m[0m/Users/niels/.ivy2/local/node/node_2.12/0.1/docs/node_2.12-javadoc.jar already exists, nothing done[0m
+[0m[[0m[33mwarn[0m] [0m[0mAttempting to overwrite /Users/niels/.ivy2/local/node/node_2.12/0.1/docs/node_2.12-javadoc.jar (non-SNAPSHOT)[0m
+[0m[[0m[33mwarn[0m] [0m[0m	You need to remove it from the cache manually to take effect.[0m
+[0m[[0m[0mdebug[0m] [0m[0m/Users/niels/.ivy2/local/node/node_2.12/0.1/docs/node_2.12-javadoc.jar.sha1 already exists, nothing done[0m
+[0m[[0m[33mwarn[0m] [0m[0mAttempting to overwrite /Users/niels/.ivy2/local/node/node_2.12/0.1/docs/node_2.12-javadoc.jar.sha1 (non-SNAPSHOT)[0m
+[0m[[0m[33mwarn[0m] [0m[0m	You need to remove it from the cache manually to take effect.[0m
+[0m[[0m[0mdebug[0m] [0m[0m/Users/niels/.ivy2/local/node/node_2.12/0.1/docs/node_2.12-javadoc.jar.md5 already exists, nothing done[0m
+[0m[[0m[33mwarn[0m] [0m[0mAttempting to overwrite /Users/niels/.ivy2/local/node/node_2.12/0.1/docs/node_2.12-javadoc.jar.md5 (non-SNAPSHOT)[0m
+[0m[[0m[33mwarn[0m] [0m[0m	You need to remove it from the cache manually to take effect.[0m
+[0m[[0m[0minfo[0m] [0m[0m	published node_2.12 to /Users/niels/.ivy2/local/node/node_2.12/0.1/docs/node_2.12-javadoc.jar[0m
+[0m[[0m[0mdebug[0m] [0m[0m/Users/niels/.ivy2/local/node/node_2.12/0.1/ivys/ivy.xml already exists, nothing done[0m
+[0m[[0m[33mwarn[0m] [0m[0mAttempting to overwrite /Users/niels/.ivy2/local/node/node_2.12/0.1/ivys/ivy.xml (non-SNAPSHOT)[0m
+[0m[[0m[33mwarn[0m] [0m[0m	You need to remove it from the cache manually to take effect.[0m
+[0m[[0m[0mdebug[0m] [0m[0m/Users/niels/.ivy2/local/node/node_2.12/0.1/ivys/ivy.xml.sha1 already exists, nothing done[0m
+[0m[[0m[33mwarn[0m] [0m[0mAttempting to overwrite /Users/niels/.ivy2/local/node/node_2.12/0.1/ivys/ivy.xml.sha1 (non-SNAPSHOT)[0m
+[0m[[0m[33mwarn[0m] [0m[0m	You need to remove it from the cache manually to take effect.[0m
+[0m[[0m[0mdebug[0m] [0m[0m/Users/niels/.ivy2/local/node/node_2.12/0.1/ivys/ivy.xml.md5 already exists, nothing done[0m
+[0m[[0m[33mwarn[0m] [0m[0mAttempting to overwrite /Users/niels/.ivy2/local/node/node_2.12/0.1/ivys/ivy.xml.md5 (non-SNAPSHOT)[0m
+[0m[[0m[33mwarn[0m] [0m[0m	You need to remove it from the cache manually to take effect.[0m
+[0m[[0m[0minfo[0m] [0m[0m	published ivy to /Users/niels/.ivy2/local/node/node_2.12/0.1/ivys/ivy.xml[0m

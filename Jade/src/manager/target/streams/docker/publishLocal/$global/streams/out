@@ -1,0 +1,97 @@
+[0m[[0m[0mdebug[0m] [0m[0mExecuting Native docker build --force-rm -t manager:0.1 .[0m
+[0m[[0m[0mdebug[0m] [0m[0mWorking directory /Users/niels/Projects/egjns/manager/target/docker/stage[0m
+[0m[[0m[0minfo[0m] [0m[0mSending build context to Docker daemon  54.54MB[0m
+[0m[[0m[0minfo[0m] [0m[0mStep 1/15 : FROM openjdk:8 as stage0[0m
+[0m[[0m[0minfo[0m] [0m[0m8: Pulling from library/openjdk[0m
+[0m[[0m[0minfo[0m] [0m[0me79bb959ec00: Pulling fs layer[0m
+[0m[[0m[0minfo[0m] [0m[0md4b7902036fe: Pulling fs layer[0m
+[0m[[0m[0minfo[0m] [0m[0m1b2a72d4e030: Pulling fs layer[0m
+[0m[[0m[0minfo[0m] [0m[0md54db43011fd: Pulling fs layer[0m
+[0m[[0m[0minfo[0m] [0m[0m1a97c78dad71: Pulling fs layer[0m
+[0m[[0m[0minfo[0m] [0m[0m6dcb79eeeda4: Pulling fs layer[0m
+[0m[[0m[0minfo[0m] [0m[0mbd56246cf4fd: Pulling fs layer[0m
+[0m[[0m[0minfo[0m] [0m[0m88cea60f56c5: Pulling fs layer[0m
+[0m[[0m[0minfo[0m] [0m[0md54db43011fd: Waiting[0m
+[0m[[0m[0minfo[0m] [0m[0m1a97c78dad71: Waiting[0m
+[0m[[0m[0minfo[0m] [0m[0m6dcb79eeeda4: Waiting[0m
+[0m[[0m[0minfo[0m] [0m[0mbd56246cf4fd: Waiting[0m
+[0m[[0m[0minfo[0m] [0m[0m88cea60f56c5: Waiting[0m
+[0m[[0m[0minfo[0m] [0m[0m1b2a72d4e030: Verifying Checksum[0m
+[0m[[0m[0minfo[0m] [0m[0m1b2a72d4e030: Download complete[0m
+[0m[[0m[0minfo[0m] [0m[0md4b7902036fe: Verifying Checksum[0m
+[0m[[0m[0minfo[0m] [0m[0md4b7902036fe: Download complete[0m
+[0m[[0m[0minfo[0m] [0m[0m1a97c78dad71: Download complete[0m
+[0m[[0m[0minfo[0m] [0m[0m6dcb79eeeda4: Verifying Checksum[0m
+[0m[[0m[0minfo[0m] [0m[0m6dcb79eeeda4: Download complete[0m
+[0m[[0m[0minfo[0m] [0m[0mbd56246cf4fd: Verifying Checksum[0m
+[0m[[0m[0minfo[0m] [0m[0mbd56246cf4fd: Download complete[0m
+[0m[[0m[0minfo[0m] [0m[0md54db43011fd: Verifying Checksum[0m
+[0m[[0m[0minfo[0m] [0m[0md54db43011fd: Download complete[0m
+[0m[[0m[0minfo[0m] [0m[0m88cea60f56c5: Verifying Checksum[0m
+[0m[[0m[0minfo[0m] [0m[0m88cea60f56c5: Download complete[0m
+[0m[[0m[0minfo[0m] [0m[0me79bb959ec00: Verifying Checksum[0m
+[0m[[0m[0minfo[0m] [0m[0me79bb959ec00: Download complete[0m
+[0m[[0m[0minfo[0m] [0m[0me79bb959ec00: Pull complete[0m
+[0m[[0m[0minfo[0m] [0m[0md4b7902036fe: Pull complete[0m
+[0m[[0m[0minfo[0m] [0m[0m1b2a72d4e030: Pull complete[0m
+[0m[[0m[0minfo[0m] [0m[0md54db43011fd: Pull complete[0m
+[0m[[0m[0minfo[0m] [0m[0m1a97c78dad71: Pull complete[0m
+[0m[[0m[0minfo[0m] [0m[0m6dcb79eeeda4: Pull complete[0m
+[0m[[0m[0minfo[0m] [0m[0mbd56246cf4fd: Pull complete[0m
+[0m[[0m[0minfo[0m] [0m[0m88cea60f56c5: Pull complete[0m
+[0m[[0m[0minfo[0m] [0m[0mDigest: sha256:fb1fc7fa8d14a86f6c5bc288fe38072600284f10316495f225f7e269b8e8eb8a[0m
+[0m[[0m[0minfo[0m] [0m[0mStatus: Downloaded newer image for openjdk:8[0m
+[0m[[0m[0minfo[0m] [0m[0m ---> b8d3f94869bb[0m
+[0m[[0m[0minfo[0m] [0m[0mStep 2/15 : WORKDIR /opt/docker[0m
+[0m[[0m[0minfo[0m] [0m[0m ---> Running in e4c1a4637040[0m
+[0m[[0m[0minfo[0m] [0m[0mRemoving intermediate container e4c1a4637040[0m
+[0m[[0m[0minfo[0m] [0m[0m ---> f0041206b2af[0m
+[0m[[0m[0minfo[0m] [0m[0mStep 3/15 : COPY opt /opt[0m
+[0m[[0m[0minfo[0m] [0m[0m ---> ec06fc9dc577[0m
+[0m[[0m[0minfo[0m] [0m[0mStep 4/15 : USER root[0m
+[0m[[0m[0minfo[0m] [0m[0m ---> Running in 9b610d926eb2[0m
+[0m[[0m[0minfo[0m] [0m[0mRemoving intermediate container 9b610d926eb2[0m
+[0m[[0m[0minfo[0m] [0m[0m ---> 44a3863cd020[0m
+[0m[[0m[0minfo[0m] [0m[0mStep 5/15 : RUN ["chmod", "-R", "u=rX,g=rX", "/opt/docker"][0m
+[0m[[0m[0minfo[0m] [0m[0m ---> Running in 3e5f4c487c3f[0m
+[0m[[0m[0minfo[0m] [0m[0mRemoving intermediate container 3e5f4c487c3f[0m
+[0m[[0m[0minfo[0m] [0m[0m ---> 02c58e0c2fb6[0m
+[0m[[0m[0minfo[0m] [0m[0mStep 6/15 : RUN ["chmod", "u+x,g+x", "/opt/docker/bin/manager"][0m
+[0m[[0m[0minfo[0m] [0m[0m ---> Running in 403d619346dd[0m
+[0m[[0m[0minfo[0m] [0m[0mRemoving intermediate container 403d619346dd[0m
+[0m[[0m[0minfo[0m] [0m[0m ---> cffa8ddd42ad[0m
+[0m[[0m[0minfo[0m] [0m[0mStep 7/15 : FROM openjdk:8[0m
+[0m[[0m[0minfo[0m] [0m[0m ---> b8d3f94869bb[0m
+[0m[[0m[0minfo[0m] [0m[0mStep 8/15 : USER root[0m
+[0m[[0m[0minfo[0m] [0m[0m ---> Running in 8f3477ececb2[0m
+[0m[[0m[0minfo[0m] [0m[0mRemoving intermediate container 8f3477ececb2[0m
+[0m[[0m[0minfo[0m] [0m[0m ---> dc049427e42a[0m
+[0m[[0m[0minfo[0m] [0m[0mStep 9/15 : RUN id -u demiourgos728 2> /dev/null || useradd --system --create-home --uid 1001 --gid 0 demiourgos728[0m
+[0m[[0m[0minfo[0m] [0m[0m ---> Running in ef45524184a1[0m
+[0m[[0m[0minfo[0m] [0m[0mRemoving intermediate container ef45524184a1[0m
+[0m[[0m[0minfo[0m] [0m[0m ---> 03099aaebbb5[0m
+[0m[[0m[0minfo[0m] [0m[0mStep 10/15 : WORKDIR /opt/docker[0m
+[0m[[0m[0minfo[0m] [0m[0m ---> Running in 247a2b3030ed[0m
+[0m[[0m[0minfo[0m] [0m[0mRemoving intermediate container 247a2b3030ed[0m
+[0m[[0m[0minfo[0m] [0m[0m ---> 346924bb4162[0m
+[0m[[0m[0minfo[0m] [0m[0mStep 11/15 : COPY --from=stage0 --chown=demiourgos728:root /opt/docker /opt/docker[0m
+[0m[[0m[0minfo[0m] [0m[0m ---> 41e09537e452[0m
+[0m[[0m[0minfo[0m] [0m[0mStep 12/15 : EXPOSE 2551[0m
+[0m[[0m[0minfo[0m] [0m[0m ---> Running in bb6f2ae8874c[0m
+[0m[[0m[0minfo[0m] [0m[0mRemoving intermediate container bb6f2ae8874c[0m
+[0m[[0m[0minfo[0m] [0m[0m ---> b19242fb1897[0m
+[0m[[0m[0minfo[0m] [0m[0mStep 13/15 : USER 1001[0m
+[0m[[0m[0minfo[0m] [0m[0m ---> Running in 4b618033b959[0m
+[0m[[0m[0minfo[0m] [0m[0mRemoving intermediate container 4b618033b959[0m
+[0m[[0m[0minfo[0m] [0m[0m ---> 54d3a46d8b8a[0m
+[0m[[0m[0minfo[0m] [0m[0mStep 14/15 : ENTRYPOINT ["/opt/docker/bin/manager"][0m
+[0m[[0m[0minfo[0m] [0m[0m ---> Running in 9731dcd08b1d[0m
+[0m[[0m[0minfo[0m] [0m[0mRemoving intermediate container 9731dcd08b1d[0m
+[0m[[0m[0minfo[0m] [0m[0m ---> a9dabd47f3db[0m
+[0m[[0m[0minfo[0m] [0m[0mStep 15/15 : CMD [][0m
+[0m[[0m[0minfo[0m] [0m[0m ---> Running in a615889596c2[0m
+[0m[[0m[0minfo[0m] [0m[0mRemoving intermediate container a615889596c2[0m
+[0m[[0m[0minfo[0m] [0m[0m ---> f8344949b3f4[0m
+[0m[[0m[0minfo[0m] [0m[0mSuccessfully built f8344949b3f4[0m
+[0m[[0m[0minfo[0m] [0m[0mSuccessfully tagged manager:0.1[0m
+[0m[[0m[0minfo[0m] [0m[0mBuilt image manager with tags [0.1][0m

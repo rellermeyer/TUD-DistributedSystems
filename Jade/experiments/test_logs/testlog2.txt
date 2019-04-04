@@ -1,0 +1,2 @@
+[DEBUG] [03/31/2019 22:05:11.363] [Manager-akka.remote.default-remote-dispatcher-6] [akka.tcp://Manager@172.17.0.4:2551/system/endpointManager/reliableEndpointWriter-akka.tcp%3A%2F%2FNode%40172.17.0.3%3A2552-1/endpointWriter] Disassociated [akka.tcp://Manager@172.17.0.4:2551] -> [akka.tcp://Node@172.17.0.3:2552]
+[DEBUG] [03/31/2019 13:54:55.615] [Node-akka.actor.default-dispatcher-3] [akka://Node/user/Node] received handled message Heartbeat() from Actor[akka.tcp://Manager@172.17.0.4:2551/temp/$X]

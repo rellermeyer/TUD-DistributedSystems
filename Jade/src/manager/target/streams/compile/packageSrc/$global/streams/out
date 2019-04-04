@@ -1,0 +1,21 @@
+[0m[[0m[0minfo[0m] [0m[0mPackaging /Users/niels/Projects/egjns/manager/target/scala-2.12/manager_2.12-0.1-sources.jar ...[0m
+[0m[[0m[0mdebug[0m] [0m[0mInput file mappings:[0m
+[0m[[0m[0mdebug[0m] [0m[0m	JadeLauncher.scala[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /Users/niels/Projects/egjns/manager/src/main/scala/JadeLauncher.scala[0m
+[0m[[0m[0mdebug[0m] [0m[0m	JadeManagerReplica.scala[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /Users/niels/Projects/egjns/manager/src/main/scala/JadeManagerReplica.scala[0m
+[0m[[0m[0mdebug[0m] [0m[0m	egjns.json[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /Users/niels/Projects/egjns/manager/src/main/resources/egjns.json[0m
+[0m[[0m[0mdebug[0m] [0m[0m	NodeMirror.scala[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /Users/niels/Projects/egjns/manager/src/main/scala/NodeMirror.scala[0m
+[0m[[0m[0mdebug[0m] [0m[0m	application.conf[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /Users/niels/Projects/egjns/manager/src/main/resources/application.conf[0m
+[0m[[0m[0mdebug[0m] [0m[0m	JadeManager.scala[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /Users/niels/Projects/egjns/manager/src/main/scala/JadeManager.scala[0m
+[0m[[0m[0mdebug[0m] [0m[0m	ManagedArchitecture.scala[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /Users/niels/Projects/egjns/manager/src/main/scala/ManagedArchitecture.scala[0m
+[0m[[0m[0mdebug[0m] [0m[0m	WrapperMirror.scala[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /Users/niels/Projects/egjns/manager/src/main/scala/WrapperMirror.scala[0m
+[0m[[0m[0mdebug[0m] [0m[0m	RepairManager.scala[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /Users/niels/Projects/egjns/manager/src/main/scala/RepairManager.scala[0m
+[0m[[0m[0minfo[0m] [0m[0mDone packaging.[0m

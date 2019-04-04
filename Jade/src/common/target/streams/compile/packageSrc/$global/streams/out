@@ -1,0 +1,17 @@
+[0m[[0m[0minfo[0m] [0m[0mPackaging /Users/niels/Projects/egjns/common/target/scala-2.12/common_2.12-0.1-sources.jar ...[0m
+[0m[[0m[0mdebug[0m] [0m[0mInput file mappings:[0m
+[0m[[0m[0mdebug[0m] [0m[0m	NodeMessages.scala[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /Users/niels/Projects/egjns/common/src/main/scala/NodeMessages.scala[0m
+[0m[[0m[0mdebug[0m] [0m[0m	WrapperConfiguration.scala[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /Users/niels/Projects/egjns/common/src/main/scala/WrapperConfiguration.scala[0m
+[0m[[0m[0mdebug[0m] [0m[0m	ComponentState.scala[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /Users/niels/Projects/egjns/common/src/main/scala/ComponentState.scala[0m
+[0m[[0m[0mdebug[0m] [0m[0m	ConnectionConfig.scala[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /Users/niels/Projects/egjns/common/src/main/scala/ConnectionConfig.scala[0m
+[0m[[0m[0mdebug[0m] [0m[0m	WrapperId.scala[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /Users/niels/Projects/egjns/common/src/main/scala/WrapperId.scala[0m
+[0m[[0m[0mdebug[0m] [0m[0m	Address.scala[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /Users/niels/Projects/egjns/common/src/main/scala/Address.scala[0m
+[0m[[0m[0mdebug[0m] [0m[0m	FutureUtil.scala[0m
+[0m[[0m[0mdebug[0m] [0m[0m	  /Users/niels/Projects/egjns/common/src/main/scala/FutureUtil.scala[0m
+[0m[[0m[0minfo[0m] [0m[0mDone packaging.[0m

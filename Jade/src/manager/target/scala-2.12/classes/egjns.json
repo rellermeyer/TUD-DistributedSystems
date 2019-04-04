@@ -1,0 +1,26 @@
+{
+    "nodes": [
+        {
+            "id": "node1",
+            "wrappers": [
+                "Flask"
+            ],
+            "bindings": [
+                {
+                    "toNode": "node2",
+                    "fromWrapper": "Flask",
+                    "toWrapper": "Postgres"
+                }
+            ]
+        },
+        {
+            "id": "node2",
+            "wrappers": [
+                "Postgres"
+            ],
+            "bindings": [
+            ]
+        }
+    ]
+}
+
