@@ -1,0 +1,76 @@
+plugins {
+    id 'scala'
+    id 'idea'
+    id "com.github.maiflai.scalatest" version "0.24"
+}
+
+repositories {
+    mavenCentral()
+    jcenter()
+}
+configurations {
+  scalaCompilerPlugin
+}
+
+dependencies {
+    implementation 'org.scala-lang:scala-library:2.12.8'
+    implementation 'org.scala-lang.modules:scala-async_2.12:0.9.7'
+
+    compile 'com.monovore:decline_2.12:0.6.1'
+
+    /* Simple and easy http framework (spark) + requests lib (unirest) */
+    implementation "com.sparkjava:spark-core:2.8.0"
+    implementation "com.konghq:unirest-java:2.1.03"
+
+    /* criteo lolhttp framework + json library */
+    compile 'org.typelevel:cats-core_2.12:1.5.0'
+    compile group: 'com.criteo.lolhttp', name: 'lolhttp_2.12', version: '10.0.0'
+    compile group: 'com.criteo.lolhttp', name: 'lolhtml_2.12', version: '10.0.0'
+    compile group: 'com.criteo.lolhttp', name: 'loljson_2.12', version: '10.0.0'
+    // json lib for scala (with cats)
+    compile group: 'io.circe', name: 'circe-core_2.12', version: '0.11.1'
+    compile group: 'io.circe', name: 'circe-generic_2.12', version: '0.11.1'
+    compile group: 'io.circe', name: 'circe-optics_2.12', version: '0.11.0'
+    compile 'au.com.bytecode:opencsv:2.4'
+
+    testImplementation 'org.pegdown:pegdown:1.4.2'
+    testImplementation 'org.scalatest:scalatest_2.12:3.0.6'
+    testImplementation 'junit:junit:4.12'
+
+    scalaCompilerPlugin "org.scalamacros:paradise_2.12.8:2.1.0"
+}
+
+tasks.withType(ScalaCompile) {
+  scalaCompileOptions.additionalParameters = [
+    "-Xplugin:" + configurations.scalaCompilerPlugin.asPath
+  ]
+}
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '4.10'
+}
+
+idea{
+    module {
+        testSourceDirs += sourceSets.main.runtimeClasspath
+    }
+}
+
+task run(type: JavaExec, dependsOn: classes) {
+    main = 'chatapp.ChatClient'
+    standardInput = System.in
+    classpath sourceSets.main.runtimeClasspath
+}
+
+compileJava {
+  options.compilerArgs += [
+      "--add-modules", "java.se",
+      "--add-exports", "java.base/jdk.internal.ref=ALL-UNNAMED",
+      "--add-opens", "java.base/java.lang=ALL-UNNAMED",
+      "--add-opens", "java.base/java.nio=ALL-UNNAMED",
+      "--add-opens", "java.base/sun.nio.ch=ALL-UNNAMED",
+      "--add-opens", "java.management/sun.management=ALL-UNNAMED",
+      "--add-opens", "jdk.management/com.sun.management.internal=ALL-UNNAMED"
+  ]
+}
+
