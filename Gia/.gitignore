@@ -1,0 +1,25 @@
+syntax: glob
+*.ser
+*.class
+*~
+*.bak
+*.old
+.settings
+.classpath
+.project
+.manager
+.scala_dependencies
+.idea
+*.iml
+target
+build
+null
+tmp*
+temp*
+dist
+test-output
+build.log
+.svn
+.CVS
+.hg*
+build.log
