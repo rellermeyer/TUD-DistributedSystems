@@ -1,0 +1,146 @@
+version: '2'
+services:
+  bayou-master:
+    container_name: master
+    image: master:0.1
+    restart: on-failure
+    ports:
+      - 9999
+    command: "[]"
+    networks:
+      bayou:
+        ipv4_address: 172.22.0.2
+
+  bayou-server1:
+    container_name: slave1
+    image: slave:0.1
+    restart: on-failure
+    ports:
+      - 9999
+    command: "[172.22.0.2]"
+    networks:
+      bayou:
+        ipv4_address: 172.22.0.3
+
+  bayou-server2:
+    container_name: slave2
+    image: slave:0.1
+    restart: on-failure
+    ports:
+      - 9999
+    command: "[172.22.0.3]"
+    networks:
+      bayou:
+        ipv4_address: 172.22.0.4
+
+  bayou-server3:
+    container_name: slave3
+    image: slave:0.1
+    restart: on-failure
+    ports:
+      - 9999
+    command: "[172.22.0.4]"
+    networks:
+      bayou:
+        ipv4_address: 172.22.0.5
+
+  bayou-server4:
+    container_name: slave4
+    image: slave:0.1
+    restart: on-failure
+    ports:
+      - 9999
+    command: "[172.22.0.5]"
+    networks:
+      bayou:
+        ipv4_address: 172.22.0.6
+
+  bayou-server5:
+    container_name: slave5
+    image: slave:0.1
+    restart: on-failure
+    ports:
+      - 9999
+    command: "[172.22.0.6]"
+    networks:
+      bayou:
+        ipv4_address: 172.22.0.7
+
+  bayou-server6:
+    container_name: slave6
+    image: slave:0.1
+    restart: on-failure
+    ports:
+      - 9999
+    command: "[172.22.0.7]"
+    networks:
+      bayou:
+        ipv4_address: 172.22.0.8
+
+  bayou-server7:
+    container_name: slave7
+    image: slave:0.1
+    restart: on-failure
+    ports:
+      - 9999
+    command: "[172.22.0.8]"
+    networks:
+      bayou:
+        ipv4_address: 172.22.0.9
+
+  bayou-server8:
+    container_name: slave8
+    image: slave:0.1
+    restart: on-failure
+    ports:
+      - 9999
+    command: "[172.22.0.9]"
+    networks:
+      bayou:
+        ipv4_address: 172.22.0.10
+
+  bayou-server9:
+    container_name: slave9
+    image: slave:0.1
+    restart: on-failure
+    ports:
+      - 9999
+    command: "[172.22.0.10]"
+    networks:
+      bayou:
+        ipv4_address: 172.22.0.11
+
+  bayou-server10:
+    container_name: slave10
+    image: slave:0.1
+    restart: on-failure
+    ports:
+      - 9999
+    command: "[172.22.0.11]"
+    networks:
+      bayou:
+        ipv4_address: 172.22.0.12
+
+  bayou-client1:
+    container_name: client1
+    image: client:0.1
+    restart: unless-stopped
+    ports:
+      - 9999
+    command:
+      - "172.22.0.12"
+      - "ham"
+      - "kaas"
+      - "melk"
+      - "m"
+    networks:
+      bayou:
+        ipv4_address: 172.22.0.13
+
+networks:
+  bayou:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.22.0.0/24
+          gateway: 172.22.0.254
