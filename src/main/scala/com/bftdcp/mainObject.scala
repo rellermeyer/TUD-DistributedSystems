@@ -30,13 +30,13 @@ object Messages {
   //Coordinator to Coordinator
   final case class initViewChange() extends Message//(optional)
   /****** Douwe ******/
-  final case class newView() extends Message//(optional)
-  final case class baPrepare() extends Message
-  final case class baCommit() extends Message
+  final case class newView(newViewNumber,viewCertificate,transactionID, outcomeProposed,decisionCertificate) extends Message//(optional)
+  final case class baPrepare(viewNumber,transactionID,decisionCertificate,outcomeProposed, coordinatorID) extends Message //decisionCertificate can be replaced with hash/digest 
+  final case class baCommit(viewNumber,transactionID,decisionCertificate,outcomeProposed, coordinatorID) extends Message
 
   //Coordinator(primary) to Coordinator
-  final case class baPrePrepare() extends Message
-  final case class sendUnknownParticipants() extends Message//(see page 41, second whole paragraph)
+  final case class baPrePrepare(viewNumber,transactionID,outcomeProposed,decisionCertificate) extends Message
+  final case class sendUnknownParticipants(endPointReferences) extends Message// (see page 41, second whole paragraph)
 
   /****** Michael ******/
   //Coordinator to Coordinator(primary)
