@@ -8,45 +8,46 @@ import akka.actor.typed.scaladsl.Behaviors
 import Father.Command
 
 object Messages {
+  sealed trait Message
   /****** Patrick ******/
   //Initiator to Coordinator and Participant
-  final case class initCommit()
-  final case class initAbort()
+  final case class initCommit() extends Message
+  final case class initAbort() extends Message
 
   //Coordinator to Participant
-  final case class prepare()
-  final case class abort()
-  final case class commit()
+  final case class prepare() extends Message
+  final case class abort() extends Message
+  final case class commit() extends Message
 
   /****** Miguel ******/
   //Coordinator to Initiator
-  final case class commitSuccess()
-  final case class abortSuccess()
+  final case class commitSuccess() extends Message
+  final case class abortSuccess() extends Message
 
   //Participant to Initiator
-  final case class registerWithInitiator()//(page 39, start of second column seems to imply this is needed .Could perhaps be merged with the ack to initiateCommit / initiateAbort )
+  final case class registerWithInitiator() extends Message //(page 39, start of second column seems to imply this is needed .Could perhaps be merged with the ack to initiateCommit / initiateAbort )
 
   //Coordinator to Coordinator
-  final case class initViewChange()//(optional)
+  final case class initViewChange() extends Message//(optional)
   /****** Douwe ******/
-  final case class newView()//(optional)
-  final case class baPrepare()
-  final case class baCommit()
+  final case class newView() extends Message//(optional)
+  final case class baPrepare() extends Message
+  final case class baCommit() extends Message
 
   //Coordinator(primary) to Coordinator
-  final case class baPrePrepare()
-  final case class sendUnknownParticipants()//(see page 41, second whole paragraph)
+  final case class baPrePrepare() extends Message
+  final case class sendUnknownParticipants() extends Message//(see page 41, second whole paragraph)
 
   /****** Michael ******/
   //Coordinator to Coordinator(primary)
-  final case class requestUnknownParticipants()
+  final case class requestUnknownParticipants() extends Message
 
   //Participant to Coordinator
-  final case class registerWithCoordinator()
-  final case class prepared()
-  final case class readOnly()
-  final case class aborted()
-  final case class committed()
+  final case class registerWithCoordinator() extends Message
+  final case class prepared() extends Message
+  final case class readOnly() extends Message
+  final case class aborted() extends Message
+  final case class committed() extends Message
 }
 
 object Coordinator {
