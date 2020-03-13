@@ -16,7 +16,10 @@ object Coordinator {
         participants += from
       case Prepared(t: Transaction, from: Participant) =>
       case Aborted(t: Transaction, from: Participant) =>
-      case m: InitCommit =>
+      case m: InitCommit => //After receiving initCommit message, coordinator answers with a prepare message
+        m.from ! Messages.Prepare(context.self)
+        println("Coordinator: InitCommit received from "+m.from+". Transaction: "+m.t)
+
       case m: InitAbort =>
       case InitViewChange(from: Coordinator) =>
       case m: NewView =>

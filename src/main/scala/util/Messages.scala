@@ -8,10 +8,13 @@ object Messages {
   sealed trait InitiatorMessage extends ParticipantMessage
   type Coordinator = ActorRef[CoordinatorMessage]
   type Participant = ActorRef[ParticipantMessage]
-  type Initiator = ActorRef[InitiatorMessage]
+  type Initiator = ActorRef[ParticipantMessage]
 
   final case class Transaction()
   final case class View(id: Int)
+
+  // We added this message to let the participant know when to start sending commit requests
+  final case class ParticipantStart(partRef : ActorRef[ParticipantMessage]) extends ParticipantMessage
 
   //Coordinator to Participant
   final case class Prepare(from: Coordinator) extends ParticipantMessage
