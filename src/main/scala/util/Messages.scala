@@ -26,6 +26,8 @@ object Messages {
   final case class RegisterWithCoordinator(from: Participant) extends CoordinatorMessage
   final case class Prepared(t: Transaction, from: Participant) extends CoordinatorMessage
   final case class Aborted(t: Transaction, from: Participant) extends CoordinatorMessage
+  final case class Committed(t: Transaction, from: Participant) extends CoordinatorMessage
+
   //Initiator to Coordinator and Participant
   final case class InitCommit(t: Transaction, /*commitRequest,*/ from: Initiator) extends CoordinatorMessage with ParticipantMessage
   final case class InitAbort(t: Transaction, from: Initiator) extends CoordinatorMessage with ParticipantMessage

@@ -14,11 +14,20 @@ object Coordinator {
         m.replyTo ! Greeted(m.whom, context.self)
       case RegisterWithCoordinator(from: Participant) =>
         participants += from
-      case Prepared(t: Transaction, from: Participant) =>
+
+      case m: Prepared =>
+        println("Coordinator: Prepared message received from participant: "+m.from+". Transaction: "+m.t)
+
       case Aborted(t: Transaction, from: Participant) =>
+
       case m: InitCommit => //After receiving initCommit message, coordinator answers with a prepare message
-        m.from ! Messages.Prepare(context.self)
         println("Coordinator: InitCommit received from "+m.from+". Transaction: "+m.t)
+        m.from ! Messages.Prepare(context.self)
+        //Start byzantine agreement
+        Thread.sleep(2000)
+        m.from ! Messages.Commit(context.self)
+      case m: Committed =>
+        println("Coordinator: Committed received from participant: "+m.from+".Transaction: "+m.t)
 
       case m: InitAbort =>
       case InitViewChange(from: Coordinator) =>

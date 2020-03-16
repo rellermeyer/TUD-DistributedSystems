@@ -17,8 +17,13 @@ object Participant {
         startWorkflow(m.partRef,coordRef)
       case Messages.Prepare (from: Coordinator) =>
         println ("Participant: prepare message received from "+from)
+        from ! Messages.Prepared(null,context.self)
       case Messages.Abort (from: Coordinator) =>
-      case Messages.Commit (from: Coordinator) =>
+        println("Participant: commit received from Coordinator")
+        from ! Messages.Aborted(null,context.self)
+      case m:Commit =>
+        println("Participant: commit received from Coordinator")
+        m.from ! Messages.Committed(null,context.self)
       case m: InitCommit =>
       case m: InitAbort =>
       case message: Messages.InitiatorMessage =>
@@ -32,9 +37,11 @@ object Participant {
 
   // Infinite loop which sends commitRequests every second
   def startWorkflow(partRef : ActorRef[ParticipantMessage],coordRef : ActorRef[CoordinatorMessage]): Unit = {
-    while(true){
+    coordRef ! Messages.InitCommit(null,partRef)
+
+    /*while(true){
       Thread.sleep(1000)
       coordRef ! Messages.InitCommit(null,partRef)
-    }
+    }*/
   }
 }
