@@ -48,7 +48,7 @@ object Coordinator {
         //TODO: check message validity and only append valid messages (or append all and do validation in checkBaPrepare?)
         println("Coordinator: Received BaPrepare")
         BaPrepareLog += m
-        if (enoughMatchingBaPrepare(BaPrepareLog)&& (!BaPrepared)) {
+        if (enoughMatchingBaPrepare(BaPrepareLog,m.proposeCommit)&& (!BaPrepared)) {
           //BaPrepared flag prevents duplicate messages
           //TODO: implement this in a way that functions for continuous operation instead of just one commit
           coordinators.foreach(coord => coord ! Messages.BaCommit(null, null, m.proposeCommit, context.self))
@@ -59,7 +59,7 @@ object Coordinator {
         //TODO: check message validity and only append valid messages (or append all and do validation in checkBaCommit?)
         println("Coordinator: Received BaCommit")
         BaCommitLog += m
-        if (enoughMatchingBaCommit(BaCommitLog)&& (!BaCommitted)) {
+        if (enoughMatchingBaCommit(BaCommitLog,m.proposeCommit)&& (!BaCommitted)) {
           //BaCommitted flag prevents duplicate messages
           //TODO: implement this in a way that functions for continuous operation instead of just one message
           participants.foreach(part => part ! Messages.Commit(context.self, m.proposeCommit))
@@ -87,23 +87,27 @@ object Coordinator {
   }
 
 
-  def enoughMatchingBaPrepare(/*v: View, t: Transaction, */ BaPrepareLog: ListBuffer[Messages.BaPrepare]): Boolean = {
+  def enoughMatchingBaPrepare(/*v: View, t: Transaction, */ BaPrepareLog: ListBuffer[Messages.BaPrepare],proposedOutcome: Boolean): Boolean = {
     var numOfMatchingMessages = 0
 
     BaPrepareLog.foreach(x =>
       //TODO: select only matching messages
-      numOfMatchingMessages = numOfMatchingMessages + 1
+      if (x.proposeCommit == proposedOutcome) {
+        numOfMatchingMessages = numOfMatchingMessages + 1
+      }
     )
     val f = getF()
     if (numOfMatchingMessages >= 2 * f) true else false
   }
 
-  def enoughMatchingBaCommit(BaCommitLog: ListBuffer[BaCommit]): Boolean = {
+  def enoughMatchingBaCommit(BaCommitLog: ListBuffer[BaCommit],proposedOutcome: Boolean): Boolean = {
     var numOfMatchingMessages = 0
 
     BaCommitLog.foreach(x =>
       //TODO: select only matching messages
-      numOfMatchingMessages = numOfMatchingMessages + 1
+      if (x.proposeCommit == proposedOutcome) {
+        numOfMatchingMessages = numOfMatchingMessages + 1
+      }
     )
     val f = getF()
     if (numOfMatchingMessages > 2 * f) true else false
