@@ -23,32 +23,24 @@ object Coordinator {
       case m: SendCoordinatorSet =>
         coordinators = m.coordinatorSet
 
-      case m: Greet =>
-        context.log.info("Hello {}", m.whom)
-        m.replyTo ! Greeted(m.whom, context.self)
-
       case RegisterWithCoordinator(from: Participant) =>
         participants += from
 
       case m: Prepared =>
         println("Coordinator: Prepared message received from participant: " + m.from + ". Transaction: " + m.t)
 
-      case Aborted(t: Transaction, from: Participant) =>
-
       case m: InitCommit => //After receiving initCommit message, coordinator answers with a prepare message
         println("Coordinator: InitCommit received from " + m.from + ". Transaction: " + m.t)
         participants.foreach(participant => participant ! Messages.Prepare(context.self))
         //Start byzantine agreement
-        byzantineAgreement(coordinators, context.self) //Set of coordinator replicas answers
+        byzantineAgreement(coordinators, m.proposeCommit, context.self) //Set of coordinator replicas answers
 
-      case m: Committed =>
-        println("Coordinator: Committed received from participant: " + m.from + ".Transaction: " + m.t)
-
-      case m: InitAbort =>
-        println("Coordinator: InitAbort received from " + m.from + ". Transaction: " + m.t)
-        participants.foreach(participant => participant ! Messages.Prepare(context.self))
-        //Start byzantine agreement
-        byzantineAgreement(coordinators, context.self)
+      case m: CommitOutcome =>
+        if(m.commitResult) {
+          println("Coordinator: Committed received from participant: " + m.from + ".Transaction: " + m.t)
+        } else {
+          println("Coordinator: Aborted received from participant: " + m.from + ".Transaction: " + m.t)
+        }
 
       case InitViewChange(from: Coordinator) =>
       case m: NewView =>
@@ -58,27 +50,25 @@ object Coordinator {
         BaPrepareLog += m
         if (enoughMatchingBaPrepare(BaPrepareLog)&& (!BaPrepared)) {
           //BaPrepared flag prevents duplicate messages
-          //TODO: implement this in a way that functions for continuous operation instead of just one message
-          coordinators.foreach(coord => coord ! Messages.BaCommit(null, null, context.self))
+          //TODO: implement this in a way that functions for continuous operation instead of just one commit
+          coordinators.foreach(coord => coord ! Messages.BaCommit(null, null, m.proposeCommit, context.self))
           BaPrepared = true
           println("Coordinator: BaPrepared")
         }
-      case m: BaCommit =>
+        case m: BaCommit =>
         //TODO: check message validity and only append valid messages (or append all and do validation in checkBaCommit?)
         println("Coordinator: Received BaCommit")
         BaCommitLog += m
         if (enoughMatchingBaCommit(BaCommitLog)&& (!BaCommitted)) {
           //BaCommitted flag prevents duplicate messages
           //TODO: implement this in a way that functions for continuous operation instead of just one message
-          participants.foreach(part => part ! Messages.Commit(context.self, true))
+          participants.foreach(part => part ! Messages.Commit(context.self, m.proposeCommit))
           BaCommitted = true
           println("Coordinator: BaCommitted")
         }
       case m: BaPrePrepare =>
-        // Here we must check if the output is commit or abort.
-
         //TODO: implement message checking and handling the reject case (initiating view change)
-        coordinators.foreach(coord => coord ! Messages.BaPrepare(null, null, context.self))
+        coordinators.foreach(coord => coord ! Messages.BaPrepare(null, null, m.proposeCommit,context.self))
         println("Coordinator: BaPrePrepared")
 
       case SendUnknownParticipants(participants: Set[Participant], from: Coordinator) =>
@@ -91,10 +81,9 @@ object Coordinator {
     Behaviors.same
   }
 
-  //TODO: execute byzantine agreement protocol and return results
-  def byzantineAgreement(coordinators: Set[Coordinator], self: ActorRef[CoordinatorMessage]): Unit = {
+  def byzantineAgreement(coordinators: Set[Coordinator], proposeCommit: Boolean/*true =commit,false=abort*/, self: ActorRef[CoordinatorMessage]): Unit = {
     // Start BAAlgorithm
-    coordinators.foreach(coord => coord ! Messages.BaPrePrepare(null, null, self))
+    coordinators.foreach(coord => coord ! Messages.BaPrePrepare(null, null, proposeCommit, self))
   }
 
 

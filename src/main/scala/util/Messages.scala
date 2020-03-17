@@ -10,7 +10,7 @@ object Messages {
   type Participant = ActorRef[ParticipantMessage]
   type Initiator = ActorRef[ParticipantMessage]
 
-  final case class Transaction()
+  final case class Transaction(id: Int)
   final case class View(id: Int)
 
   // We added this message to let the participant know when to start sending commit requests
@@ -18,27 +18,24 @@ object Messages {
   final case class SendCoordinatorSet(coordinatorSet: Set[Coordinator]) extends CoordinatorMessage
   //Coordinator to Participant
   final case class Prepare(from: Coordinator) extends ParticipantMessage
-  final case class Abort(from: Coordinator, BAResult: Boolean) extends ParticipantMessage
-  final case class Commit(from: Coordinator, BAResult: Boolean) extends ParticipantMessage
+  final case class Commit(from: Coordinator, BAResult: Boolean /*true =commit,false=abort*/) extends ParticipantMessage
   //Participant to Initiator
   final case class RegisterWithInitiator(from: Participant) extends InitiatorMessage
   //Participant to Coordinator
   final case class RegisterWithCoordinator(from: Participant) extends CoordinatorMessage
   final case class Prepared(t: Transaction, from: Participant) extends CoordinatorMessage
-  final case class Aborted(t: Transaction, from: Participant) extends CoordinatorMessage
-  final case class Committed(t: Transaction, from: Participant) extends CoordinatorMessage
+  final case class CommitOutcome(t: Transaction, commitResult: Boolean /*true =commit,false=abort*/, from: Participant) extends CoordinatorMessage
 
   //Initiator to Coordinator and Participant
-  final case class InitCommit(t: Transaction, /*commitRequest,*/ from: Initiator) extends CoordinatorMessage with ParticipantMessage
-  final case class InitAbort(t: Transaction, from: Initiator) extends CoordinatorMessage with ParticipantMessage
+  final case class InitCommit(t: Transaction, /*commitRequest,*/ proposeCommit: Boolean/*true =commit,false=abort*/, from: Initiator) extends CoordinatorMessage with ParticipantMessage
   //Coordinator to Coordinator
   final case class InitViewChange(from: Coordinator) extends CoordinatorMessage
   /****************** some fields are commented out as no type is defined for them yet ************/
-  final case class NewView(new_v: View/*, viewCertificate, transactionID, outcomeProposed, decisionCertificate*/, from: Coordinator) extends CoordinatorMessage
-  final case class BaPrepare(v: View, t: Transaction, /*decisionCertificate, outcomeProposed,*/ from: Coordinator) extends CoordinatorMessage
-  final case class BaCommit(v: View, t: Transaction, /*decisionCertificate, outcomeProposed,*/ from: Coordinator) extends CoordinatorMessage
+  final case class NewView(new_v: View/*, viewCertificate, transactionID, decisionCertificate*/, proposeCommit: Boolean, from: Coordinator) extends CoordinatorMessage
+  final case class BaPrepare(v: View, t: Transaction /*,decisionCertificate, */, proposeCommit: Boolean, from: Coordinator) extends CoordinatorMessage
+  final case class BaCommit(v: View, t: Transaction /*,decisionCertificate*/, proposeCommit: Boolean, from: Coordinator) extends CoordinatorMessage
   //Coordinator(primary) to Coordinator
-  final case class BaPrePrepare(v: View, t: Transaction,/* outcomeProposed, decisionCertificate,*/ from: Coordinator) extends CoordinatorMessage
+  final case class BaPrePrepare(v: View, t: Transaction/*, decisionCertificate*/, proposeCommit: Boolean, from: Coordinator) extends CoordinatorMessage
   final case class SendUnknownParticipants(participants: Set[Participant], from: Coordinator) extends CoordinatorMessage
   final case class RequestUnknownParticipants(from: Coordinator) extends CoordinatorMessage
 

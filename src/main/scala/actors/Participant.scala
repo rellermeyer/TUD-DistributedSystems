@@ -13,9 +13,6 @@ object Participant {
 
     Behaviors.receive {(context, message) =>
     message match {
-      case m: Greet =>
-        context.log.info ("Hello {}", m.whom)
-        m.replyTo ! Greeted (m.whom, context.self)
 
       case m : ParticipantStart =>   // This message is used to let the participant know when to start sending commit requests
         coordRef ! Messages.RegisterWithCoordinator(context.self)
@@ -25,26 +22,28 @@ object Participant {
         println ("Participant: Prepare message received from "+from)
         from ! Messages.Prepared(null,context.self)
 
-      case m: Abort =>
-        println("Participant: Abort received from Coordinator")
-        decisionLog += m.BAResult
-        if(canMakeDecision(true,decisionLog)) {
-          m.from ! Messages.Aborted(null, context.self)
-          println("Participant: Can make decision")
-        } else
-          println("Participant: Cannot make decision")
-
       case m: Commit =>
-        println("Participant: Commit received from Coordinator")
+        if(m.BAResult) {
+          println("Participant: Commit received from Coordinator")
+        }
+        else {
+          println("Participant: Abort received from Coordinator")
+        }
         decisionLog += m.BAResult
-        if(canMakeDecision(true,decisionLog)) {
-          m.from ! Messages.Committed(null, context.self)
-          println("Participant: Can make decision")
-        } else
-          println("Participant: Cannot make decision")
-
+        if(canMakeDecision(m.BAResult,decisionLog)) {
+          m.from ! Messages.CommitOutcome(null, m.BAResult/*true=commit,false=abort*/, context.self)
+          if(m.BAResult) {
+            println("Participant: Committed")
+          }
+          else {
+            println("Participant: Aborted")
+          }
+        }
+        else
+          println("Participant: Cannot make decision yet")
+/*
       case m: InitCommit => //only needed for multiple participants
-      case m: InitAbort =>  //only needed for multiple participants
+ */
       case message: Messages.InitiatorMessage =>
         message match {
           case Messages.RegisterWithInitiator (from: Participant) =>
@@ -56,7 +55,7 @@ object Participant {
 
   // Infinite loop which sends commitRequests every second
   def startWorkflow(partRef : ActorRef[ParticipantMessage],coordRef : ActorRef[CoordinatorMessage]): Unit = {
-    coordRef ! Messages.InitCommit(null,partRef)
+    coordRef ! Messages.InitCommit(null,true,partRef)
 
     /*while(true){
       Thread.sleep(1000)
