@@ -43,8 +43,8 @@ object Participant {
         } else
           println("Participant: Cannot make decision")
 
-      case m: InitCommit =>
-      case m: InitAbort =>
+      case m: InitCommit => //only needed for multiple participants
+      case m: InitAbort =>  //only needed for multiple participants
       case message: Messages.InitiatorMessage =>
         message match {
           case Messages.RegisterWithInitiator (from: Participant) =>

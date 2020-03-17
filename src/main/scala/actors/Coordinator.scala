@@ -5,10 +5,20 @@ import akka.actor.typed.scaladsl.Behaviors
 import util._
 import Messages._
 
+import scala.collection.mutable.ListBuffer
+
 object Coordinator {
   var coordinators: Set[Coordinator] = null
   var participants: Set[Participant] = Set()
+  var BaPrepared: Boolean = false
+  var BaCommitted: Boolean = false
+  var BaPrepareLog: ListBuffer[Messages.BaPrepare] = ListBuffer()
+  var BaCommitLog: ListBuffer[Messages.BaCommit] = ListBuffer()
+
   def apply(): Behavior[CoordinatorMessage] = Behaviors.receive { (context, message) =>
+
+    //TODO: implement message content, message checking and byzantine behaviour simulation
+
     message match {
       case m: SendCoordinatorSet =>
         coordinators = m.coordinatorSet
@@ -21,21 +31,21 @@ object Coordinator {
         participants += from
 
       case m: Prepared =>
-        println("Coordinator: Prepared message received from participant: "+m.from+". Transaction: "+m.t)
+        println("Coordinator: Prepared message received from participant: " + m.from + ". Transaction: " + m.t)
 
       case Aborted(t: Transaction, from: Participant) =>
 
       case m: InitCommit => //After receiving initCommit message, coordinator answers with a prepare message
-        println("Coordinator: InitCommit received from "+m.from+". Transaction: "+m.t)
+        println("Coordinator: InitCommit received from " + m.from + ". Transaction: " + m.t)
         participants.foreach(participant => participant ! Messages.Prepare(context.self))
         //Start byzantine agreement
-        byzantineAgreement(coordinators,context.self) //Set of coordinator replicas answers
+        byzantineAgreement(coordinators, context.self) //Set of coordinator replicas answers
 
       case m: Committed =>
-        println("Coordinator: Committed received from participant: "+m.from+".Transaction: "+m.t)
+        println("Coordinator: Committed received from participant: " + m.from + ".Transaction: " + m.t)
 
       case m: InitAbort =>
-        println("Coordinator: InitAbort received from "+m.from+". Transaction: "+m.t)
+        println("Coordinator: InitAbort received from " + m.from + ". Transaction: " + m.t)
         participants.foreach(participant => participant ! Messages.Prepare(context.self))
         //Start byzantine agreement
         byzantineAgreement(coordinators, context.self)
@@ -43,16 +53,33 @@ object Coordinator {
       case InitViewChange(from: Coordinator) =>
       case m: NewView =>
       case m: BaPrepare =>
+        //TODO: check message validity and only append valid messages (or append all and do validation in checkBaPrepare?)
+        println("Coordinator: Received BaPrepare")
+        BaPrepareLog += m
+        if (enoughMatchingBaPrepare(BaPrepareLog)&& (!BaPrepared)) {
+          //BaPrepared flag prevents duplicate messages
+          //TODO: implement this in a way that functions for continuous operation instead of just one message
+          coordinators.foreach(coord => coord ! Messages.BaCommit(null, null, context.self))
+          BaPrepared = true
+          println("Coordinator: BaPrepared")
+        }
       case m: BaCommit =>
+        //TODO: check message validity and only append valid messages (or append all and do validation in checkBaCommit?)
+        println("Coordinator: Received BaCommit")
+        BaCommitLog += m
+        if (enoughMatchingBaCommit(BaCommitLog)&& (!BaCommitted)) {
+          //BaCommitted flag prevents duplicate messages
+          //TODO: implement this in a way that functions for continuous operation instead of just one message
+          participants.foreach(part => part ! Messages.Commit(context.self, true))
+          BaCommitted = true
+          println("Coordinator: BaCommitted")
+        }
       case m: BaPrePrepare =>
         // Here we must check if the output is commit or abort.
-        println("Coordinator: Received BaPrePrepare")
-        // We are simulating the result of the BAAlgorithm. Commit or abort message must be sent depending on the BAPrePrepare message Output parameter.
-        val r = scala.util.Random
-        if(r.nextInt % 2 == 0)
-          participants.foreach( part => part ! Messages.Commit(context.self, true))
-        else
-          participants.foreach( part => part ! Messages.Commit(context.self, false))
+
+        //TODO: implement message checking and handling the reject case (initiating view change)
+        coordinators.foreach(coord => coord ! Messages.BaPrepare(null, null, context.self))
+        println("Coordinator: BaPrePrepared")
 
       case SendUnknownParticipants(participants: Set[Participant], from: Coordinator) =>
         this.participants |= participants
@@ -64,9 +91,37 @@ object Coordinator {
     Behaviors.same
   }
 
-//TODO: execute byzantine agreement protocol and return results
-  def byzantineAgreement(coordinators: Set[Coordinator], self: ActorRef[CoordinatorMessage]): Unit ={
+  //TODO: execute byzantine agreement protocol and return results
+  def byzantineAgreement(coordinators: Set[Coordinator], self: ActorRef[CoordinatorMessage]): Unit = {
     // Start BAAlgorithm
-    coordinators.foreach( coord => coord ! Messages.BaPrePrepare(null,null,self))
+    coordinators.foreach(coord => coord ! Messages.BaPrePrepare(null, null, self))
+  }
+
+
+  def enoughMatchingBaPrepare(/*v: View, t: Transaction, */ BaPrepareLog: ListBuffer[Messages.BaPrepare]): Boolean = {
+    var numOfMatchingMessages = 0
+
+    BaPrepareLog.foreach(x =>
+      //TODO: select only matching messages
+      numOfMatchingMessages = numOfMatchingMessages + 1
+    )
+    val f = getF()
+    if (numOfMatchingMessages >= 2 * f) true else false
+  }
+
+  def enoughMatchingBaCommit(BaCommitLog: ListBuffer[BaCommit]): Boolean = {
+    var numOfMatchingMessages = 0
+
+    BaCommitLog.foreach(x =>
+      //TODO: select only matching messages
+      numOfMatchingMessages = numOfMatchingMessages + 1
+    )
+    val f = getF()
+    if (numOfMatchingMessages > 2 * f) true else false
+  }
+
+  def getF(): Integer = {
+    val f: Integer = (coordinators.size - 1) / 3
+    return f
   }
 }
