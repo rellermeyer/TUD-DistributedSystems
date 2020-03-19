@@ -27,49 +27,49 @@ object Coordinator {
         participants += from
 
       case m: Prepared =>
-        println("Coordinator: Prepared message received from participant: " + m.from + ". Transaction: " + m.t)
+        context.log.info("Prepared message received from participant: " + m.from + ". Transaction: " + m.t)
 
       case m: InitCommit => //After receiving initCommit message, coordinator answers with a prepare message
-        println("Coordinator: InitCommit received from " + m.from + ". Transaction: " + m.t)
+        context.log.info("InitCommit received from " + m.from + ". Transaction: " + m.t)
         participants.foreach(participant => participant ! Messages.Prepare(context.self))
         //Start byzantine agreement
         byzantineAgreement(coordinators, m.proposeCommit, context.self) //Set of coordinator replicas answers
 
       case m: CommitOutcome =>
         if(m.commitResult) {
-          println("Coordinator: Committed received from participant: " + m.from + ".Transaction: " + m.t)
+          context.log.info("Committed received from participant: " + m.from + ".Transaction: " + m.t)
         } else {
-          println("Coordinator: Aborted received from participant: " + m.from + ".Transaction: " + m.t)
+          context.log.info("Aborted received from participant: " + m.from + ".Transaction: " + m.t)
         }
 
       case InitViewChange(from: Coordinator) =>
       case m: NewView =>
       case m: BaPrepare =>
         //TODO: check message validity and only append valid messages (or append all and do validation in checkBaPrepare?)
-        println("Coordinator: Received BaPrepare")
+        context.log.info("Received BaPrepare")
         BaPrepareLog += m
         if (enoughMatchingBaPrepare(BaPrepareLog,m.proposeCommit)&& (!BaPrepared)) {
           //BaPrepared flag prevents duplicate messages
           //TODO: implement this in a way that functions for continuous operation instead of just one commit
           coordinators.foreach(coord => coord ! Messages.BaCommit(null, null, m.proposeCommit, context.self))
           BaPrepared = true
-          println("Coordinator: BaPrepared")
+          context.log.info("BaPrepared")
         }
         case m: BaCommit =>
         //TODO: check message validity and only append valid messages (or append all and do validation in checkBaCommit?)
-        println("Coordinator: Received BaCommit")
+        context.log.info("Received BaCommit")
         BaCommitLog += m
         if (enoughMatchingBaCommit(BaCommitLog,m.proposeCommit)&& (!BaCommitted)) {
           //BaCommitted flag prevents duplicate messages
           //TODO: implement this in a way that functions for continuous operation instead of just one message
           participants.foreach(part => part ! Messages.Commit(context.self, m.proposeCommit))
           BaCommitted = true
-          println("Coordinator: BaCommitted")
+          context.log.info("BaCommitted")
         }
       case m: BaPrePrepare =>
         //TODO: implement message checking and handling the reject case (initiating view change)
         coordinators.foreach(coord => coord ! Messages.BaPrepare(null, null, m.proposeCommit,context.self))
-        println("Coordinator: BaPrePrepared")
+        context.log.info("BaPrePrepared")
 
       case SendUnknownParticipants(participants: Set[Participant], from: Coordinator) =>
         this.participants |= participants

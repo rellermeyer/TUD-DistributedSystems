@@ -14,7 +14,7 @@ object Messages {
   final case class View(id: Int)
 
   // We added this message to let the participant know when to start sending commit requests
-  final case class ParticipantStart(partRef : ActorRef[ParticipantMessage]) extends ParticipantMessage
+  final case class ParticipantStart() extends ParticipantMessage
   final case class SendCoordinatorSet(coordinatorSet: Set[Coordinator]) extends CoordinatorMessage
   //Coordinator to Participant
   final case class Prepare(from: Coordinator) extends ParticipantMessage

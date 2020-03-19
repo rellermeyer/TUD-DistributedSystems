@@ -13,32 +13,30 @@ object ActorStart {
   final case class ActorStartMessage()
 
   def apply(): Behavior[ActorStartMessage] = Behaviors.setup { context =>
-
-    println("ActorStart: I'm the ActorStart object. Creating actors and sending start messages...")
+    context.getLog.info("Creating actors and sending start messages");
 
     Behaviors.receiveMessage { message =>
-      var coordinators: Set[Coordinator] = Set()
-      var participants: Set[Participant] = Set()
 
-      //Create coordinator
-      val coordRef = context.spawn(Coordinator(),"CoordinatorObjectName")
-      val coordRef1 = context.spawn(Coordinator(),"CoordinatorObjectName1")
-      val coordRef2 = context.spawn(Coordinator(),"CoordinatorObjectName2")
-      val coordRef3 = context.spawn(Coordinator(),"CoordinatorObjectName3")
-      coordinators += coordRef
-      coordinators += coordRef1
-      coordinators += coordRef2
-      coordinators += coordRef3
-
-      //Create participant
-      val partRef = context.spawn(Participant(coordRef), "ParticipantObjectName")
-      participants += partRef
+      // Create coordinators
+      val coordinators: Set[Coordinator] = Set(
+        context.spawn(Coordinator(), "Coordinator---1"),
+        context.spawn(Coordinator(), "Coordinator---2"),
+        context.spawn(Coordinator(), "Coordinator---3"),
+        context.spawn(Coordinator(), "Coordinator---4")
+      )
 
       // Send coordinators set of coordinators
       coordinators.foreach { x => x ! Messages.SendCoordinatorSet(coordinators)}
+      // TODO: avoid coordinators registering with themselves
+
+      // Create participant(s)
+      val participants: Set[Participant] = Set(
+        context.spawn(Participant(coordinators.head), "PartInitiator-1")
+      )
 
       // Let the participant start messaging the coordinator
-      partRef ! Messages.ParticipantStart(partRef)
+      val initiator = participants.head;
+      initiator ! Messages.ParticipantStart()
 
       Behaviors.same
     }

@@ -14,33 +14,33 @@ object Participant {
     Behaviors.receive {(context, message) =>
     message match {
 
-      case m : ParticipantStart =>   // This message is used to let the participant know when to start sending commit requests
+      case ParticipantStart() =>   // This message is used to let the participant know when to start sending commit requests
         coordRef ! Messages.RegisterWithCoordinator(context.self)
-        startWorkflow(m.partRef,coordRef)
+        startWorkflow(context.self,coordRef)
 
       case Messages.Prepare (from: Coordinator) =>
-        println ("Participant: Prepare message received from "+from)
+        context.log.info("Prepare message received from "+from)
         from ! Messages.Prepared(null,context.self)
 
       case m: Commit =>
         if(m.BAResult) {
-          println("Participant: Commit received from Coordinator")
+          context.log.info("Commit received from Coordinator")
         }
         else {
-          println("Participant: Abort received from Coordinator")
+          context.log.info("Abort received from Coordinator")
         }
         decisionLog += m.BAResult
         if(canMakeDecision(m.BAResult,decisionLog)) {
           m.from ! Messages.CommitOutcome(null, m.BAResult/*true=commit,false=abort*/, context.self)
           if(m.BAResult) {
-            println("Participant: Committed")
+            context.log.info("Committed")
           }
           else {
-            println("Participant: Aborted")
+            context.log.info("Aborted")
           }
         }
         else
-          println("Participant: Cannot make decision yet")
+          context.log.info("Cannot make decision yet")
 /*
       case m: InitCommit => //only needed for multiple participants
  */
