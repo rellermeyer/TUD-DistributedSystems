@@ -1,8 +1,8 @@
 package controllers
 
 import actors.{Coordinator, Participant}
-import akka.actor.typed.{ActorSystem, Behavior}
 import akka.actor.typed.javadsl.Behaviors
+import akka.actor.typed.{ActorSystem, Behavior}
 import util.Messages
 import util.Messages.{PropagateTransaction, Transaction}
 
@@ -45,7 +45,7 @@ object ActorStart {
       Thread.sleep(1000)
       // - start the distributed commit
       for (id <- 0 until numberOfTransactions) {
-        coordinators.foreach(c=>c ! Messages.InitCommit(transactions(id).id, participants.head))
+        coordinators.foreach(c => c ! Messages.InitCommit(transactions(id).id, participants.head))
         //Thread.sleep(1000)
       }
 
@@ -54,6 +54,7 @@ object ActorStart {
   })
 
   final case class ActorStartMessage()
+
 }
 
 // This class is needed to run the application. It creates the principal actor and triggers it with his start message

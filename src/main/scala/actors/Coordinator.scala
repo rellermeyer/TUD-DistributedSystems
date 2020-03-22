@@ -65,7 +65,7 @@ class Coordinator(context: ActorContext[CoordinatorMessage]) extends AbstractBeh
                   case Some(value) =>
                   case None =>
                     // TODO check if *everyone* voted *correct*! COMMIT(or also abort)?
-                    if(i == ss.v%(3*f+1)){ // primary
+                    if (i == ss.v % (3 * f + 1)) { // primary
                       coordinators.foreach(coord => coord ! Messages.BaPrePrepare(ss.v, m.t, Decision.COMMIT, ss.decisionCertificate, context.self))
                     }
                 }
@@ -87,7 +87,7 @@ class Coordinator(context: ActorContext[CoordinatorMessage]) extends AbstractBeh
       case m: BaPrepare =>
         stableStorage.get(m.t) match {
           case Some(ss) =>
-            if(ss.baState != BaState.INITIAL){
+            if (ss.baState != BaState.INITIAL) {
               // TODO: simply ignore?
               return this
             }
@@ -110,7 +110,7 @@ class Coordinator(context: ActorContext[CoordinatorMessage]) extends AbstractBeh
       case m: BaCommit =>
         stableStorage.get(m.t) match {
           case Some(ss) =>
-            if(ss.baState != BaState.PREPARED){
+            if (ss.baState != BaState.PREPARED) {
               // TODO: simply ignore?
               return this
             }
