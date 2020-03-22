@@ -47,7 +47,7 @@ class Participant(context: ActorContext[ParticipantMessage], coordinators: Array
               // TODO: add decisionLog
               val coordinatorIndex = coordinators.indexOf(m.from)
               s.decisionLog(coordinatorIndex) = m.o
-              if (s.decisionLog.count(x => x == m.o) > f + 1) {
+              if (s.decisionLog.count(x => x == m.o) >= f + 1) {
                 // m.from ! Messages.Committed(null, m.o, context.self)
                 m.o match {
                   case util.Messages.Decision.COMMIT =>
