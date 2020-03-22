@@ -129,8 +129,8 @@ class Coordinator(context: ActorContext[CoordinatorMessage]) extends AbstractBeh
       case m: BaPrePrepare =>
         stableStorage.get(m.t) match {
           case Some(value) =>
-            // TODO: do all the checks
-            // TODO: generate digest
+            // TODO: do all the checks (is he really primary, is the data correctl, are the registrations a superset,...)
+            // TODO: generate digest from m.c
             val digest = 0
             coordinators.foreach(coord => coord ! Messages.BaPrepare(m.v, m.t, digest, m.o, context.self))
           case None =>
