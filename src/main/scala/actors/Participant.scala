@@ -1,69 +1,75 @@
 package actors
 
-import akka.actor.typed.scaladsl.Behaviors
-import akka.actor.typed.{ActorRef, Behavior}
-import util.Messages.CommitOrAbort.CommitOrAbort
+import actors.Participant.TransactionState.{COMMITTED, NEW, PREPARED, TransactionState}
+import akka.actor.typed.Behavior
+import akka.actor.typed.scaladsl.{AbstractBehavior, ActorContext, Behaviors}
+import util.Messages.Decision.Decision
 import util.Messages._
-import util._
 
-import scala.collection.mutable.ListBuffer
+import scala.collection.immutable
+
 
 object Participant {
-  val f = 1 //Just for the example to work // TODO: fix this
-  var decisionLog: ListBuffer[CommitOrAbort] = ListBuffer()
-
-  def apply(coordRef: ActorRef[CoordinatorMessage]): Behavior[Messages.ParticipantMessage] = {
-
-    Behaviors.receive { (context, message) =>
-      message match {
-
-        case ParticipantStart() => // This message is used to let the participant know when to start sending commit requests
-          coordRef ! Messages.RegisterWithCoordinator(context.self)
-
-          // Infinite loop which sends commitRequests every second
-          for (x <- 1 to 1) {
-            val t = Transaction(x)
-            coordRef ! Messages.InitCommit(t, context.self)
-            Thread.sleep(1000)
-          }
-
-        case Messages.Prepare(t: Transaction, from: Coordinator) =>
-          context.log.info("Prepare message received from " + from)
-          from ! Messages.Prepared(t, context.self)
-
-        case m: Commit =>
-          if (m.BAResult == CommitOrAbort.COMMIT) {
-            context.log.info("Commit received from Coordinator")
-          }
-          else {
-            context.log.info("Abort received from Coordinator")
-          }
-          decisionLog += m.BAResult
-          if (canMakeDecision(m.BAResult)) {
-            m.from ! Messages.CommitOutcome(null, m.BAResult, context.self)
-            m.BAResult match {
-              case util.Messages.CommitOrAbort.COMMIT =>
-                context.log.info("Committed")
-              case util.Messages.CommitOrAbort.ABORT =>
-                context.log.info("Aborted")
-            }
-          }
-          else
-            context.log.info("Cannot make decision yet")
-        /*
-              // TODO
-              case m: InitCommit => //only needed for multiple participants
-         */
-        case message: Messages.InitiatorMessage =>
-          message match {
-            case Messages.RegisterWithInitiator(from: Participant) =>
-          }
-      }
-      Behaviors.same
-    }
+  def apply(coordinators: Array[Coordinator]): Behavior[ParticipantMessage] = {
+    Behaviors.setup(context => new Participant(context, coordinators))
   }
 
-  def canMakeDecision(decision: CommitOrAbort): Boolean = {
-    decisionLog.count(x => x == decision) > f + 1
+  class State(val t: Transaction, var s: TransactionState, val decisionLog: Array[Decision])
+
+  object TransactionState extends Enumeration {
+    type TransactionState = Value
+    val NEW, PREPARED, COMMITTED = Value
+  }
+
+}
+
+class Participant(context: ActorContext[ParticipantMessage], coordinators: Array[Coordinator]) extends AbstractBehavior[ParticipantMessage](context) {
+
+  import Participant._
+
+  val f = (coordinators.length - 1) / 3
+  val transactions: immutable.Map[TransactionID, State] = Map()
+
+  override def onMessage(message: ParticipantMessage): Behavior[ParticipantMessage] = {
+    message match {
+      case m: Prepare =>
+        transactions.get(m.t) match {
+          case Some(s) => s.s match {
+            case NEW => s.s = PREPARED
+            case PREPARED =>
+            case COMMITTED =>
+          }
+          case None =>
+        }
+      case m: Commit =>
+        transactions.get(m.t) match {
+          case Some(s) => s.s match {
+            case NEW =>
+            case PREPARED =>
+              // TODO: add decisionLog
+              val coordinatorIndex = coordinators.indexOf(m.from)
+              s.decisionLog(coordinatorIndex) = m.o
+              if (s.decisionLog.count(x => x == m.o) > f + 1) {
+                // m.from ! Messages.Committed(null, m.o, context.self)
+                m.o match {
+                  case util.Messages.Decision.COMMIT =>
+                    context.log.info("Committed")
+                  case util.Messages.Decision.ABORT =>
+                    context.log.info("Aborted")
+                }
+              }
+              else {
+                context.log.info("Waiting for more commits to make decision...")
+              }
+            case COMMITTED =>
+          }
+          case None =>
+        }
+      case m: PropagateTransaction =>
+        // TODO: check if already in there
+        transactions.+(m.t.id -> new State(m.t, NEW, new Array(coordinators.length)))
+        coordinators.foreach(c => c ! Register(m.t.id, context.self))
+    }
+    this
   }
 }
