@@ -34,13 +34,9 @@ class Participant(context: ActorContext[ParticipantMessage], coordinators: Array
     message match {
       case m: Prepare =>
         transactions.get(m.t) match {
-          case Some(s) => s.s match {
-            case ACTIVE =>
-              s.s = PREPARED
-              m.from ! VotePrepared(m.t, Decision.COMMIT, context.self)
-            case _ =>
-              context.log.error("Transaction not in ACTIVE state")
-          }
+          case Some(s) =>
+            s.s = PREPARED
+            m.from ! VotePrepared(m.t, Decision.COMMIT, context.self)
           case None =>
             context.log.error("Transaction not known")
         }
