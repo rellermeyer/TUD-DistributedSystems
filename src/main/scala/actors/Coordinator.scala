@@ -94,10 +94,10 @@ class Coordinator(context: ActorContext[CoordinatorMessage]) extends AbstractBeh
             ss.baPrepareLog += m
             // TODO: check if all are for the same digest
             // TODO: is checking for o really necessary?
+            // TODO: make check more advanced
             if (ss.baPrepareLog.count(p => p.o == m.o) >= 2 * f) {
               //BaPrepared flag prevents duplicate messages
               val decisionCertDigest = 0
-              //TODO: implement this in a way that functions for continuous operation instead of just one commit
               coordinators.foreach(coord => coord ! Messages.BaCommit(m.v, m.t, decisionCertDigest, m.o, context.self))
               ss.baState = BaState.PREPARED
               context.log.info("BaPrepared")
@@ -115,8 +115,8 @@ class Coordinator(context: ActorContext[CoordinatorMessage]) extends AbstractBeh
               return this
             }
             ss.baCommitLog += m
+            // TODO: make the check more advanced
             if (ss.baCommitLog.count(p => p.o == m.o) >= 2 * f) {
-              //TODO: implement this in a way that functions for continuous operation instead of just one message
               ss.participants.foreach(part => part ! Messages.Commit(m.t, m.o, context.self))
               ss.baState = BaState.COMMITTED // or just drop the transaction?
               context.log.info("BaCommitted")
