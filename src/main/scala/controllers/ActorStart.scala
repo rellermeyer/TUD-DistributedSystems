@@ -8,7 +8,7 @@ import util.Messages.{PropagateTransaction, Transaction}
 
 object ActorStart {
 
-  def apply(): Behavior[ActorStartMessage] = Behaviors.setup { context =>
+  def apply(): Behavior[ActorStartMessage] = Behaviors.logMessages(Behaviors.setup { context =>
     context.getLog.info("Creating actors and sending start messages");
 
     Behaviors.receiveMessage { message =>

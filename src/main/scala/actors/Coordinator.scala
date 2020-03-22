@@ -12,7 +12,7 @@ import scala.collection.mutable
 
 object Coordinator {
   def apply(): Behavior[CoordinatorMessage] = {
-    Behaviors.setup(context => new Coordinator(context))
+    Behaviors.logMessages(Behaviors.setup(context => new Coordinator(context)))
   }
 
   class StableStorageItem() {

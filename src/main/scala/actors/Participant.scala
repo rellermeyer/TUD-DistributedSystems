@@ -11,7 +11,7 @@ import scala.collection.immutable
 
 object Participant {
   def apply(coordinators: Array[Coordinator]): Behavior[ParticipantMessage] = {
-    Behaviors.setup(context => new Participant(context, coordinators))
+    Behaviors.logMessages(Behaviors.setup(context => new Participant(context, coordinators)))
   }
 
   class State(val t: Transaction, var s: TransactionState, val decisionLog: Array[Decision])
