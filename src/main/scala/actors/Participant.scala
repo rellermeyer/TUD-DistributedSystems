@@ -1,6 +1,6 @@
 package actors
 
-import actors.Participant.TransactionState.{COMMITTED, NEW, PREPARED, TransactionState}
+import actors.Participant.TransactionState.{ACTIVE, PREPARED, TransactionState}
 import akka.actor.typed.Behavior
 import akka.actor.typed.scaladsl.{AbstractBehavior, ActorContext, Behaviors}
 import util.Messages.Decision.Decision
@@ -14,11 +14,11 @@ object Participant {
     Behaviors.logMessages(Behaviors.setup(context => new Participant(context, coordinators)))
   }
 
-  class State(val t: Transaction, var s: TransactionState, val decisionLog: Array[Decision])
+  class State(var s: TransactionState, val t: Transaction, val decisionLog: Array[Decision])
 
   object TransactionState extends Enumeration {
     type TransactionState = Value
-    val NEW, PREPARED, COMMITTED = Value
+    val ACTIVE, PREPARED = Value
   }
 
 }
@@ -35,11 +35,11 @@ class Participant(context: ActorContext[ParticipantMessage], coordinators: Array
       case m: Prepare =>
         transactions.get(m.t) match {
           case Some(s) => s.s match {
-            case NEW =>
+            case ACTIVE =>
               s.s = PREPARED
               m.from ! VotePrepared(m.t, Decision.COMMIT, context.self)
             case _ =>
-              context.log.error("Transaction not in NEW state")
+              context.log.error("Transaction not in ACTIVE state")
           }
           case None =>
             context.log.error("Transaction not known")
@@ -47,7 +47,6 @@ class Participant(context: ActorContext[ParticipantMessage], coordinators: Array
       case m: Commit =>
         transactions.get(m.t) match {
           case Some(s) => s.s match {
-            case NEW =>
             case PREPARED =>
               // TODO: add decisionLog
               val coordinatorIndex = coordinators.indexOf(m.from)
@@ -57,20 +56,22 @@ class Participant(context: ActorContext[ParticipantMessage], coordinators: Array
                 m.o match {
                   case util.Messages.Decision.COMMIT =>
                     context.log.info("Committed transaction " + m.t)
+                    transactions.remove(m.t);
                   case util.Messages.Decision.ABORT =>
                     context.log.info("Aborted transaction " + m.t)
+                    transactions.remove(m.t);
                 }
               }
               else {
                 context.log.info("Waiting for more commits to make decision...")
               }
-            case COMMITTED =>
+            case _ =>
           }
           case None =>
         }
       case m: PropagateTransaction =>
         // TODO: check if already in there
-        transactions += (m.t.id -> new State(m.t, NEW, new Array(coordinators.length)))
+        transactions += (m.t.id -> new State(ACTIVE, m.t, new Array(coordinators.length)))
         coordinators.foreach(c => c ! Register(m.t.id, context.self))
     }
     this
