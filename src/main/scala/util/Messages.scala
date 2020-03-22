@@ -3,21 +3,24 @@ package util
 import akka.actor.typed.ActorRef
 import util.Messages.Decision.Decision
 
+import scala.collection.mutable
+
 object Messages {
 
   type Coordinator = ActorRef[CoordinatorMessage]
   type Participant = ActorRef[ParticipantMessage]
   type View = Int
   type TransactionID = Int
-  type DecisionCertificate = Map[Participant, (Messages.Register, VotePrepared)]
+  type DecisionCertificate = mutable.Map[Participant, DecisionCertificateEntry]
   type Digest = Int
 
   sealed trait ParticipantMessage
 
   sealed trait CoordinatorMessage
 
-
   sealed trait ViewChangeState
+
+  case class DecisionCertificateEntry(registration: Messages.Register, vote: Option[VotePrepared])
 
   final case class ViewChangeStateBaNotPrePrepared(v: View, t: TransactionID, c: DecisionCertificate) extends ViewChangeState // "A backup suspects the primary and initiates a view change immediately if the ba-pre-prepare message fails the verification."
 

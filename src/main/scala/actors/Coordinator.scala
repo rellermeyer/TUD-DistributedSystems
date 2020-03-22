@@ -19,9 +19,8 @@ object Coordinator {
     val decisionLog: mutable.Map[Participant, (Decision, Coordinator, String)] = mutable.Map()
     val baPrepareLog: mutable.Set[Messages.BaPrepare] = mutable.Set()
     val baCommitLog: mutable.Set[Messages.BaCommit] = mutable.Set()
-    val signedRegistrations: mutable.Set[Messages.Register] = mutable.Set()
+    val decisionCertificate: DecisionCertificate = mutable.Map()
     val participants: mutable.Set[Participant] = mutable.Set() // could be computed from signedRegistrations
-    val signedVotes: mutable.Set[Messages.VotePrepared] = mutable.Set()
     var v: View = 0
     var baState: BaState = BaState.UNKNOWN
   }
@@ -47,38 +46,46 @@ class Coordinator(context: ActorContext[CoordinatorMessage]) extends AbstractBeh
         this.coordinators = coordinators
         f = (coordinators.length - 1) / 3
       case m: Register =>
-        stableStorage.getOrElseUpdate(m.t, new StableStorageItem()).signedRegistrations += m
+        val ss = stableStorage.getOrElseUpdate(m.t, new StableStorageItem())
+        if (!ss.participants.contains(m.from)) {
+          ss.decisionCertificate += (m.from -> DecisionCertificateEntry(m, Option.empty))
+          ss.participants += m.from
+        }
+        else {
+
+        }
       case m: VotePrepared =>
         stableStorage.get(m.t) match {
           case Some(ss) =>
-            if (ss.signedRegistrations.exists(x => x.from == m.from)) {
-              if (ss.signedVotes add m) {
-                // TODO
-                //coordinators.foreach(coord => coord ! Messages.BA_Pre_Prepare(v, m.t, Decision.COMMIT, context.self))
-              }
-              else {
-
-              }
-            }
-            else {
-
+            ss.decisionCertificate.get(m.from) match {
+              case Some(value) =>
+                value.vote match {
+                  case Some(value) =>
+                  case None =>
+                    // TODO check if everyone voted correct, COMMIT?
+                    coordinators.foreach(coord => coord ! Messages.BaPrePrepare(ss.v, m.t, Decision.COMMIT, ss.decisionCertificate, context.self))
+                }
+              case None =>
             }
           case None =>
+            context.log.error("Not implemented")
         }
       case Committed(t, commitResult, from) =>
       case m: InitCommit =>
         stableStorage.get(m.t) match {
-          case Some(value) =>
-            value.participants.foreach(p => p ! Messages.Prepare(m.t, context.self))
+          case Some(ss) =>
+            ss.participants.foreach(p => p ! Messages.Prepare(m.t, context.self))
           // TODO: spread to replicas?
           case None =>
+            context.log.error("not implemented")
         }
       case m: ViewChange =>
       case m: BaPrepare =>
         stableStorage.get(m.t) match {
           case Some(ss) =>
             ss.baPrepareLog += m
-            // TODO:check if enough
+            // TODO: check if all are for the same digest
+            // TODO: is checking for o really necessary?
             if (ss.baState == BaState.UNKNOWN && ss.baPrepareLog.count(p => p.o == m.o) >= 2 * f) {
               //BaPrepared flag prevents duplicate messages
               val decisionCertDigest = 0
@@ -111,8 +118,10 @@ class Coordinator(context: ActorContext[CoordinatorMessage]) extends AbstractBeh
       case m: BaPrePrepare =>
         stableStorage.get(m.t) match {
           case Some(value) =>
-          // TODO
-          //coordinators.foreach(coord => coord ! Messages.BA_Prepare(m.v, m.t, m.proposeCommit, context.self))
+            // TODO: do all the checks
+            // TODO: generate digest
+            val digest = 0
+            coordinators.foreach(coord => coord ! Messages.BaPrepare(m.v, m.t, digest, m.o, context.self))
           case None =>
         }
     }

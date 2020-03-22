@@ -6,7 +6,7 @@ import akka.actor.typed.scaladsl.{AbstractBehavior, ActorContext, Behaviors}
 import util.Messages.Decision.Decision
 import util.Messages._
 
-import scala.collection.immutable
+import scala.collection.mutable
 
 
 object Participant {
@@ -28,18 +28,21 @@ class Participant(context: ActorContext[ParticipantMessage], coordinators: Array
   import Participant._
 
   val f = (coordinators.length - 1) / 3
-  val transactions: immutable.Map[TransactionID, State] = Map()
+  val transactions: mutable.Map[TransactionID, State] = mutable.Map()
 
   override def onMessage(message: ParticipantMessage): Behavior[ParticipantMessage] = {
     message match {
       case m: Prepare =>
         transactions.get(m.t) match {
           case Some(s) => s.s match {
-            case NEW => s.s = PREPARED
-            case PREPARED =>
-            case COMMITTED =>
+            case NEW =>
+              s.s = PREPARED
+              m.from ! VotePrepared(m.t, Decision.COMMIT, context.self)
+            case _ =>
+              context.log.error("Transaction not in NEW state")
           }
           case None =>
+            context.log.error("Transaction not known")
         }
       case m: Commit =>
         transactions.get(m.t) match {
@@ -53,9 +56,9 @@ class Participant(context: ActorContext[ParticipantMessage], coordinators: Array
                 // m.from ! Messages.Committed(null, m.o, context.self)
                 m.o match {
                   case util.Messages.Decision.COMMIT =>
-                    context.log.info("Committed")
+                    context.log.info("Committed transaction " + m.t)
                   case util.Messages.Decision.ABORT =>
-                    context.log.info("Aborted")
+                    context.log.info("Aborted transaction " + m.t)
                 }
               }
               else {
@@ -67,7 +70,7 @@ class Participant(context: ActorContext[ParticipantMessage], coordinators: Array
         }
       case m: PropagateTransaction =>
         // TODO: check if already in there
-        transactions.+(m.t.id -> new State(m.t, NEW, new Array(coordinators.length)))
+        transactions += (m.t.id -> new State(m.t, NEW, new Array(coordinators.length)))
         coordinators.foreach(c => c ! Register(m.t.id, context.self))
     }
     this

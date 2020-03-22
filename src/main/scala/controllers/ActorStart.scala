@@ -33,18 +33,23 @@ object ActorStart {
       // Let the participant start messaging the coordinator
 
       // send some transactions
-      for (id <- 1 to 1) {
-        val t = Transaction(id);
+      val numberOfTransactions = 10
+      val transactions = new Array[Transaction](numberOfTransactions)
+      for (id <- 0 until numberOfTransactions) {
+        transactions(id) = Transaction(id);
         for (x <- participants) {
-          x ! PropagateTransaction(t)
+          x ! PropagateTransaction(transactions(id))
         }
-        coordinators.head ! Messages.InitCommit(t.id, participants.head)
-        Thread.sleep(1000)
+      }
+      Thread.sleep(1000)
+      for (id <- 0 until numberOfTransactions) {
+        coordinators.head ! Messages.InitCommit(transactions(id).id, participants.head)
+        //Thread.sleep(1000)
       }
 
       Behaviors.same
     }
-  }
+  })
 
   final case class ActorStartMessage()
 }
