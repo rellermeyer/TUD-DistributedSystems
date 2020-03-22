@@ -37,6 +37,7 @@ class Coordinator(context: ActorContext[CoordinatorMessage]) extends AbstractBeh
   import Coordinator._
 
   var coordinators: Array[Messages.Coordinator] = Array(context.self)
+  var i = 0
   var f: Int = (coordinators.length - 1) / 3
   var stableStorage: mutable.Map[TransactionID, StableStorageItem] = mutable.Map()
 
@@ -45,6 +46,7 @@ class Coordinator(context: ActorContext[CoordinatorMessage]) extends AbstractBeh
       case Setup(coordinators) =>
         this.coordinators = coordinators
         f = (coordinators.length - 1) / 3
+        i = coordinators.indexOf(this.context.self)
       case m: Register =>
         val ss = stableStorage.getOrElseUpdate(m.t, new StableStorageItem())
         if (!ss.participants.contains(m.from)) {
@@ -62,8 +64,10 @@ class Coordinator(context: ActorContext[CoordinatorMessage]) extends AbstractBeh
                 value.vote match {
                   case Some(value) =>
                   case None =>
-                    // TODO check if everyone voted correct, COMMIT?
-                    coordinators.foreach(coord => coord ! Messages.BaPrePrepare(ss.v, m.t, Decision.COMMIT, ss.decisionCertificate, context.self))
+                    // TODO check if *everyone* voted *correct*! COMMIT(or also abort)?
+                    if(i == ss.v%(3*f+1)){ // primary
+                      coordinators.foreach(coord => coord ! Messages.BaPrePrepare(ss.v, m.t, Decision.COMMIT, ss.decisionCertificate, context.self))
+                    }
                 }
               case None =>
             }
