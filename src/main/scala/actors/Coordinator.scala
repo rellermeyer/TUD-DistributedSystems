@@ -22,12 +22,12 @@ object Coordinator {
     val decisionCertificate: DecisionCertificate = mutable.Map()
     val participants: mutable.Set[Participant] = mutable.Set() // could be computed from signedRegistrations
     var v: View = 0
-    var baState: BaState = BaState.UNKNOWN
+    var baState: BaState = BaState.INITIAL
   }
 
   object BaState extends Enumeration {
     type BaState = Value
-    val UNKNOWN, PREPARED, COMMITTED = Value
+    val INITIAL, PREPARED, COMMITTED = Value
   }
 
 }
@@ -87,10 +87,14 @@ class Coordinator(context: ActorContext[CoordinatorMessage]) extends AbstractBeh
       case m: BaPrepare =>
         stableStorage.get(m.t) match {
           case Some(ss) =>
+            if(ss.baState != BaState.INITIAL){
+              // TODO: simply ignore?
+              return this
+            }
             ss.baPrepareLog += m
             // TODO: check if all are for the same digest
             // TODO: is checking for o really necessary?
-            if (ss.baState == BaState.UNKNOWN && ss.baPrepareLog.count(p => p.o == m.o) >= 2 * f) {
+            if (ss.baPrepareLog.count(p => p.o == m.o) >= 2 * f) {
               //BaPrepared flag prevents duplicate messages
               val decisionCertDigest = 0
               //TODO: implement this in a way that functions for continuous operation instead of just one commit
@@ -106,12 +110,15 @@ class Coordinator(context: ActorContext[CoordinatorMessage]) extends AbstractBeh
       case m: BaCommit =>
         stableStorage.get(m.t) match {
           case Some(ss) =>
+            if(ss.baState != BaState.PREPARED){
+              // TODO: simply ignore?
+              return this
+            }
             ss.baCommitLog += m
-            if (ss.baState == BaState.PREPARED && ss.baCommitLog.count(p => p.o == m.o) >= 2 * f) {
-              //BaCommitted flag prevents duplicate messages
+            if (ss.baCommitLog.count(p => p.o == m.o) >= 2 * f) {
               //TODO: implement this in a way that functions for continuous operation instead of just one message
               ss.participants.foreach(part => part ! Messages.Commit(m.t, m.o, context.self))
-              ss.baState = BaState.COMMITTED
+              ss.baState = BaState.COMMITTED // or just drop the transaction?
               context.log.info("BaCommitted")
             }
             else {
