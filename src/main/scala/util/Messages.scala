@@ -1,14 +1,18 @@
 package util
 
 import akka.actor.typed.ActorRef
-import util.Messages.CommitOrAbort.CommitOrAbort
+import util.Messages.Decision.Decision
 
 object Messages {
 
   type Coordinator = ActorRef[CoordinatorMessage]
+  type PrimaryCoordinator = ActorRef[PrimaryCoordinatorMessage]
   type Participant = ActorRef[ParticipantMessage]
   type Initiator = ActorRef[ParticipantMessage]
   type View = Int
+  type TransactionID = Int
+  type DecisionCertificate = Map[Participant, (SignedRegistration, SignedVote)]
+  type Digest = Int
 
   sealed trait ParticipantMessage
 
@@ -16,55 +20,55 @@ object Messages {
 
   sealed trait InitiatorMessage extends ParticipantMessage
 
-  final case class Transaction(id: Int)
+  sealed trait PrimaryCoordinatorMessage extends CoordinatorMessage
+
+  sealed trait ViewChangeState
+
+  final case class ViewChangeStateBaNotPrePrepared(v: View, t: TransactionID, c: DecisionCertificate) extends ViewChangeState // "A backup suspects the primary and initiates a view change immediately if the ba-pre-prepare message fails the verification."
+
+  final case class ViewChangeStateBaPrePrepared(v: View, t: TransactionID, o: Decision, c: DecisionCertificate) extends ViewChangeState
+
+  final case class ViewChangeStateBaPrepared(v: View, t: TransactionID, o: Decision, c: DecisionCertificate, baPrepared: Set[BaPrepare]) extends ViewChangeState // BaPrepared acc to paper "and 2f matching ba-prepared messages from different replicas"
+
+  final case class Transaction(id: TransactionID) // TODO: add payload to Transaction
+
+  final case class SignedRegistration(t: TransactionID, j: Participant) // TODO: add signature
+
+  final case class SignedVote(t: TransactionID, vote: Decision) // TODO: add signature
 
   // We added this message to let the participant know when to start sending commit requests
   final case class ParticipantStart() extends ParticipantMessage
 
   final case class SendCoordinatorSet(coordinatorSet: Set[Coordinator]) extends CoordinatorMessage
 
-  //Coordinator to Participant
-  final case class Prepare(t: Transaction, from: Coordinator) extends ParticipantMessage
+  final case class Prepare(t: TransactionID, from: Coordinator) extends ParticipantMessage
 
-  final case class Commit(t: Transaction, from: Coordinator, BAResult: CommitOrAbort) extends ParticipantMessage
+  final case class Commit(t: TransactionID, BAResult: Decision, from: Coordinator) extends ParticipantMessage
 
-  //Participant to Initiator
-  final case class RegisterWithInitiator(from: Participant) extends InitiatorMessage
-
-  //Participant to Coordinator
   final case class RegisterWithCoordinator(from: Participant) extends CoordinatorMessage
 
-  final case class Prepared(t: Transaction, from: Participant) extends CoordinatorMessage
+  final case class Prepared(t: TransactionID, from: Participant) extends CoordinatorMessage
 
-  final case class CommitOutcome(t: Transaction, commitResult: CommitOrAbort, from: Participant) extends CoordinatorMessage
+  final case class CommitOutcome(t: TransactionID, commitResult: Decision, from: Participant) extends CoordinatorMessage
 
-  //Initiator to Coordinator and Participant
-  final case class InitCommit(t: Transaction, from: Initiator) extends CoordinatorMessage with ParticipantMessage
+  final case class PropagateTransaction(t: Transaction, from: Initiator) extends ParticipantMessage
 
-  //Coordinator to Coordinator
-  final case class InitViewChange(from: Coordinator) extends CoordinatorMessage
+  final case class InitCommit(t: TransactionID, from: Initiator) extends CoordinatorMessage // TODO: implement abort
 
-  /** **************** some fields are commented out as no type is defined for them yet ************/
-  final case class NewView(new_v: View /*, viewCertificate, transactionID, decisionCertificate*/ , proposeCommit: CommitOrAbort, from: Coordinator) extends CoordinatorMessage
+  final case class ViewChange(new_v: View, t: TransactionID, p: ViewChangeState, from: Coordinator) extends CoordinatorMessage
 
-  final case class BaPrepare(v: View, t: Transaction /*,decisionCertificate, */ , proposeCommit: CommitOrAbort, from: Coordinator) extends CoordinatorMessage
+  final case class BaPrepare(v: View, t: TransactionID, decisionCertificateDigest: Digest, o: Decision, from: Coordinator) extends CoordinatorMessage
 
-  final case class BaCommit(v: View, t: Transaction /*,decisionCertificate*/ , proposeCommit: CommitOrAbort, from: Coordinator) extends CoordinatorMessage
+  final case class BaCommit(v: View, t: TransactionID, decisionCertificateDigest: Digest, o: Decision, from: Coordinator) extends CoordinatorMessage
 
-  //Coordinator(primary) to Coordinator
-  final case class BaPrePrepare(v: View, t: Transaction /*, decisionCertificate*/ , proposeCommit: CommitOrAbort, from: Coordinator) extends CoordinatorMessage
+  final case class BaPrePrepare(v: View, t: TransactionID, o: Decision, c: DecisionCertificate, from: PrimaryCoordinator) extends CoordinatorMessage
 
-  final case class SendUnknownParticipants(participants: Set[Participant], from: Coordinator) extends CoordinatorMessage
+  // No need to ask for endpoint references they are already in the registration certificate
+  // final case class SendUnknownParticipants(participants: Set[Participant], from: PrimaryCoordinator) extends CoordinatorMessage
+  // final case class RequestUnknownParticipants(from: Coordinator) extends PrimaryCoordinatorMessage
 
-  final case class RequestUnknownParticipants(from: Coordinator) extends CoordinatorMessage
-
-  // other messages for debugging purposes
-  final case class Greet(whom: String, replyTo: ActorRef[Greeted]) extends CoordinatorMessage with ParticipantMessage
-
-  final case class Greeted(whom: String, from: ActorRef[Greet])
-
-  object CommitOrAbort extends Enumeration {
-    type CommitOrAbort = Value
+  object Decision extends Enumeration {
+    type Decision = Value
     val COMMIT, ABORT = Value
   }
 
