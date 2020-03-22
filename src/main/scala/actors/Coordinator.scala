@@ -64,6 +64,7 @@ class Coordinator(context: ActorContext[CoordinatorMessage]) extends AbstractBeh
                 value.vote match {
                   case Some(value) =>
                   case None =>
+                    // TODO: Collect votes...
                     // TODO check if *everyone* voted *correct*! COMMIT(or also abort)?
                     if (i == ss.v % (3 * f + 1)) { // primary
                       coordinators.foreach(coord => coord ! Messages.BaPrePrepare(ss.v, m.t, Decision.COMMIT, ss.decisionCertificate, context.self))
