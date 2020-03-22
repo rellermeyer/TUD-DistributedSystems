@@ -33,7 +33,8 @@ object ActorStart {
       // Let the participant start messaging the coordinator
 
       // send some transactions
-      val numberOfTransactions = 10
+      // - propagate
+      val numberOfTransactions = 1
       val transactions = new Array[Transaction](numberOfTransactions)
       for (id <- 0 until numberOfTransactions) {
         transactions(id) = Transaction(id);
@@ -42,6 +43,7 @@ object ActorStart {
         }
       }
       Thread.sleep(1000)
+      // - start the distributed commit
       for (id <- 0 until numberOfTransactions) {
         coordinators.head ! Messages.InitCommit(transactions(id).id, participants.head)
         //Thread.sleep(1000)
