@@ -79,8 +79,7 @@ class Coordinator(context: ActorContext[CoordinatorMessage]) extends AbstractBeh
       case m: InitCommit =>
         stableStorage.get(m.t) match {
           case Some(ss) =>
-            ss.participants.foreach(p => p ! Messages.Prepare(m.t, context.self))
-          // TODO: spread to replicas?
+            ss.participants.foreach(p => p ! Messages.Prepare(m.t, m.o, context.self))
           case None =>
             context.log.error("not implemented")
         }
@@ -130,7 +129,7 @@ class Coordinator(context: ActorContext[CoordinatorMessage]) extends AbstractBeh
       case m: BaPrePrepare =>
         stableStorage.get(m.t) match {
           case Some(value) =>
-            // TODO: do all the checks (is he really primary, is the data correctl, are the registrations a superset,...)
+            // TODO: do all the checks (is he really primary, is the data correct, are the registrations a superset,...)
             // TODO: generate digest from m.c
             val digest = 0
             coordinators.foreach(coord => coord ! Messages.BaPrepare(m.v, m.t, digest, m.o, context.self))

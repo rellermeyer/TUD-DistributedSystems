@@ -36,7 +36,7 @@ class Participant(context: ActorContext[ParticipantMessage], coordinators: Array
         transactions.get(m.t) match {
           case Some(s) =>
             s.s = PREPARED
-            m.from ! VotePrepared(m.t, Decision.COMMIT, context.self)
+            m.from ! VotePrepared(m.t, m.o, context.self)
           case None =>
             context.log.error("Transaction not known")
         }
@@ -44,7 +44,7 @@ class Participant(context: ActorContext[ParticipantMessage], coordinators: Array
         transactions.get(m.t) match {
           case Some(s) => s.s match {
             case PREPARED =>
-              // TODO: add decisionLog
+              // TODO: add decisionLog (isn't this already there?)
               val coordinatorIndex = coordinators.indexOf(m.from)
               s.decisionLog(coordinatorIndex) = m.o
               if (s.decisionLog.count(x => x == m.o) >= f + 1) {
@@ -66,8 +66,12 @@ class Participant(context: ActorContext[ParticipantMessage], coordinators: Array
           case None =>
         }
       case m: PropagateTransaction =>
-        // TODO: check if already in there
-        transactions += (m.t.id -> new State(ACTIVE, m.t, new Array(coordinators.length)))
+        transactions.get(m.t.id) match {
+          case Some(s) =>
+            context.log.warn("Transaction known, no action needed")
+          case None =>
+            transactions += (m.t.id -> new State(ACTIVE, m.t, new Array(coordinators.length)))
+        }
         coordinators.foreach(c => c ! Register(m.t.id, context.self))
     }
     this

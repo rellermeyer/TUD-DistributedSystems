@@ -32,7 +32,7 @@ object Messages {
 
   final case class Setup(coordinators: Array[Coordinator]) extends CoordinatorMessage
 
-  final case class Prepare(t: TransactionID, from: Coordinator) extends ParticipantMessage
+  final case class Prepare(t: TransactionID, o: Decision, from: Coordinator) extends ParticipantMessage
 
   final case class Commit(t: TransactionID, o: Decision, from: Coordinator) extends ParticipantMessage
 
@@ -44,7 +44,7 @@ object Messages {
 
   final case class PropagateTransaction(t: Transaction) extends ParticipantMessage // from: Initiator
 
-  final case class InitCommit(t: TransactionID, from: Participant) extends CoordinatorMessage // TODO: implement abort // from: Initiator
+  final case class InitCommit(t: TransactionID, o: Decision, from: Participant) extends CoordinatorMessage  // from: Initiator
 
   final case class ViewChange(new_v: View, t: TransactionID, p: ViewChangeState, from: Coordinator) extends CoordinatorMessage
 
