@@ -25,6 +25,7 @@ object Coordinator {
     val participants: mutable.Set[Participant] = mutable.Set() // could be computed from signedRegistrations
     var v: View = 0
     var baState: BaState = BaState.INITIAL
+    var digest: Digest = 0
   }
 
   object BaState extends Enumeration {
@@ -92,16 +93,18 @@ class Coordinator(context: ActorContext[CoordinatorMessage]) extends AbstractBeh
                 case Some(part) =>
                   if(!(part.registration.t == m.t) || !(part.vote.vote == m.o) ) { //check certificate
                     nothingWrong = false
-                    context.log.warn("invalid decision certificate")
+                    context.log.debug("invalid decision certificate")
                   }
                 case None =>
                   nothingWrong = false
-                  context.log.warn("locally known participant not in decision certificate")
+                  context.log.debug("locally known participant not in decision certificate")
                 }
                 )
               if(nothingWrong) {
+                value.digest = hash(m.c)
+                context.log.debug("Digest:" + value.digest)
                 value.baPrePrepareLog += m
-                coordinators.foreach(coord => coord ! Messages.BaPrepare(m.v, m.t, hash(m.c), m.o, context.self))
+                coordinators.foreach(coord => coord ! Messages.BaPrepare(m.v, m.t, value.digest, m.o, context.self))
               }
             }
           }
@@ -111,11 +114,16 @@ class Coordinator(context: ActorContext[CoordinatorMessage]) extends AbstractBeh
         stableStorage.get(m.t) match {
           case Some(ss) =>
             if (ss.baState != BaState.INITIAL) {
+              context.log.debug("not expecting BaPrepare")
               return this
             }
-            if (m.c == hash(ss.decisionCertificate)) { //check digest
-              ss.baPrePrepareLog.exists(p => (p.o == m.o) && p.t == m.t) //check if same decision as in baPrePrepare
-              ss.baPrepareLog += m
+            if (m.c == ss.digest) { //check digest
+              if (ss.baPrePrepareLog.exists(p => (p.o == m.o) && p.t == m.t)) { //check if same decision as in baPrePrepare
+                ss.baPrepareLog += m
+              } else
+                context.log.debug("proposed outcome different from BaPrePrepare stage")
+            } else {
+              context.log.debug("digest verification failed:" + m.c +" vs. " + ss.digest)
             }
             if (ss.baPrepareLog.count(p => p.o == m.o) >= 2 * f) {
               //BaPrepared flag prevents duplicate messages
@@ -132,11 +140,10 @@ class Coordinator(context: ActorContext[CoordinatorMessage]) extends AbstractBeh
         stableStorage.get(m.t) match {
           case Some(ss) =>
             if (ss.baState != BaState.PREPARED) {
+              context.log.debug("not expecting BaCommit")
               return this
             }
-            if (m.c == hash(ss.decisionCertificate)) {
               ss.baCommitLog += m
-            }
             if (ss.baCommitLog.count(p => p.o == m.o) >= 2 * f) {
               ss.participants.foreach(part => part ! Messages.Commit(m.t, m.o, context.self))
               ss.baState = BaState.COMMITTED // or just drop the transaction?
