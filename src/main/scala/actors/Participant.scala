@@ -44,7 +44,6 @@ class Participant(context: ActorContext[ParticipantMessage], coordinators: Array
         transactions.get(m.t) match {
           case Some(s) => s.s match {
             case PREPARED =>
-              // TODO: add decisionLog (isn't this already there?)
               val coordinatorIndex = coordinators.indexOf(m.from)
               s.decisionLog(coordinatorIndex) = m.o
               if (s.decisionLog.count(x => x == m.o) >= f + 1) {
