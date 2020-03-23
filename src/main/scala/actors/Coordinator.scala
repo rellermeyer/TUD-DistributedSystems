@@ -74,7 +74,6 @@ class Coordinator(context: ActorContext[CoordinatorMessage]) extends AbstractBeh
           case None =>
             context.log.error("Not implemented")
         }
-      case Committed(t, commitResult, from) =>
       case m: InitCommit =>
         stableStorage.get(m.t) match {
           case Some(ss) =>
@@ -135,8 +134,9 @@ class Coordinator(context: ActorContext[CoordinatorMessage]) extends AbstractBeh
             if (ss.baState != BaState.PREPARED) {
               return this
             }
-            ss.baCommitLog += m
-            // TODO: make the check more advanced
+            if (m.c == hash(ss.decisionCertificate)) {
+              ss.baCommitLog += m
+            }
             if (ss.baCommitLog.count(p => p.o == m.o) >= 2 * f) {
               ss.participants.foreach(part => part ! Messages.Commit(m.t, m.o, context.self))
               ss.baState = BaState.COMMITTED // or just drop the transaction?
@@ -147,6 +147,7 @@ class Coordinator(context: ActorContext[CoordinatorMessage]) extends AbstractBeh
             }
           case None =>
         }
+      case Committed(t, commitResult, from) =>
     }
     this
   }

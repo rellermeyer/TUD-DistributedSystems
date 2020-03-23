@@ -20,6 +20,20 @@ class CoordinatorSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike {
       ps.foreach(x => testKit.stop(x))
     }
   }
+  "1 transactions" must {
+    "succeed with 4 coordinators and 1 participant" in {
+      val (cs, ps) = spawnAll(4, 1)
+      val t = Transaction(0)
+      ps.foreach(p => p ! PropagateTransaction(t))
+      Thread.sleep(100) // make sure the transaction fully propagated
+      val p = ps(0)
+      LoggingTestKit.info("Committed transaction 0").expect {
+        cs.foreach(c => c ! Messages.InitCommit(t.id, Decision.COMMIT, p))
+      }
+      cs.foreach(x => testKit.stop(x))
+      ps.foreach(x => testKit.stop(x))
+    }
+  }
   "2 transactions" must {
     "succeed with 4 coordinators and 1 participant" in {
       val (cs, ps) = spawnAll(4, 1)
