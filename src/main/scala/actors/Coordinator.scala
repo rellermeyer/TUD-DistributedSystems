@@ -101,10 +101,8 @@ class Coordinator(context: ActorContext[CoordinatorMessage]) extends AbstractBeh
                 }
                 )
               if(nothingWrong) {
-                // TODO: generate digest from m.c
-                val digest = 0
                 value.baPrePrepareLog += m
-                coordinators.foreach(coord => coord ! Messages.BaPrepare(m.v, m.t, digest, m.o, context.self))
+                coordinators.foreach(coord => coord ! Messages.BaPrepare(m.v, m.t, hash(m.c), m.o, context.self))
               }
             }
           }
@@ -114,17 +112,15 @@ class Coordinator(context: ActorContext[CoordinatorMessage]) extends AbstractBeh
         stableStorage.get(m.t) match {
           case Some(ss) =>
             if (ss.baState != BaState.INITIAL) {
-              // TODO: simply ignore?
               return this
             }
-            ss.baPrepareLog += m
-            // TODO: check if all are for the same digest
-            // TODO: is checking for o really necessary?
-            // TODO: make check more advanced
+            if (m.c == hash(ss.decisionCertificate)) { //check digest
+              ss.baPrePrepareLog.exists(p => (p.o == m.o) && p.t == m.t) //check if same decision as in baPrePrepare
+              ss.baPrepareLog += m
+            }
             if (ss.baPrepareLog.count(p => p.o == m.o) >= 2 * f) {
               //BaPrepared flag prevents duplicate messages
-              val decisionCertDigest = 0
-              coordinators.foreach(coord => coord ! Messages.BaCommit(m.v, m.t, decisionCertDigest, m.o, context.self))
+              coordinators.foreach(coord => coord ! Messages.BaCommit(m.v, m.t, m.c, m.o, context.self))
               ss.baState = BaState.PREPARED
               context.log.info("BaPrepared")
             }
@@ -137,7 +133,6 @@ class Coordinator(context: ActorContext[CoordinatorMessage]) extends AbstractBeh
         stableStorage.get(m.t) match {
           case Some(ss) =>
             if (ss.baState != BaState.PREPARED) {
-              // TODO: simply ignore?
               return this
             }
             ss.baCommitLog += m
@@ -155,5 +150,7 @@ class Coordinator(context: ActorContext[CoordinatorMessage]) extends AbstractBeh
     }
     this
   }
-
+  def hash(data : DecisionCertificate) : Int ={
+    scala.util.hashing.MurmurHash3.mapHash(data)
+  }
 }
