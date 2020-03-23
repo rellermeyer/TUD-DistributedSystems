@@ -20,7 +20,7 @@ object Messages {
 
   sealed trait ViewChangeState
 
-  case class DecisionCertificateEntry(registration: Messages.Register, vote: Option[VotePrepared])
+  case class DecisionCertificateEntry(registration: Messages.Register, vote: Messages.VotePrepared)
 
   final case class ViewChangeStateBaNotPrePrepared(v: View, t: TransactionID, c: DecisionCertificate) extends ViewChangeState // "A backup suspects the primary and initiates a view change immediately if the ba-pre-prepare message fails the verification."
 

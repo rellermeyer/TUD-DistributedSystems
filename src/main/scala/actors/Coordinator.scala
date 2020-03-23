@@ -17,8 +17,10 @@ object Coordinator {
 
   class StableStorageItem() {
     val decisionLog: mutable.Map[Participant, (Decision, Coordinator, String)] = mutable.Map()
+    val baPrePrepareLog: mutable.Set[Messages.BaPrePrepare] = mutable.Set()
     val baPrepareLog: mutable.Set[Messages.BaPrepare] = mutable.Set()
     val baCommitLog: mutable.Set[Messages.BaCommit] = mutable.Set()
+    val registrationLog: mutable.Map[Participant, Messages.Register] = mutable.Map()
     val decisionCertificate: DecisionCertificate = mutable.Map()
     val participants: mutable.Set[Participant] = mutable.Set() // could be computed from signedRegistrations
     var v: View = 0
@@ -49,9 +51,9 @@ class Coordinator(context: ActorContext[CoordinatorMessage]) extends AbstractBeh
         i = coordinators.indexOf(this.context.self)
       case m: Register =>
         val ss = stableStorage.getOrElseUpdate(m.t, new StableStorageItem())
-        if (!ss.participants.contains(m.from)) {
-          ss.decisionCertificate += (m.from -> DecisionCertificateEntry(m, Option.empty))
-          ss.participants += m.from
+          if (!ss.participants.contains(m.from)) {
+            ss.participants += m.from
+            ss.registrationLog(m.from) = m
         }
         else {
 
@@ -59,19 +61,16 @@ class Coordinator(context: ActorContext[CoordinatorMessage]) extends AbstractBeh
       case m: VotePrepared =>
         stableStorage.get(m.t) match {
           case Some(ss) =>
-            ss.decisionCertificate.get(m.from) match {
-              case Some(value) =>
-                value.vote match {
+            if (ss.participants.contains(m.from)) {
+                ss.decisionCertificate.get(m.from) match {
                   case Some(value) =>
                   case None =>
-                    // TODO: Collect votes...
-                    // TODO check if *everyone* voted *correct*! COMMIT(or also abort)?
                     if (i == ss.v % (3 * f + 1)) { // primary
-                      coordinators.foreach(coord => coord ! Messages.BaPrePrepare(ss.v, m.t, Decision.COMMIT, ss.decisionCertificate, context.self))
+                      ss.decisionCertificate += (m.from -> DecisionCertificateEntry(ss.registrationLog(m.from), m))
+                      coordinators.foreach(coord => coord ! Messages.BaPrePrepare(ss.v, m.t, m.vote, ss.decisionCertificate, context.self))
                     }
                 }
-              case None =>
-            }
+              }
           case None =>
             context.log.error("Not implemented")
         }
@@ -84,6 +83,33 @@ class Coordinator(context: ActorContext[CoordinatorMessage]) extends AbstractBeh
             context.log.error("not implemented")
         }
       case m: ViewChange =>
+      case m: BaPrePrepare =>
+        stableStorage.get(m.t) match {
+          case Some(value) => {
+            //TODO: check if message is from primary
+            if (!value.baPrePrepareLog.contains(m)) { // if no previous ba-pre-prepare message has been received
+              var nothingWrong = true
+              value.participants.foreach(p => m.c.get(p) match {
+                case Some(part) =>
+                  if(!(part.registration.t == m.t) || !(part.vote.vote == m.o) ) { //check certificate
+                    nothingWrong = false
+                    context.log.warn("invalid decision certificate")
+                  }
+                case None =>
+                  nothingWrong = false
+                  context.log.warn("locally known participant not in decision certificate")
+                }
+                )
+              if(nothingWrong) {
+                // TODO: generate digest from m.c
+                val digest = 0
+                value.baPrePrepareLog += m
+                coordinators.foreach(coord => coord ! Messages.BaPrepare(m.v, m.t, digest, m.o, context.self))
+              }
+            }
+          }
+          case None =>
+        }
       case m: BaPrepare =>
         stableStorage.get(m.t) match {
           case Some(ss) =>
@@ -124,15 +150,6 @@ class Coordinator(context: ActorContext[CoordinatorMessage]) extends AbstractBeh
             else {
 
             }
-          case None =>
-        }
-      case m: BaPrePrepare =>
-        stableStorage.get(m.t) match {
-          case Some(value) =>
-            // TODO: do all the checks (is he really primary, is the data correct, are the registrations a superset,...)
-            // TODO: generate digest from m.c
-            val digest = 0
-            coordinators.foreach(coord => coord ! Messages.BaPrepare(m.v, m.t, digest, m.o, context.self))
           case None =>
         }
     }
