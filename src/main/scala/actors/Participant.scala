@@ -10,8 +10,8 @@ import scala.collection.mutable
 
 
 object Participant {
-  def apply(coordinators: Array[Coordinator]): Behavior[ParticipantMessage] = {
-    Behaviors.logMessages(Behaviors.setup(context => new Participant(context, coordinators)))
+  def apply(coordinators: Array[Coordinator], decision: Decision): Behavior[ParticipantMessage] = {
+    Behaviors.logMessages(Behaviors.setup(context => new FixedDecisionParticipant(context, coordinators, decision)))
   }
 
   class State(var s: TransactionState, val t: Transaction, val decisionLog: Array[Decision])
@@ -23,7 +23,7 @@ object Participant {
 
 }
 
-class Participant(context: ActorContext[ParticipantMessage], coordinators: Array[Coordinator]) extends AbstractBehavior[ParticipantMessage](context) {
+abstract class Participant(context: ActorContext[ParticipantMessage], coordinators: Array[Coordinator]) extends AbstractBehavior[ParticipantMessage](context) {
 
   import Participant._
 
@@ -35,8 +35,14 @@ class Participant(context: ActorContext[ParticipantMessage], coordinators: Array
       case m: Prepare =>
         transactions.get(m.t) match {
           case Some(s) =>
-            s.s = PREPARED
-            m.from ! VotePrepared(m.t, m.o, context.self)
+            prepare(m.t) match {
+              case util.Messages.Decision.COMMIT =>
+                s.s = PREPARED
+                m.from ! VotePrepared(m.t, Decision.COMMIT, context.self)
+              case util.Messages.Decision.ABORT =>
+                // TODO: change into some aborted state?
+                m.from ! VotePrepared(m.t, Decision.ABORT, context.self)
+            }
           case None =>
             context.log.error("Transaction not known")
         }
@@ -75,4 +81,10 @@ class Participant(context: ActorContext[ParticipantMessage], coordinators: Array
     }
     this
   }
+
+  def prepare(t: TransactionID): Decision
+}
+
+class FixedDecisionParticipant(context: ActorContext[ParticipantMessage], coordinators: Array[Coordinator], decision: Decision) extends Participant(context, coordinators) {
+  override def prepare(t: TransactionID): Decision = decision
 }

@@ -26,7 +26,7 @@ object ActorStart {
 
       // Create participant(s)
       val participants: Set[Messages.Participant] = Set(
-        context.spawn(Participant(coordinators), "PartInitiator-1")
+        context.spawn(Participant(coordinators, Decision.COMMIT), "PartInitiator-1")
       )
 
 

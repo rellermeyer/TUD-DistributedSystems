@@ -43,7 +43,7 @@ class CoordinatorSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike {
       cs.foreach(x => testKit.stop(x))
       ps.foreach(x => testKit.stop(x))
     }
-    "abort with 1 coordinator and 1 participant" in {
+    "abort with 1 coordinator and 1 participant (participant should never be asked to prepare)" in {
       val (cs, ps) = spawnAll(1, 1)
       val t = Transaction(0)
       ps.foreach(p => p ! PropagateTransaction(t))
@@ -55,7 +55,7 @@ class CoordinatorSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike {
       cs.foreach(x => testKit.stop(x))
       ps.foreach(x => testKit.stop(x))
     }
-    "abort with 4 coordinators and 1 participant" in {
+    "abort with 4 coordinators and 1 participant (participant should never be asked to prepare)" in {
       val (cs, ps) = spawnAll(4, 1)
       val t = Transaction(0)
       ps.foreach(p => p ! PropagateTransaction(t))
@@ -67,7 +67,7 @@ class CoordinatorSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike {
       cs.foreach(x => testKit.stop(x))
       ps.foreach(x => testKit.stop(x))
     }
-    "abort with 1 coordinator and 4 participants" in {
+    "abort with 1 coordinator and 4 participants (participant should never be asked to prepare)" in {
       val (cs, ps) = spawnAll(1, 4)
       val t = Transaction(0)
       ps.foreach(p => p ! PropagateTransaction(t))
@@ -108,7 +108,7 @@ class CoordinatorSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike {
     coordinators.foreach { x => x ! Messages.Setup(coordinators) }
     val participants = new Array[Messages.Participant](nParticipants)
     for (x <- 0 until nParticipants) {
-      participants(x) = spawn(Participant(coordinators), "Participant-" + x)
+      participants(x) = spawn(Participant(coordinators, Decision.COMMIT), "Participant-" + x)
     }
     (coordinators, participants)
   }
