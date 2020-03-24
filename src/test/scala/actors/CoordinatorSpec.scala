@@ -136,20 +136,17 @@ class CoordinatorSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike {
     }
   }
 
-  def spawnAll(nCoordinators: Int, nNormalParticipants: Int, nCommittingParticipants: Int = 0, nAbortingParticipants: Int = 0): (Array[Messages.Coordinator], Array[Messages.Participant]) = {
+  def spawnAll(nCoordinators: Int, nCommittingParticipants: Int, nAbortingParticipants: Int = 0): (Array[Messages.Coordinator], Array[Messages.Participant]) = {
     val cs = new Array[Messages.Coordinator](nCoordinators)
     for (x <- 0 until nCoordinators) {
       cs(x) = spawn(Coordinator(), "Coordinator-" + x)
     }
     cs.foreach { x => x ! Messages.Setup(cs) }
-    val ps = new Array[Messages.Participant](nNormalParticipants + nCommittingParticipants + nAbortingParticipants)
-    for (x <- 0 until nNormalParticipants) {
-      ps(x) = spawn(Participant(cs), "Participant-" + x)
-    }
-    for (x <- nNormalParticipants + 1 until nNormalParticipants + nCommittingParticipants) {
+    val ps = new Array[Messages.Participant](nCommittingParticipants + nAbortingParticipants)
+    for (x <- 0 until nCommittingParticipants) {
       ps(x) = spawn(Participant(cs, Decision.COMMIT), "Participant-" + x)
     }
-    for (x <- nNormalParticipants + nCommittingParticipants + 1 until nNormalParticipants + nCommittingParticipants + nAbortingParticipants) {
+    for (x <- nCommittingParticipants + 1 until nCommittingParticipants + nAbortingParticipants) {
       ps(x) = spawn(Participant(cs, Decision.ABORT), "Participant-" + x)
     }
     (cs, ps)
