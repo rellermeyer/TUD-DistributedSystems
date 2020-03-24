@@ -3,6 +3,8 @@ package actors
 import akka.actor.testkit.typed.scaladsl.{LoggingTestKit, ScalaTestWithActorTestKit}
 import org.scalatest.wordspec.AnyWordSpecLike
 import util.Messages
+import java.security.{KeyPair, KeyPairGenerator, PrivateKey, PublicKey}
+
 import util.Messages._
 
 class CoordinatorSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike {
@@ -151,17 +153,33 @@ class CoordinatorSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike {
 
   def spawnAll(nCoordinators: Int, nCommittingParticipants: Int, nAbortingParticipants: Int = 0): (Array[Messages.Coordinator], Array[Messages.Participant]) = {
     val cs = new Array[Messages.Coordinator](nCoordinators)
+
+    //
+    var kpg: KeyPairGenerator = KeyPairGenerator.getInstance("RSA")
+    kpg.initialize(2048)
+
+    var keyPairs = for (i <- 1 to nCoordinators+nAbortingParticipants+nCommittingParticipants) yield kpg.generateKeyPair
+
+    var pubKeys = for (e <- keyPairs) yield e.getPublic
+
+
+    //
+
     for (x <- 0 until nCoordinators) {
-      cs(x) = spawn(Coordinator(), testNr + "Coordinator-" + x)
+      cs(x) = spawn(Coordinator(keyPairs(x).getPrivate(),pubKeys), testNr + "Coordinator-" + x)
     }
     cs.foreach { x => x ! Messages.Setup(cs) }
     val ps = new Array[Messages.Participant](nCommittingParticipants + nAbortingParticipants)
     for (x <- 0 until nCommittingParticipants) {
-      ps(x) = spawn(Participant(cs, Decision.COMMIT), testNr + "Participant-" + x)
+      ps(x) = spawn(Participant(cs, Decision.COMMIT, keyPairs(nCoordinators+x).getPrivate(),pubKeys), testNr + "Participant-" + x)
     }
     for (x <- nCommittingParticipants until nCommittingParticipants + nAbortingParticipants) {
-      ps(x) = spawn(Participant(cs, Decision.ABORT), testNr + "Participant-" + x)
+      ps(x) = spawn(Participant(cs, Decision.ABORT, keyPairs(nCoordinators+nCommittingParticipants+x).getPrivate(),pubKeys), testNr + "Participant-" + x)
     }
     (cs, ps)
   }
+
+
+
+
 }

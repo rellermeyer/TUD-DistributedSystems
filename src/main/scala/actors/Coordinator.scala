@@ -1,5 +1,7 @@
 package actors
 
+import java.security.{PrivateKey, PublicKey}
+
 import actors.Coordinator.BaState.BaState
 import akka.actor.typed.Behavior
 import akka.actor.typed.scaladsl.{AbstractBehavior, ActorContext, Behaviors}
@@ -11,8 +13,8 @@ import scala.collection.mutable
 
 
 object Coordinator {
-  def apply(): Behavior[CoordinatorMessage] = {
-    Behaviors.logMessages(Behaviors.setup(context => new Coordinator(context)))
+  def apply(privateKey: PrivateKey, publicKeys: IndexedSeq[PublicKey]): Behavior[CoordinatorMessage] = {
+    Behaviors.logMessages(Behaviors.setup(context => new Coordinator(context, privateKey, publicKeys)))
   }
 
   class StableStorageItem() {
@@ -35,7 +37,7 @@ object Coordinator {
 
 }
 
-class Coordinator(context: ActorContext[CoordinatorMessage]) extends AbstractBehavior[CoordinatorMessage](context) {
+class Coordinator(context: ActorContext[CoordinatorMessage],privateKey: PrivateKey, publicKeys: IndexedSeq[PublicKey]) extends AbstractBehavior[CoordinatorMessage](context) {
 
   import Coordinator._
 
