@@ -79,6 +79,42 @@ class CoordinatorSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike {
       cs.foreach(x => testKit.stop(x))
       ps.foreach(x => testKit.stop(x))
     }
+    "be able to abort a transaction" in {
+      val (cs, ps) = spawnAll(1, 0, 1)
+      val t = Transaction(0)
+      ps.foreach(p => p ! PropagateTransaction(t))
+      Thread.sleep(100) // make sure the transaction fully propagated
+      val p = ps(0)
+      LoggingTestKit.info("Aborted transaction 0").withOccurrences(1).expect {
+        cs.foreach(c => c ! Messages.InitCommit(t.id, Decision.COMMIT, p))
+      }
+      cs.foreach(x => testKit.stop(x))
+      ps.foreach(x => testKit.stop(x))
+    }
+    "be able to unilaterally abort a transaction (1 coordinator)" in {
+      val (cs, ps) = spawnAll(1, 4, 1)
+      val t = Transaction(0)
+      ps.foreach(p => p ! PropagateTransaction(t))
+      Thread.sleep(100) // make sure the transaction fully propagated
+      val p = ps(0)
+      LoggingTestKit.info("Aborted transaction 0").withOccurrences(5).expect {
+        cs.foreach(c => c ! Messages.InitCommit(t.id, Decision.COMMIT, p))
+      }
+      cs.foreach(x => testKit.stop(x))
+      ps.foreach(x => testKit.stop(x))
+    }
+    "be able to unilaterally abort a transaction (4 coordinators)" in {
+      val (cs, ps) = spawnAll(4, 4, 1)
+      val t = Transaction(0)
+      ps.foreach(p => p ! PropagateTransaction(t))
+      Thread.sleep(100) // make sure the transaction fully propagated
+      val p = ps(0)
+      LoggingTestKit.info("Aborted transaction 0").withOccurrences(5).expect {
+        cs.foreach(c => c ! Messages.InitCommit(t.id, Decision.COMMIT, p))
+      }
+      cs.foreach(x => testKit.stop(x))
+      ps.foreach(x => testKit.stop(x))
+    }
   }
   "2 transactions" must {
     "succeed" in {
@@ -100,16 +136,19 @@ class CoordinatorSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike {
     }
   }
 
-  def spawnAll(nCoordinators: Int, nParticipants: Int): (Array[Messages.Coordinator], Array[Messages.Participant]) = {
-    val coordinators = new Array[Messages.Coordinator](nCoordinators)
+  def spawnAll(nCoordinators: Int, nCommittingParticipants: Int, nAbortingParticipants: Int = 0): (Array[Messages.Coordinator], Array[Messages.Participant]) = {
+    val cs = new Array[Messages.Coordinator](nCoordinators)
     for (x <- 0 until nCoordinators) {
-      coordinators(x) = spawn(Coordinator(), "Coordinator-" + x)
+      cs(x) = spawn(Coordinator(), "Coordinator-" + x)
     }
-    coordinators.foreach { x => x ! Messages.Setup(coordinators) }
-    val participants = new Array[Messages.Participant](nParticipants)
-    for (x <- 0 until nParticipants) {
-      participants(x) = spawn(Participant(coordinators, Decision.COMMIT), "Participant-" + x)
+    cs.foreach { x => x ! Messages.Setup(cs) }
+    val ps = new Array[Messages.Participant](nCommittingParticipants + nAbortingParticipants)
+    for (x <- 0 until nCommittingParticipants) {
+      ps(x) = spawn(Participant(cs, Decision.COMMIT), "Participant-" + x)
     }
-    (coordinators, participants)
+    for (x <- nCommittingParticipants + 1 until nCommittingParticipants + nAbortingParticipants) {
+      ps(x) = spawn(Participant(cs, Decision.ABORT), "Participant-" + x)
+    }
+    (cs, ps)
   }
 }
