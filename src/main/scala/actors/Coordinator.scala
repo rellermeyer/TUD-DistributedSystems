@@ -63,16 +63,22 @@ class Coordinator(context: ActorContext[CoordinatorMessage]) extends AbstractBeh
         stableStorage.get(m.t) match {
           case Some(ss) =>
             if (ss.participants.contains(m.from)) {
-              ss.decisionCertificate.get(m.from) match {
-                case Some(value) =>
-                case None =>
-                  if (i == ss.v % (3 * f + 1)) { // primary
-                    ss.decisionCertificate += (m.from -> DecisionCertificateEntry(ss.registrationLog(m.from), Option(m), None))
+              m.vote match {
+                case util.Messages.Decision.COMMIT =>
+                  ss.decisionCertificate += (m.from -> DecisionCertificateEntry(ss.registrationLog(m.from), Option(m), None))
+                  val isPrimary = i == ss.v % (3 * f + 1)
+                  val enoughVotes = ss.decisionCertificate.size == ss.participants.size
+                  if (isPrimary && enoughVotes) {
                     coordinators.foreach(coord => coord ! Messages.BaPrePrepare(ss.v, m.t, Decision.COMMIT, ss.decisionCertificate, context.self))
+                  }
+                case util.Messages.Decision.ABORT =>
+                  if (!ss.decisionCertificate.contains(m.from)) {
+                    ss.decisionCertificate += (m.from -> DecisionCertificateEntry(ss.registrationLog(m.from), Option(m), None))
+                    coordinators.foreach(coord => coord ! Messages.BaPrePrepare(ss.v, m.t, Decision.ABORT, ss.decisionCertificate, context.self))
                   }
               }
             }
-            else{
+            else {
               context.log.warn("Voting participant is not registered")
             }
           case None =>
