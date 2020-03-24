@@ -159,7 +159,7 @@ class CoordinatorSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike {
     for (x <- 0 until nCommittingParticipants) {
       ps(x) = spawn(Participant(cs, Decision.COMMIT), testNr + "Participant-" + x)
     }
-    for (x <- nCommittingParticipants + 1 until nCommittingParticipants + nAbortingParticipants) {
+    for (x <- nCommittingParticipants until nCommittingParticipants + nAbortingParticipants) {
       ps(x) = spawn(Participant(cs, Decision.ABORT), testNr + "Participant-" + x)
     }
     (cs, ps)
