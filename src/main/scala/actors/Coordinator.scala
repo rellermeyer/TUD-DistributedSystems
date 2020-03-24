@@ -106,33 +106,39 @@ class Coordinator(context: ActorContext[CoordinatorMessage]) extends AbstractBeh
         stableStorage.get(m.t) match {
           case Some(value) => {
             //TODO: check if message is from primary
+            //TODO: check if we are in the correct view
             if (!value.baPrePrepareLog.contains(m)) { // if no previous ba-pre-prepare message has been received
-              var nothingWrong = true
+              var changeView = false
               m.o match {
                 case util.Messages.Decision.COMMIT =>
                   value.participants.foreach(p => m.c.get(p) match {
                     case Some(part) =>
                       if ((part.registration.t != m.t) || (part.vote.get.vote != Decision.COMMIT)) { //check certificate
-                        nothingWrong = false
+                        changeView = true
                         context.log.debug("invalid decision certificate")
                       }
                     case None =>
-                      nothingWrong = false
+                      changeView = true
                       context.log.debug("locally known participant not in decision certificate")
                   }
                   )
+                  if (!changeView) {
+                    value.digest = hash(m.c)
+                    context.log.debug("Digest:" + value.digest)
+                    value.baPrePrepareLog += m
+                    coordinators.foreach(coord => coord ! Messages.BaPrepare(m.v, m.t, value.digest, Decision.COMMIT, context.self))
+                  }
                 case util.Messages.Decision.ABORT =>
-                  //TODO: implement proper abort handling and checking
-                  nothingWrong = false
+                  //TODO: implement proper checks
+                  value.digest = hash(m.c)
+                  context.log.debug("Digest:" + value.digest)
+                  value.baPrePrepareLog += m
+                  coordinators.foreach(coord => coord ! Messages.BaPrepare(m.v, m.t, value.digest, Decision.ABORT, context.self))
               }
-              value.digest = hash(m.c)
-              context.log.debug("Digest:" + value.digest)
-              value.baPrePrepareLog += m
-              if (nothingWrong) {
-                coordinators.foreach(coord => coord ! Messages.BaPrepare(m.v, m.t, value.digest, Decision.COMMIT, context.self))
-              } else {
+              if (changeView) {
                 context.log.warn("View change not implemented yet")
-                coordinators.foreach(coord => coord ! Messages.BaPrepare(m.v, m.t, value.digest, Decision.ABORT, context.self))
+                // TODO: implement view change
+                // TODO: abort?
               }
             }
           }
