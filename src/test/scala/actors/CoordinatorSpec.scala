@@ -86,6 +86,8 @@ class CoordinatorSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike {
       cs.foreach(x => testKit.stop(x))
       ps.foreach(x => testKit.stop(x))
     }
+  }
+  "A participant" must {
     "be able to abort a transaction" in {
       testNr = testNr + 1
       val (cs, ps) = spawnAll(1, 0, 1)
