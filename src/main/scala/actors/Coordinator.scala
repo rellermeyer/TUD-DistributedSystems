@@ -125,9 +125,6 @@ class Coordinator(context: ActorContext[CoordinatorMessage]) extends AbstractBeh
                 context.log.warn("View change not implemented yet")
                 coordinators.foreach(coord => coord ! Messages.BaPrepare(m.v, m.t, value.digest, Decision.ABORT, context.self))
               }
-              else{
-                context.log.warn("View change not implemented yet")
-              }
             }
           }
           case None =>
