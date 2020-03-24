@@ -108,21 +108,22 @@ class Coordinator(context: ActorContext[CoordinatorMessage]) extends AbstractBeh
             //TODO: check if message is from primary
             if (!value.baPrePrepareLog.contains(m)) { // if no previous ba-pre-prepare message has been received
               var nothingWrong = true
-              if (m.o == Decision.COMMIT) {
-                value.participants.foreach(p => m.c.get(p) match {
-                  case Some(part) =>
-                    if ((part.registration.t != m.t) || (part.vote.get.vote != Decision.COMMIT)) { //check certificate
+              m.o match {
+                case util.Messages.Decision.COMMIT =>
+                  value.participants.foreach(p => m.c.get(p) match {
+                    case Some(part) =>
+                      if ((part.registration.t != m.t) || (part.vote.get.vote != Decision.COMMIT)) { //check certificate
+                        nothingWrong = false
+                        context.log.debug("invalid decision certificate")
+                      }
+                    case None =>
                       nothingWrong = false
-                      context.log.debug("invalid decision certificate")
-                    }
-                  case None =>
-                    nothingWrong = false
-                    context.log.debug("locally known participant not in decision certificate")
-                }
-                )
-              } else { //m.o==ABORT
-                //TODO: implement proper abort handling and checking
-                nothingWrong = false
+                      context.log.debug("locally known participant not in decision certificate")
+                  }
+                  )
+                case util.Messages.Decision.ABORT =>
+                  //TODO: implement proper abort handling and checking
+                  nothingWrong = false
               }
               value.digest = hash(m.c)
               context.log.debug("Digest:" + value.digest)
