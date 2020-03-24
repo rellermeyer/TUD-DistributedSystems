@@ -72,6 +72,9 @@ class Coordinator(context: ActorContext[CoordinatorMessage]) extends AbstractBeh
                   }
               }
             }
+            else{
+              context.log.warn("Voting participant is not registered")
+            }
           case None =>
             context.log.error("Not implemented")
         }
