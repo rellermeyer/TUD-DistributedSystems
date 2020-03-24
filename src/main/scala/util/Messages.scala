@@ -58,10 +58,6 @@ object Messages {
 
   final case class BaPrePrepare(v: View, t: TransactionID, o: Decision, c: DecisionCertificate, from: Coordinator) extends CoordinatorMessage // from: PrimaryCoordinator
 
-  // No need to ask for endpoint references they are already in the registration certificate
-  // final case class SendUnknownParticipants(participants: Set[Participant], from: PrimaryCoordinator) extends CoordinatorMessage
-  // final case class RequestUnknownParticipants(from: Coordinator) extends PrimaryCoordinatorMessage
-
   object Decision extends Enumeration {
     type Decision = Value
     val COMMIT, ABORT = Value
