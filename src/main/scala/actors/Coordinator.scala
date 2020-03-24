@@ -151,7 +151,7 @@ class Coordinator(context: ActorContext[CoordinatorMessage]) extends AbstractBeh
               context.log.debug("not expecting BaPrepare")
               return this
             }
-            if (m.c == ss.digest) { //check digest
+            if (m.c == ss.digest) { //check digest // TODO: not sure if this is how it should be done
               if (ss.baPrePrepareLog.exists(p => (p.o == m.o) && p.t == m.t)) { //check if same decision as in baPrePrepare
                 ss.baPrepareLog += m
               } else
