@@ -114,7 +114,8 @@ class Coordinator(context: ActorContext[CoordinatorMessage]) extends AbstractBeh
                 }
                 )
               } else { //m.o==ABORT
-                //TODO: implement ABORT case
+                //TODO: implement proper abort handling and checking
+                nothingWrong = false
               }
               value.digest = hash(m.c)
               context.log.debug("Digest:" + value.digest)
