@@ -20,6 +20,7 @@ object Participant {
     type TransactionState = Value
     val ACTIVE, PREPARED = Value
   }
+
 }
 
 abstract class Participant(context: ActorContext[ParticipantMessage], coordinators: Array[Coordinator]) extends AbstractBehavior[ParticipantMessage](context) {
@@ -51,16 +52,16 @@ abstract class Participant(context: ActorContext[ParticipantMessage], coordinato
           case Some(s) => s.s match {
             case PREPARED =>
               val coordinatorIndex = coordinators.indexOf(m.from)
-                s.decisionLog(coordinatorIndex) = Decision.COMMIT
-              }
-              if (s.decisionLog.count(x => x == Decision.COMMIT) >= f + 1) {
-                // m.from ! Messages.Committed(null, m.o, context.self)
-                    context.log.info("Committed transaction " + m.t)
-                    transactions.remove(m.t)
-                }
-              else {
-                context.log.info("Waiting for more commits to make decision...")
-              }
+              s.decisionLog(coordinatorIndex) = Decision.COMMIT
+          }
+            if (s.decisionLog.count(x => x == Decision.COMMIT) >= f + 1) {
+              // m.from ! Messages.Committed(null, m.o, context.self)
+              context.log.info("Committed transaction " + m.t)
+              transactions.remove(m.t)
+            }
+            else {
+              context.log.info("Waiting for more commits to make decision...")
+            }
           case None =>
         }
       case m: Rollback => {

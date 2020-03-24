@@ -46,9 +46,9 @@ object Messages {
 
   final case class PropagateTransaction(t: Transaction) extends ParticipantMessage // from: Initiator
 
-  final case class InitCommit(t: TransactionID, from: Participant) extends CoordinatorMessage  // from: Initiator
+  final case class InitCommit(t: TransactionID, from: Participant) extends CoordinatorMessage // from: Initiator
 
-  final case class InitAbort(t: TransactionID, from: Participant) extends CoordinatorMessage  // from: Initiator
+  final case class InitAbort(t: TransactionID, from: Participant) extends CoordinatorMessage // from: Initiator
 
   final case class ViewChange(new_v: View, t: TransactionID, p: ViewChangeState, from: Coordinator) extends CoordinatorMessage
 

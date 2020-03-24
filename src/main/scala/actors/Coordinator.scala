@@ -52,9 +52,9 @@ class Coordinator(context: ActorContext[CoordinatorMessage]) extends AbstractBeh
         i = coordinators.indexOf(this.context.self)
       case m: Register =>
         val ss = stableStorage.getOrElseUpdate(m.t, new StableStorageItem())
-          if (!ss.participants.contains(m.from)) {
-            ss.participants += m.from
-            ss.registrationLog(m.from) = m
+        if (!ss.participants.contains(m.from)) {
+          ss.participants += m.from
+          ss.registrationLog(m.from) = m
         }
         else {
 
@@ -63,15 +63,15 @@ class Coordinator(context: ActorContext[CoordinatorMessage]) extends AbstractBeh
         stableStorage.get(m.t) match {
           case Some(ss) =>
             if (ss.participants.contains(m.from)) {
-                ss.decisionCertificate.get(m.from) match {
-                  case Some(value) =>
-                  case None =>
-                    if (i == ss.v % (3 * f + 1)) { // primary
-                      ss.decisionCertificate += (m.from -> DecisionCertificateEntry(ss.registrationLog(m.from), Option(m), None))
-                      coordinators.foreach(coord => coord ! Messages.BaPrePrepare(ss.v, m.t, Decision.COMMIT, ss.decisionCertificate, context.self))
-                    }
-                }
+              ss.decisionCertificate.get(m.from) match {
+                case Some(value) =>
+                case None =>
+                  if (i == ss.v % (3 * f + 1)) { // primary
+                    ss.decisionCertificate += (m.from -> DecisionCertificateEntry(ss.registrationLog(m.from), Option(m), None))
+                    coordinators.foreach(coord => coord ! Messages.BaPrePrepare(ss.v, m.t, Decision.COMMIT, ss.decisionCertificate, context.self))
+                  }
               }
+            }
           case None =>
             context.log.error("Not implemented")
         }
@@ -101,10 +101,10 @@ class Coordinator(context: ActorContext[CoordinatorMessage]) extends AbstractBeh
             //TODO: check if message is from primary
             if (!value.baPrePrepareLog.contains(m)) { // if no previous ba-pre-prepare message has been received
               var nothingWrong = true
-              if(m.o==Decision.COMMIT) {
+              if (m.o == Decision.COMMIT) {
                 value.participants.foreach(p => m.c.get(p) match {
                   case Some(part) =>
-                    if((part.registration.t != m.t) || (part.vote.get.vote != Decision.COMMIT) ) { //check certificate
+                    if ((part.registration.t != m.t) || (part.vote.get.vote != Decision.COMMIT)) { //check certificate
                       nothingWrong = false
                       context.log.debug("invalid decision certificate")
                     }
@@ -120,7 +120,7 @@ class Coordinator(context: ActorContext[CoordinatorMessage]) extends AbstractBeh
               value.digest = hash(m.c)
               context.log.debug("Digest:" + value.digest)
               value.baPrePrepareLog += m
-              if(nothingWrong) {
+              if (nothingWrong) {
                 coordinators.foreach(coord => coord ! Messages.BaPrepare(m.v, m.t, value.digest, Decision.COMMIT, context.self))
               } else {
                 context.log.warn("View change not implemented yet")
@@ -143,7 +143,7 @@ class Coordinator(context: ActorContext[CoordinatorMessage]) extends AbstractBeh
               } else
                 context.log.debug("proposed outcome different from BaPrePrepare stage")
             } else {
-              context.log.debug("digest verification failed:" + m.c +" vs. " + ss.digest)
+              context.log.debug("digest verification failed:" + m.c + " vs. " + ss.digest)
             }
             if (ss.baPrepareLog.count(p => p.o == m.o) >= 2 * f) {
               //BaPrepared flag prevents duplicate messages
@@ -163,7 +163,7 @@ class Coordinator(context: ActorContext[CoordinatorMessage]) extends AbstractBeh
               context.log.debug("not expecting BaCommit")
               return this
             }
-              ss.baCommitLog += m
+            ss.baCommitLog += m
             if (m.o == Decision.COMMIT) {
               if (ss.baCommitLog.count(p => p.o == m.o) >= 2 * f) {
                 ss.participants.foreach(part => part ! Messages.Commit(m.t, context.self))
@@ -183,7 +183,8 @@ class Coordinator(context: ActorContext[CoordinatorMessage]) extends AbstractBeh
     }
     this
   }
-  def hash(data : DecisionCertificate) : Int ={
+
+  def hash(data: DecisionCertificate): Int = {
     scala.util.hashing.MurmurHash3.mapHash(data)
   }
 }
