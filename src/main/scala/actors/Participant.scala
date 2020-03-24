@@ -33,17 +33,15 @@ abstract class Participant(context: ActorContext[ParticipantMessage], coordinato
     message match {
       case m: Prepare =>
         transactions.get(m.t) match {
-          case Some(s) => {
+          case Some(s) =>
+            prepare(m.t) match {
+              case util.Messages.Decision.COMMIT =>
                 s.s = PREPARED
-                prepare(m.t) match {
-                  case util.Messages.Decision.COMMIT =>
-                    s.s = PREPARED
-                    m.from ! VotePrepared(m.t, Decision.COMMIT, context.self)
-                  case util.Messages.Decision.ABORT =>
-                    // TODO: change into some aborted state?
-                  m.from ! VotePrepared(m.t, Decision.ABORT, context.self)
+                m.from ! VotePrepared(m.t, Decision.COMMIT, context.self)
+              case util.Messages.Decision.ABORT =>
+                // TODO: change into some aborted state?
+                m.from ! VotePrepared(m.t, Decision.ABORT, context.self)
             }
-          }
           case None =>
             m.from ! VotePrepared(m.t, Decision.ABORT, context.self)
             context.log.error("Transaction not known")
@@ -51,7 +49,7 @@ abstract class Participant(context: ActorContext[ParticipantMessage], coordinato
       case m: Commit =>
         transactions.get(m.t) match {
           case Some(s) => s.s match {
-            case _ =>
+            case PREPARED =>
               val coordinatorIndex = coordinators.indexOf(m.from)
                 s.decisionLog(coordinatorIndex) = Decision.COMMIT
               }
@@ -63,7 +61,6 @@ abstract class Participant(context: ActorContext[ParticipantMessage], coordinato
               else {
                 context.log.info("Waiting for more commits to make decision...")
               }
-
           case None =>
         }
       case m: Rollback => {
@@ -77,6 +74,7 @@ abstract class Participant(context: ActorContext[ParticipantMessage], coordinato
                 transactions.remove(m.t)
               }
             }
+            case _ =>
           }
           case None =>
         }

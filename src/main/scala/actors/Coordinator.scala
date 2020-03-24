@@ -122,9 +122,9 @@ class Coordinator(context: ActorContext[CoordinatorMessage]) extends AbstractBeh
               if(nothingWrong) {
                 coordinators.foreach(coord => coord ! Messages.BaPrepare(m.v, m.t, value.digest, Decision.COMMIT, context.self))
               } else {
+                context.log.warn("View change not implemented yet")
                 coordinators.foreach(coord => coord ! Messages.BaPrepare(m.v, m.t, value.digest, Decision.ABORT, context.self))
               }
-
             }
           }
           case None =>
