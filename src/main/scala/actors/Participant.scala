@@ -10,9 +10,6 @@ import scala.collection.mutable
 
 
 object Participant {
-  def apply(coordinators: Array[Coordinator]): Behavior[ParticipantMessage] = {
-    Behaviors.logMessages(Behaviors.setup(context => new normalParticipant(context, coordinators)))
-  }
   def apply(coordinators: Array[Coordinator], decision: Decision): Behavior[ParticipantMessage] = {
     Behaviors.logMessages(Behaviors.setup(context => new FixedDecisionParticipant(context, coordinators, decision)))
   }
@@ -23,7 +20,6 @@ object Participant {
     type TransactionState = Value
     val ACTIVE, PREPARED = Value
   }
-
 }
 
 abstract class Participant(context: ActorContext[ParticipantMessage], coordinators: Array[Coordinator]) extends AbstractBehavior[ParticipantMessage](context) {
@@ -37,16 +33,19 @@ abstract class Participant(context: ActorContext[ParticipantMessage], coordinato
     message match {
       case m: Prepare =>
         transactions.get(m.t) match {
-          case Some(s) =>
-            val decision: Decision = getDecision(m.o)
-            if(decision == Decision.COMMIT) {
-              s.s = PREPARED
-              m.from ! VotePrepared (m.t, Decision.COMMIT, context.self)
-            } else {
-                m.from ! VotePrepared (m.t, Decision.ABORT, context.self)
+          case Some(s) => {
+                s.s = PREPARED
+                prepare(m.t) match {
+                  case util.Messages.Decision.COMMIT =>
+                    s.s = PREPARED
+                    m.from ! VotePrepared(m.t, Decision.COMMIT, context.self)
+                  case util.Messages.Decision.ABORT =>
+                    // TODO: change into some aborted state?
+                  m.from ! VotePrepared(m.t, Decision.ABORT, context.self)
             }
-
+          }
           case None =>
+            m.from ! VotePrepared(m.t, Decision.ABORT, context.self)
             context.log.error("Transaction not known")
         }
       case m: Commit =>
@@ -54,26 +53,35 @@ abstract class Participant(context: ActorContext[ParticipantMessage], coordinato
           case Some(s) => s.s match {
             case _ =>
               val coordinatorIndex = coordinators.indexOf(m.from)
-              s.decisionLog(coordinatorIndex) = m.o
-              if (s.decisionLog.count(x => x == m.o) >= f + 1) {
-                // m.from ! Messages.Committed(null, m.o, context.self)
-                m.o match {
-                  case Decision.COMMIT =>
-                    context.log.info("Committed transaction " + m.t)
-                    transactions.remove(m.t);
-                  case Decision.ABORT =>
-                    context.log.info("Aborted transaction " + m.t)
-                    transactions.remove(m.t);
-                }
+                s.decisionLog(coordinatorIndex) = Decision.COMMIT
               }
+              if (s.decisionLog.count(x => x == Decision.COMMIT) >= f + 1) {
+                // m.from ! Messages.Committed(null, m.o, context.self)
+                    context.log.info("Committed transaction " + m.t)
+                    transactions.remove(m.t)
+                }
               else {
                 context.log.info("Waiting for more commits to make decision...")
               }
 
-
+          case None =>
+        }
+      case m: Rollback => {
+        transactions.get(m.t) match {
+          case Some(s) => s.s match {
+            case _ => {
+              val coordinatorIndex = coordinators.indexOf(m.from)
+              s.decisionLog(coordinatorIndex) = Decision.ABORT
+              if (s.decisionLog.count(x => x == Decision.ABORT) >= f + 1) {
+                context.log.info("Aborted transaction " + m.t)
+                transactions.remove(m.t)
+              }
+            }
           }
           case None =>
         }
+      }
+
       case m: PropagateTransaction =>
         transactions.get(m.t.id) match {
           case Some(s) =>
@@ -85,13 +93,10 @@ abstract class Participant(context: ActorContext[ParticipantMessage], coordinato
     }
     this
   }
-  def getDecision(incomingDecision: Decision.Decision): Decision
+
+  def prepare(t: TransactionID): Decision
 }
 
-class FixedDecisionParticipant(context: ActorContext[ParticipantMessage], coordinators: Array[Coordinator], fixedDecision: Decision) extends Participant(context, coordinators) {
-  override def getDecision(incomingDecision: Decision): Decision = fixedDecision
-}
-
-class normalParticipant(context: ActorContext[ParticipantMessage], coordinators: Array[Coordinator]) extends Participant(context, coordinators) {
-  override def getDecision(incomingDecision: Decision): Decision = incomingDecision
+class FixedDecisionParticipant(context: ActorContext[ParticipantMessage], coordinators: Array[Coordinator], decision: Decision) extends Participant(context, coordinators) {
+  override def prepare(t: TransactionID): Decision = decision
 }

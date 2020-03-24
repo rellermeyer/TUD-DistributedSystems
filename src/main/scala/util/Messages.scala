@@ -20,7 +20,7 @@ object Messages {
 
   sealed trait ViewChangeState
 
-  case class DecisionCertificateEntry(registration: Messages.Register, vote: Messages.VotePrepared)
+  case class DecisionCertificateEntry(registration: Messages.Register, vote: Option[VotePrepared], abort: Option[InitAbort])
 
   final case class ViewChangeStateBaNotPrePrepared(v: View, t: TransactionID, c: DecisionCertificate) extends ViewChangeState // "A backup suspects the primary and initiates a view change immediately if the ba-pre-prepare message fails the verification."
 
@@ -32,9 +32,11 @@ object Messages {
 
   final case class Setup(coordinators: Array[Coordinator]) extends CoordinatorMessage
 
-  final case class Prepare(t: TransactionID, o: Decision, from: Coordinator) extends ParticipantMessage
+  final case class Prepare(t: TransactionID, from: Coordinator) extends ParticipantMessage
 
-  final case class Commit(t: TransactionID, o: Decision, from: Coordinator) extends ParticipantMessage
+  final case class Commit(t: TransactionID, from: Coordinator) extends ParticipantMessage
+
+  final case class Rollback(t: TransactionID, from: Coordinator) extends ParticipantMessage
 
   final case class Register(t: TransactionID, from: Participant) extends CoordinatorMessage // TODO: add signature
 
@@ -44,7 +46,9 @@ object Messages {
 
   final case class PropagateTransaction(t: Transaction) extends ParticipantMessage // from: Initiator
 
-  final case class InitCommit(t: TransactionID, o: Decision, from: Participant) extends CoordinatorMessage  // from: Initiator
+  final case class InitCommit(t: TransactionID, from: Participant) extends CoordinatorMessage  // from: Initiator
+
+  final case class InitAbort(t: TransactionID, from: Participant) extends CoordinatorMessage  // from: Initiator
 
   final case class ViewChange(new_v: View, t: TransactionID, p: ViewChangeState, from: Coordinator) extends CoordinatorMessage
 

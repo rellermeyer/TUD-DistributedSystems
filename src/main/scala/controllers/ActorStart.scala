@@ -45,7 +45,7 @@ object ActorStart {
       Thread.sleep(1000)
       // - start the distributed commit
       for (id <- 0 until numberOfTransactions) {
-        coordinators.foreach(c => c ! Messages.InitCommit(transactions(id).id, Decision.COMMIT, participants.head))
+        coordinators.foreach(c => c ! Messages.InitCommit(transactions(id).id, participants.head))
         //Thread.sleep(1000)
       }
 
