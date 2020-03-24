@@ -87,9 +87,7 @@ class Coordinator(context: ActorContext[CoordinatorMessage]) extends AbstractBeh
       case m: InitCommit =>
         stableStorage.get(m.t) match {
           case Some(ss) =>
-            if (i == ss.v % (3 * f + 1)) { // primary
-              ss.participants.foreach(p => p ! Messages.Prepare(m.t, context.self))
-            }
+            ss.participants.foreach(p => p ! Messages.Prepare(m.t, context.self))
           case None =>
             context.log.error("not implemented")
         }
