@@ -39,13 +39,13 @@ abstract class Participant(context: ActorContext[ParticipantMessage], coordinato
             prepare(m.t) match {
               case util.Messages.Decision.COMMIT =>
                 s.s = PREPARED
-                m.from ! VotePrepared(m.t, Decision.COMMIT, context.self)
+                m.from ! VotePrepared(m.t, Decision.COMMIT,sign(m.t.toString(), privateKey), context.self)
               case util.Messages.Decision.ABORT =>
                 // TODO: change into some aborted state?
-                m.from ! VotePrepared(m.t, Decision.ABORT, context.self)
+                m.from ! VotePrepared(m.t, Decision.ABORT,sign(m.t.toString(), privateKey), context.self)
             }
           case None =>
-            m.from ! VotePrepared(m.t, Decision.ABORT, context.self)
+            m.from ! VotePrepared(m.t, Decision.ABORT,sign(m.t.toString(), privateKey), context.self)
             context.log.error("Transaction not known")
         }
       case m: Commit =>
@@ -89,7 +89,7 @@ abstract class Participant(context: ActorContext[ParticipantMessage], coordinato
           case None =>
             transactions += (m.t.id -> new State(ACTIVE, m.t, new Array(coordinators.length)))
         }
-        coordinators.foreach(c => c ! Register(m.t.id, context.self))
+        coordinators.foreach(c => c ! Register(m.t.id,sign(m.t.id.toString(), privateKey), context.self))
     }
     this
   }
