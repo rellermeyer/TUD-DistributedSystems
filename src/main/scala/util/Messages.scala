@@ -12,11 +12,14 @@ object Messages {
   type View = Int
   type TransactionID = Int
   type DecisionCertificate = mutable.Map[Participant, DecisionCertificateEntry]
-  type PubKeys = mutable.Map[(ActorType, ActorNumber), (PublicKey, Sign, ActorNumber)]
+  //type PubKeys = mutable.Map[(ActorType, ActorNumber), (PublicKey, Sign, ActorNumber)]
   type Digest = Int
-  type ActorType = Int // 0 Coordinator, 1 Participant
-  type ActorNumber = Int
-  type Sign = (ActorNumber, Array[Byte])
+  //type ActorType = Int // 0 Coordinator, 1 Participant
+  //type ActorNumber = Int
+  type Signature = Array[Byte]
+  type SignatureTuple = (Signature, SignedPublicKey)
+  type SignedPublicKey = (PublicKey, Signature)
+  type KeyTuple = (PrivateKey, SignedPublicKey)
 
   sealed trait ParticipantMessage
 
@@ -42,9 +45,9 @@ object Messages {
 
   final case class Rollback(t: TransactionID, from: Coordinator) extends ParticipantMessage
 
-  final case class Register(t: TransactionID, s: Sign, from: Participant) extends CoordinatorMessage // TODO: add signature
+  final case class Register(t: TransactionID, s: SignatureTuple, from: Participant) extends CoordinatorMessage // TODO: add signature
 
-  final case class VotePrepared(t: TransactionID, vote: Decision, s: Sign, from: Participant) extends CoordinatorMessage // TODO: add signature
+  final case class VotePrepared(t: TransactionID, vote: Decision, s: SignatureTuple, from: Participant) extends CoordinatorMessage // TODO: add signature
 
   final case class Committed(t: TransactionID, commitResult: Decision, from: Participant) extends CoordinatorMessage
 
@@ -68,19 +71,19 @@ object Messages {
   }
 
 
-  def sign(data: String, privateKey: PrivateKey, actorNumber: ActorNumber): Sign = {
-    var s: Signature = Signature.getInstance("SHA512withRSA");
+  def sign(data: String, privateKey: PrivateKey): Signature = {
+    var s: java.security.Signature = Signature.getInstance("SHA512withRSA");
     s.initSign(privateKey)
     s.update(data.getBytes())
-    return (actorNumber, s.sign())
+    return s.sign()
   }
 
-  def verify(data: String, signature: Sign, publicKey: PublicKey): Boolean = {
-    var s: Signature = Signature.getInstance("SHA512withRSA");
+  def verify(data: String, signature: Signature, publicKey: PublicKey): Boolean = {
+    var s: java.security.Signature = Signature.getInstance("SHA512withRSA");
     s.initVerify(publicKey)
     s.update(data.getBytes())
 
-    return s.verify(signature.asInstanceOf[Array[Byte]])
+    return s.verify(signature)
   }
 
 

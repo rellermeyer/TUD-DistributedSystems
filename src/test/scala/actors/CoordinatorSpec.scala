@@ -161,14 +161,14 @@ class CoordinatorSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike {
     kpg.initialize(2048)
 
     var masterKey = kpg.generateKeyPair
-    var keyPairs = for (i <- 1 to nCoordinators + nAbortingParticipants + nCommittingParticipants) yield kpg.generateKeyPair
+    //var keyPairs = for (i <- 1 to nCoordinators + nAbortingParticipants + nCommittingParticipants) yield kpg.generateKeyPair
 
 
-    var pubKeys: PubKeys = mutable.Map()
-    var typeCounter: Int = 0
-    var actorCounter: Int = 0
+    //var pubKeys: PubKeys = mutable.Map()
+    //var typeCounter: Int = 0
+    //var actorCounter: Int = 0
 
-    for (e <- keyPairs) {
+    /*for (e <- keyPairs) {
       var pubKey = e.getPublic()
       var signature = sign(pubKey.toString(), masterKey.getPrivate())
       pubKeys += (typeCounter, actorCounter) -> (pubKey, signature, actorCounter)
@@ -178,23 +178,28 @@ class CoordinatorSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike {
         typeCounter += 1
         actorCounter = 0
       }
-    }
+    }*/
 
 
     //
 
     for (x <- 0 until nCoordinators) {
-      cs(x) = spawn(Coordinator(keyPairs(x).getPrivate(), x, pubKeys, masterKey.getPublic()), testNr + "Coordinator-" + x)
+      cs(x) = spawn(Coordinator(genSignedKey(kpg, masterKey), masterKey.getPublic()), testNr + "Coordinator-" + x)
     }
     cs.foreach { x => x ! Messages.Setup(cs) }
     val ps = new Array[Messages.Participant](nCommittingParticipants + nAbortingParticipants)
     for (x <- 0 until nCommittingParticipants) {
-      ps(x) = spawn(Participant(cs, Decision.COMMIT, keyPairs(nCoordinators + x).getPrivate(), x , pubKeys, masterKey.getPublic()), testNr + "Participant-" + x)
+      ps(x) = spawn(Participant(cs, Decision.COMMIT, genSignedKey(kpg, masterKey), masterKey.getPublic()), testNr + "Participant-" + x)
     }
     for (x <- nCommittingParticipants until nCommittingParticipants + nAbortingParticipants) {
-      ps(x) = spawn(Participant(cs, Decision.ABORT, keyPairs(nCoordinators + nCommittingParticipants + x).getPrivate(),nCommittingParticipants + x, pubKeys, masterKey.getPublic()), testNr + "Participant-" + x)
+      ps(x) = spawn(Participant(cs, Decision.ABORT, genSignedKey(kpg, masterKey), masterKey.getPublic()), testNr + "Participant-" + x)
     }
     (cs, ps)
+  }
+
+  def genSignedKey(kpg: KeyPairGenerator, masterKey: KeyPair): (PrivateKey, SignedPublicKey) = {
+    var keyPair = kpg.generateKeyPair
+    return (keyPair.getPrivate, (keyPair.getPublic, sign(keyPair.getPublic.toString, masterKey.getPrivate)))
   }
 
 

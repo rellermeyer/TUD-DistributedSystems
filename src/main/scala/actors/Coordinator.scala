@@ -13,8 +13,8 @@ import scala.collection.mutable
 
 
 object Coordinator {
-  def apply(privateKey: PrivateKey, actorNumber: ActorNumber, publicKeys: PubKeys, masterPubKey: PublicKey): Behavior[CoordinatorMessage] = {
-    Behaviors.logMessages(Behaviors.setup(context => new Coordinator(context, privateKey,actorNumber, publicKeys, masterPubKey: PublicKey)))
+  def apply(keyTuple: KeyTuple, masterPubKey: PublicKey): Behavior[CoordinatorMessage] = {
+    Behaviors.logMessages(Behaviors.setup(context => new Coordinator(context, keyTuple, masterPubKey)))
   }
 
   class StableStorageItem() {
@@ -37,10 +37,11 @@ object Coordinator {
 
 }
 
-class Coordinator(context: ActorContext[CoordinatorMessage], privateKey: PrivateKey,actorNumber: ActorNumber, publicKeys: PubKeys, masterPubKey: PublicKey) extends AbstractBehavior[CoordinatorMessage](context) {
+class Coordinator(context: ActorContext[CoordinatorMessage], keyTuple: KeyTuple, masterPubKey: PublicKey) extends AbstractBehavior[CoordinatorMessage](context) {
 
   import Coordinator._
 
+  var privateKey = keyTuple._1
   var coordinators: Array[Messages.Coordinator] = Array(context.self)
   var i = 0
   var f: Int = (coordinators.length - 1) / 3
@@ -55,7 +56,6 @@ class Coordinator(context: ActorContext[CoordinatorMessage], privateKey: Private
       case m: Register =>
         val ss = stableStorage.getOrElseUpdate(m.t, new StableStorageItem())
         if (!ss.participants.contains(m.from)) {
-          publicKeys.get((1, m.s(0)))
 
 
           ss.participants += m.from
