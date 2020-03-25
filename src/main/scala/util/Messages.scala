@@ -12,11 +12,11 @@ object Messages {
   type View = Int
   type TransactionID = Int
   type DecisionCertificate = mutable.Map[Participant, DecisionCertificateEntry]
-  type PubKeys = mutable.Map[(ActorType, ActorNumber), (PublicKey, Sign)]
+  type PubKeys = mutable.Map[(ActorType, ActorNumber), (PublicKey, Sign, ActorNumber)]
   type Digest = Int
   type ActorType = Int // 0 Coordinator, 1 Participant
   type ActorNumber = Int
-  type Sign = Array[Byte]
+  type Sign = (ActorNumber, Array[Byte])
 
   sealed trait ParticipantMessage
 
@@ -68,19 +68,19 @@ object Messages {
   }
 
 
-  def sign(data: String, privateKey: PrivateKey): Sign = {
+  def sign(data: String, privateKey: PrivateKey, actorNumber: ActorNumber): Sign = {
     var s: Signature = Signature.getInstance("SHA512withRSA");
     s.initSign(privateKey)
     s.update(data.getBytes())
-    return s.sign()
+    return (actorNumber, s.sign())
   }
 
-  def verify(data: String, signature: Array[Byte], publicKey: PublicKey): Boolean = {
+  def verify(data: String, signature: Sign, publicKey: PublicKey): Boolean = {
     var s: Signature = Signature.getInstance("SHA512withRSA");
     s.initVerify(publicKey)
     s.update(data.getBytes())
 
-    return s.verify(signature)
+    return s.verify(signature.asInstanceOf[Array[Byte]])
   }
 
 

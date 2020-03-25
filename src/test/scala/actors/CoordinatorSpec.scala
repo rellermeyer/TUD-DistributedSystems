@@ -171,7 +171,7 @@ class CoordinatorSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike {
     for (e <- keyPairs) {
       var pubKey = e.getPublic()
       var signature = sign(pubKey.toString(), masterKey.getPrivate())
-      pubKeys += (typeCounter, actorCounter) -> (pubKey, signature)
+      pubKeys += (typeCounter, actorCounter) -> (pubKey, signature, actorCounter)
 
       actorCounter += 1
       if (typeCounter == 0 && actorCounter == nCoordinators) {
@@ -184,15 +184,15 @@ class CoordinatorSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike {
     //
 
     for (x <- 0 until nCoordinators) {
-      cs(x) = spawn(Coordinator(keyPairs(x).getPrivate(), pubKeys, masterKey.getPublic()), testNr + "Coordinator-" + x)
+      cs(x) = spawn(Coordinator(keyPairs(x).getPrivate(), x, pubKeys, masterKey.getPublic()), testNr + "Coordinator-" + x)
     }
     cs.foreach { x => x ! Messages.Setup(cs) }
     val ps = new Array[Messages.Participant](nCommittingParticipants + nAbortingParticipants)
     for (x <- 0 until nCommittingParticipants) {
-      ps(x) = spawn(Participant(cs, Decision.COMMIT, keyPairs(nCoordinators + x).getPrivate(), pubKeys, masterKey.getPublic()), testNr + "Participant-" + x)
+      ps(x) = spawn(Participant(cs, Decision.COMMIT, keyPairs(nCoordinators + x).getPrivate(), x , pubKeys, masterKey.getPublic()), testNr + "Participant-" + x)
     }
     for (x <- nCommittingParticipants until nCommittingParticipants + nAbortingParticipants) {
-      ps(x) = spawn(Participant(cs, Decision.ABORT, keyPairs(nCoordinators + nCommittingParticipants + x).getPrivate(), pubKeys, masterKey.getPublic()), testNr + "Participant-" + x)
+      ps(x) = spawn(Participant(cs, Decision.ABORT, keyPairs(nCoordinators + nCommittingParticipants + x).getPrivate(),nCommittingParticipants + x, pubKeys, masterKey.getPublic()), testNr + "Participant-" + x)
     }
     (cs, ps)
   }

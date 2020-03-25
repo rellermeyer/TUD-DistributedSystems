@@ -11,8 +11,8 @@ import scala.collection.mutable
 
 
 object Participant {
-  def apply(coordinators: Array[Coordinator], decision: Decision, privateKey: PrivateKey, publicKeys: PubKeys, masterPubKey: PublicKey): Behavior[ParticipantMessage] = {
-    Behaviors.logMessages(Behaviors.setup(context => new FixedDecisionParticipant(context, coordinators, decision, privateKey, publicKeys, masterPubKey: PublicKey)))
+  def apply(coordinators: Array[Coordinator], decision: Decision, privateKey: PrivateKey,actorNumber: ActorNumber, publicKeys: PubKeys, masterPubKey: PublicKey): Behavior[ParticipantMessage] = {
+    Behaviors.logMessages(Behaviors.setup(context => new FixedDecisionParticipant(context, coordinators, decision, privateKey,actorNumber, publicKeys, masterPubKey: PublicKey)))
   }
 
   class State(var s: TransactionState, val t: Transaction, val decisionLog: Array[Decision])
@@ -24,7 +24,7 @@ object Participant {
 
 }
 
-abstract class Participant(context: ActorContext[ParticipantMessage], coordinators: Array[Coordinator], privateKey: PrivateKey, publicKeys: PubKeys, masterPubKey: PublicKey) extends AbstractBehavior[ParticipantMessage](context) {
+abstract class Participant(context: ActorContext[ParticipantMessage], coordinators: Array[Coordinator], privateKey: PrivateKey,actorNumber: ActorNumber, publicKeys: PubKeys, masterPubKey: PublicKey) extends AbstractBehavior[ParticipantMessage](context) {
 
   import Participant._
 
@@ -39,10 +39,10 @@ abstract class Participant(context: ActorContext[ParticipantMessage], coordinato
             prepare(m.t) match {
               case util.Messages.Decision.COMMIT =>
                 s.s = PREPARED
-                m.from ! VotePrepared(m.t, Decision.COMMIT,sign(m.t.toString(), privateKey), context.self)
+                m.from ! VotePrepared(m.t, Decision.COMMIT,sign(m.t.toString(), privateKey, actorNumber), context.self)
               case util.Messages.Decision.ABORT =>
                 // TODO: change into some aborted state?
-                m.from ! VotePrepared(m.t, Decision.ABORT,sign(m.t.toString(), privateKey), context.self)
+                m.from ! VotePrepared(m.t, Decision.ABORT,sign(m.t.toString(), privateKey, actorNumber), context.self)
             }
           case None =>
             m.from ! VotePrepared(m.t, Decision.ABORT,sign(m.t.toString(), privateKey), context.self)
@@ -89,14 +89,15 @@ abstract class Participant(context: ActorContext[ParticipantMessage], coordinato
           case None =>
             transactions += (m.t.id -> new State(ACTIVE, m.t, new Array(coordinators.length)))
         }
-        coordinators.foreach(c => c ! Register(m.t.id,sign(m.t.id.toString(), privateKey), context.self))
+        coordinators.foreach(c => c ! Register(m.t.id,sign(m.t.id.toString(), privateKey,actorNumber), context.self))
     }
     this
   }
 
   def prepare(t: TransactionID): Decision
+
 }
 
-class FixedDecisionParticipant(context: ActorContext[ParticipantMessage], coordinators: Array[Coordinator], decision: Decision, privateKey: PrivateKey, publicKeys: PubKeys, masterPubKey: PublicKey) extends Participant(context, coordinators, privateKey: PrivateKey, publicKeys: PubKeys, masterPubKey: PublicKey) {
+class FixedDecisionParticipant(context: ActorContext[ParticipantMessage], coordinators: Array[Coordinator], decision: Decision, privateKey: PrivateKey,actorNumber: ActorNumber, publicKeys: PubKeys, masterPubKey: PublicKey) extends Participant(context, coordinators, privateKey: PrivateKey,actorNumber: ActorNumber, publicKeys: PubKeys, masterPubKey: PublicKey) {
   override def prepare(t: TransactionID): Decision = decision
 }
