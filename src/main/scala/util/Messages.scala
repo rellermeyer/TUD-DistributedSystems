@@ -2,8 +2,9 @@ package util
 
 import akka.actor.typed.ActorRef
 import util.Messages.Decision.Decision
-
+import java.security.{PrivateKey, PublicKey, Signature}
 import scala.collection.mutable
+import scala.math.BigInt
 
 object Messages {
 
@@ -13,6 +14,10 @@ object Messages {
   type TransactionID = Int
   type DecisionCertificate = mutable.Map[Participant, DecisionCertificateEntry]
   type Digest = Int
+  type Signature = Array[Byte]
+  type SignatureTuple = (Signature, SignedPublicKey)
+  type SignedPublicKey = (PublicKey, Signature)
+  type KeyTuple = (PrivateKey, SignedPublicKey)
 
   sealed trait ParticipantMessage
 
@@ -38,9 +43,9 @@ object Messages {
 
   final case class Rollback(t: TransactionID, from: Coordinator) extends ParticipantMessage
 
-  final case class Register(t: TransactionID, from: Participant) extends CoordinatorMessage // TODO: add signature
+  final case class Register(t: TransactionID, s: SignatureTuple, from: Participant) extends CoordinatorMessage
 
-  final case class VotePrepared(t: TransactionID, vote: Decision, from: Participant) extends CoordinatorMessage // TODO: add signature
+  final case class VotePrepared(t: TransactionID, vote: Decision, s: SignatureTuple, from: Participant) extends CoordinatorMessage
 
   final case class Committed(t: TransactionID, commitResult: Decision, from: Participant) extends CoordinatorMessage
 
@@ -61,6 +66,43 @@ object Messages {
   object Decision extends Enumeration {
     type Decision = Value
     val COMMIT, ABORT = Value
+  }
+
+
+  def sign(data: String, privateKey: PrivateKey): Signature = {
+    var s: java.security.Signature = Signature.getInstance("SHA512withRSA");
+    s.initSign(privateKey)
+    s.update(hash(data.getBytes()))
+    return s.sign()
+  }
+
+  def verify(data: String, signature: Signature, publicKey: PublicKey): Boolean = {
+    var s: java.security.Signature = Signature.getInstance("SHA512withRSA");
+    s.initVerify(publicKey)
+    s.update(hash(data.getBytes()))
+
+    return s.verify(signature)
+  }
+
+  def verify(data: String, signatureTuple: SignatureTuple, masterPublicKey: PublicKey): Boolean = {
+    var signature = signatureTuple._1
+    var signatureSignature = signatureTuple._2._2
+    var signaturePublicKey = signatureTuple._2._1
+    if (verify(signaturePublicKey.toString, signatureSignature, masterPublicKey)) { //Check if public key should be trusted
+      return verify(data, signature, signaturePublicKey) // Check if data is signed by public key
+    } else {
+      //Untrusted public key
+      return false
+    }
+  }
+
+  def hash(data: DecisionCertificate): Int = {
+    scala.util.hashing.MurmurHash3.mapHash(data)
+  }
+
+  def hash(data: Array[Byte]): Array[Byte] = {
+    var i = scala.util.hashing.MurmurHash3.bytesHash(data)
+    BigInt(i).toByteArray
   }
 
 }

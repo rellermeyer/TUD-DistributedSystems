@@ -4,14 +4,15 @@ import actors.Participant.TransactionState.{ACTIVE, PREPARED, TransactionState}
 import akka.actor.typed.Behavior
 import akka.actor.typed.scaladsl.{AbstractBehavior, ActorContext, Behaviors}
 import util.Messages.Decision.Decision
+import java.security.{PrivateKey, PublicKey}
 import util.Messages._
 
 import scala.collection.mutable
 
 
 object Participant {
-  def apply(coordinators: Array[Coordinator], decision: Decision): Behavior[ParticipantMessage] = {
-    Behaviors.logMessages(Behaviors.setup(context => new FixedDecisionParticipant(context, coordinators, decision)))
+  def apply(coordinators: Array[Coordinator], decision: Decision, keyTuple: KeyTuple, masterPubKey: PublicKey): Behavior[ParticipantMessage] = {
+    Behaviors.logMessages(Behaviors.setup(context => new FixedDecisionParticipant(context, coordinators, decision, keyTuple, masterPubKey)))
   }
 
   class State(var s: TransactionState, val t: Transaction, val decisionLog: Array[Decision])
@@ -23,10 +24,12 @@ object Participant {
 
 }
 
-abstract class Participant(context: ActorContext[ParticipantMessage], coordinators: Array[Coordinator]) extends AbstractBehavior[ParticipantMessage](context) {
+abstract class Participant(context: ActorContext[ParticipantMessage], coordinators: Array[Coordinator], keyTuple: KeyTuple, masterPubKey: PublicKey) extends AbstractBehavior[ParticipantMessage](context) {
 
   import Participant._
 
+  val privateKey = keyTuple._1
+  val signedPublicKey = keyTuple._2
   val f = (coordinators.length - 1) / 3
   val transactions: mutable.Map[TransactionID, State] = mutable.Map()
 
@@ -38,13 +41,13 @@ abstract class Participant(context: ActorContext[ParticipantMessage], coordinato
             prepare(m.t) match {
               case util.Messages.Decision.COMMIT =>
                 s.s = PREPARED
-                m.from ! VotePrepared(m.t, Decision.COMMIT, context.self)
+                m.from ! VotePrepared(m.t, Decision.COMMIT, (sign(m.t.toString() + Decision.COMMIT.toString + context.self.toString, privateKey), signedPublicKey), context.self)
               case util.Messages.Decision.ABORT =>
                 // TODO: change into some aborted state?
-                m.from ! VotePrepared(m.t, Decision.ABORT, context.self)
+                m.from ! VotePrepared(m.t, Decision.ABORT, (sign(m.t.toString() + Decision.ABORT.toString + context.self.toString, privateKey), signedPublicKey), context.self)
             }
           case None =>
-            m.from ! VotePrepared(m.t, Decision.ABORT, context.self)
+            m.from ! VotePrepared(m.t, Decision.ABORT, (sign(m.t.toString(), privateKey), signedPublicKey), context.self)
             context.log.error("Transaction not known")
         }
       case m: Commit =>
@@ -88,14 +91,15 @@ abstract class Participant(context: ActorContext[ParticipantMessage], coordinato
           case None =>
             transactions += (m.t.id -> new State(ACTIVE, m.t, new Array(coordinators.length)))
         }
-        coordinators.foreach(c => c ! Register(m.t.id, context.self))
+        coordinators.foreach(c => c ! Register(m.t.id, (sign(m.t.id.toString() + context.self.toString, privateKey), signedPublicKey), context.self))
     }
     this
   }
 
   def prepare(t: TransactionID): Decision
+
 }
 
-class FixedDecisionParticipant(context: ActorContext[ParticipantMessage], coordinators: Array[Coordinator], decision: Decision) extends Participant(context, coordinators) {
+class FixedDecisionParticipant(context: ActorContext[ParticipantMessage], coordinators: Array[Coordinator], decision: Decision, keyTuple: KeyTuple, masterPubKey: PublicKey) extends Participant(context, coordinators, keyTuple: KeyTuple, masterPubKey: PublicKey) {
   override def prepare(t: TransactionID): Decision = decision
 }

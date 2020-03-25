@@ -1,5 +1,6 @@
 package actors
 
+import java.security.{PrivateKey, PublicKey}
 import actors.Coordinator.BaState.BaState
 import akka.actor.typed.Behavior
 import akka.actor.typed.scaladsl.{AbstractBehavior, ActorContext, Behaviors}
@@ -11,8 +12,8 @@ import scala.collection.mutable
 
 
 object Coordinator {
-  def apply(): Behavior[CoordinatorMessage] = {
-    Behaviors.logMessages(Behaviors.setup(context => new Coordinator(context)))
+  def apply(keyTuple: KeyTuple, masterPubKey: PublicKey): Behavior[CoordinatorMessage] = {
+    Behaviors.logMessages(Behaviors.setup(context => new Coordinator(context, keyTuple, masterPubKey)))
   }
 
   class StableStorageItem() {
@@ -35,10 +36,11 @@ object Coordinator {
 
 }
 
-class Coordinator(context: ActorContext[CoordinatorMessage]) extends AbstractBehavior[CoordinatorMessage](context) {
+class Coordinator(context: ActorContext[CoordinatorMessage], keyTuple: KeyTuple, masterPubKey: PublicKey) extends AbstractBehavior[CoordinatorMessage](context) {
 
   import Coordinator._
 
+  var privateKey = keyTuple._1
   var coordinators: Array[Messages.Coordinator] = Array(context.self)
   var i = 0
   var f: Int = (coordinators.length - 1) / 3
@@ -53,8 +55,15 @@ class Coordinator(context: ActorContext[CoordinatorMessage]) extends AbstractBeh
       case m: Register =>
         val ss = stableStorage.getOrElseUpdate(m.t, new StableStorageItem())
         if (!ss.participants.contains(m.from)) {
-          ss.participants += m.from
-          ss.registrationLog(m.from) = m
+          if (verify(m.t.toString + m.from, m.s, masterPubKey)) {
+            ss.participants += m.from
+            ss.registrationLog(m.from) = m
+          }
+          else {
+            context.log.error("Incorrect signature")
+          }
+
+
         }
         else {
 
@@ -63,19 +72,24 @@ class Coordinator(context: ActorContext[CoordinatorMessage]) extends AbstractBeh
         stableStorage.get(m.t) match {
           case Some(ss) =>
             if (ss.participants.contains(m.from)) {
-              m.vote match {
-                case util.Messages.Decision.COMMIT =>
-                  ss.decisionCertificate += (m.from -> DecisionCertificateEntry(ss.registrationLog(m.from), Option(m), None))
-                  val isPrimary = i == ss.v % (3 * f + 1)
-                  val enoughVotes = ss.decisionCertificate.size == ss.participants.size
-                  if (isPrimary && enoughVotes) {
-                    coordinators.foreach(coord => coord ! Messages.BaPrePrepare(ss.v, m.t, Decision.COMMIT, ss.decisionCertificate, context.self))
-                  }
-                case util.Messages.Decision.ABORT =>
-                  if (!ss.decisionCertificate.contains(m.from)) {
+              if (verify(m.t.toString + m.vote.toString + m.from.toString, m.s, masterPubKey)) {
+                m.vote match {
+                  case util.Messages.Decision.COMMIT =>
                     ss.decisionCertificate += (m.from -> DecisionCertificateEntry(ss.registrationLog(m.from), Option(m), None))
-                    coordinators.foreach(coord => coord ! Messages.BaPrePrepare(ss.v, m.t, Decision.ABORT, ss.decisionCertificate, context.self))
-                  }
+                    val isPrimary = i == ss.v % (3 * f + 1)
+                    val enoughVotes = ss.decisionCertificate.size == ss.participants.size
+                    if (isPrimary && enoughVotes) {
+                      coordinators.foreach(coord => coord ! Messages.BaPrePrepare(ss.v, m.t, Decision.COMMIT, ss.decisionCertificate, context.self))
+                    }
+                  case util.Messages.Decision.ABORT =>
+                    if (!ss.decisionCertificate.contains(m.from)) {
+                      ss.decisionCertificate += (m.from -> DecisionCertificateEntry(ss.registrationLog(m.from), Option(m), None))
+                      coordinators.foreach(coord => coord ! Messages.BaPrePrepare(ss.v, m.t, Decision.ABORT, ss.decisionCertificate, context.self))
+                    }
+                }
+              }
+              else {
+                context.log.error("Incorrect signature")
               }
             }
             else {
@@ -196,9 +210,5 @@ class Coordinator(context: ActorContext[CoordinatorMessage]) extends AbstractBeh
       case Committed(t, commitResult, from) =>
     }
     this
-  }
-
-  def hash(data: DecisionCertificate): Int = {
-    scala.util.hashing.MurmurHash3.mapHash(data)
   }
 }

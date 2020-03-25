@@ -14,7 +14,7 @@ object ActorStart {
     Behaviors.receiveMessage { message =>
 
       // Create coordinators
-      val coordinators: Array[Messages.Coordinator] = Array(
+      /*val coordinators: Array[Messages.Coordinator] = Array(
         context.spawn(Coordinator(), "Coordinator---1"),
         context.spawn(Coordinator(), "Coordinator---2"),
         context.spawn(Coordinator(), "Coordinator---3"),
@@ -48,7 +48,7 @@ object ActorStart {
         coordinators.foreach(c => c ! Messages.InitCommit(transactions(id).id, participants.head))
         //Thread.sleep(1000)
       }
-
+      */
       Behaviors.same
     }
   })

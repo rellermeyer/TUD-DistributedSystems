@@ -2,8 +2,11 @@ package actors
 
 import akka.actor.testkit.typed.scaladsl.{LoggingTestKit, ScalaTestWithActorTestKit}
 import org.scalatest.wordspec.AnyWordSpecLike
+import java.security.{KeyPair, KeyPairGenerator, PrivateKey, PublicKey}
 import util.Messages
 import util.Messages._
+
+import scala.collection.mutable
 
 class CoordinatorSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike {
   var testNr = 0
@@ -151,17 +154,27 @@ class CoordinatorSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike {
 
   def spawnAll(nCoordinators: Int, nCommittingParticipants: Int, nAbortingParticipants: Int = 0): (Array[Messages.Coordinator], Array[Messages.Participant]) = {
     val cs = new Array[Messages.Coordinator](nCoordinators)
+
+    var kpg: KeyPairGenerator = KeyPairGenerator.getInstance("RSA")
+    kpg.initialize(2048)
+    var masterKey = kpg.generateKeyPair
+
     for (x <- 0 until nCoordinators) {
-      cs(x) = spawn(Coordinator(), testNr + "Coordinator-" + x)
+      cs(x) = spawn(Coordinator(genSignedKey(kpg, masterKey), masterKey.getPublic()), testNr + "Coordinator-" + x)
     }
     cs.foreach { x => x ! Messages.Setup(cs) }
     val ps = new Array[Messages.Participant](nCommittingParticipants + nAbortingParticipants)
     for (x <- 0 until nCommittingParticipants) {
-      ps(x) = spawn(Participant(cs, Decision.COMMIT), testNr + "Participant-" + x)
+      ps(x) = spawn(Participant(cs, Decision.COMMIT, genSignedKey(kpg, masterKey), masterKey.getPublic()), testNr + "Participant-" + x)
     }
     for (x <- nCommittingParticipants until nCommittingParticipants + nAbortingParticipants) {
-      ps(x) = spawn(Participant(cs, Decision.ABORT), testNr + "Participant-" + x)
+      ps(x) = spawn(Participant(cs, Decision.ABORT, genSignedKey(kpg, masterKey), masterKey.getPublic()), testNr + "Participant-" + x)
     }
     (cs, ps)
+  }
+
+  def genSignedKey(kpg: KeyPairGenerator, masterKey: KeyPair): (PrivateKey, SignedPublicKey) = {
+    var keyPair = kpg.generateKeyPair
+    return (keyPair.getPrivate, (keyPair.getPublic, sign(keyPair.getPublic.toString, masterKey.getPrivate)))
   }
 }
