@@ -4,6 +4,7 @@ import akka.actor.typed.ActorRef
 import util.Messages.Decision.Decision
 import java.security.{PrivateKey, PublicKey, Signature}
 import scala.collection.mutable
+import scala.math.BigInt
 
 object Messages {
 
@@ -71,14 +72,14 @@ object Messages {
   def sign(data: String, privateKey: PrivateKey): Signature = {
     var s: java.security.Signature = Signature.getInstance("SHA512withRSA");
     s.initSign(privateKey)
-    s.update(data.getBytes())
+    s.update(hash(data.getBytes()))
     return s.sign()
   }
 
   def verify(data: String, signature: Signature, publicKey: PublicKey): Boolean = {
     var s: java.security.Signature = Signature.getInstance("SHA512withRSA");
     s.initVerify(publicKey)
-    s.update(data.getBytes())
+    s.update(hash(data.getBytes()))
 
     return s.verify(signature)
   }
@@ -93,7 +94,15 @@ object Messages {
       //Untrusted public key
       return false
     }
+  }
 
+  def hash(data: DecisionCertificate): Int = {
+    scala.util.hashing.MurmurHash3.mapHash(data)
+  }
+
+  def hash(data: Array[Byte]): Array[Byte] = {
+    var i = scala.util.hashing.MurmurHash3.bytesHash(data)
+    BigInt(i).toByteArray
   }
 
 }

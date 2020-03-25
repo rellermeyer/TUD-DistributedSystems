@@ -72,7 +72,7 @@ class Coordinator(context: ActorContext[CoordinatorMessage], keyTuple: KeyTuple,
         stableStorage.get(m.t) match {
           case Some(ss) =>
             if (ss.participants.contains(m.from)) {
-              if (verify(m.t.toString, m.s, masterPubKey)) {
+              if (verify(m.t.toString + m.vote.toString, m.s, masterPubKey)) {
                 m.vote match {
                   case util.Messages.Decision.COMMIT =>
                     ss.decisionCertificate += (m.from -> DecisionCertificateEntry(ss.registrationLog(m.from), Option(m), None))
@@ -210,9 +210,5 @@ class Coordinator(context: ActorContext[CoordinatorMessage], keyTuple: KeyTuple,
       case Committed(t, commitResult, from) =>
     }
     this
-  }
-
-  def hash(data: DecisionCertificate): Int = {
-    scala.util.hashing.MurmurHash3.mapHash(data)
   }
 }

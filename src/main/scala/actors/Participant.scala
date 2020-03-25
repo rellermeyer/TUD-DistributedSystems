@@ -41,10 +41,10 @@ abstract class Participant(context: ActorContext[ParticipantMessage], coordinato
             prepare(m.t) match {
               case util.Messages.Decision.COMMIT =>
                 s.s = PREPARED
-                m.from ! VotePrepared(m.t, Decision.COMMIT, (sign(m.t.toString(), privateKey), signedPublicKey), context.self)
+                m.from ! VotePrepared(m.t, Decision.COMMIT, (sign(m.t.toString() + Decision.COMMIT.toString, privateKey), signedPublicKey), context.self)
               case util.Messages.Decision.ABORT =>
                 // TODO: change into some aborted state?
-                m.from ! VotePrepared(m.t, Decision.ABORT, (sign(m.t.toString(), privateKey), signedPublicKey), context.self)
+                m.from ! VotePrepared(m.t, Decision.ABORT, (sign(m.t.toString() + Decision.ABORT.toString, privateKey), signedPublicKey), context.self)
             }
           case None =>
             m.from ! VotePrepared(m.t, Decision.ABORT, (sign(m.t.toString(), privateKey), signedPublicKey), context.self)
