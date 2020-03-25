@@ -86,12 +86,12 @@ object Messages {
     return s.verify(signature)
   }
 
-  def verify(data: String, signatureTuple : SignatureTuple, masterPublicKey: PublicKey): Boolean = {
+  def verify(data: String, signatureTuple: SignatureTuple, masterPublicKey: PublicKey): Boolean = {
     var signature = signatureTuple._1
     var signatureSignature = signatureTuple._2._2
     var signaturePublicKey = signatureTuple._2._1
-    if(verify(signaturePublicKey.toString,signatureSignature,masterPublicKey)){ //Check if public key should be trusted
-      return verify(data,signature,signaturePublicKey)  // Check if data is signed by public key
+    if (verify(signaturePublicKey.toString, signatureSignature, masterPublicKey)) { //Check if public key should be trusted
+      return verify(data, signature, signaturePublicKey) // Check if data is signed by public key
     } else {
       //Untrusted public key
       return false

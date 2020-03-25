@@ -1,7 +1,6 @@
 package actors
 
 import java.security.{PrivateKey, PublicKey}
-
 import actors.Coordinator.BaState.BaState
 import akka.actor.typed.Behavior
 import akka.actor.typed.scaladsl.{AbstractBehavior, ActorContext, Behaviors}

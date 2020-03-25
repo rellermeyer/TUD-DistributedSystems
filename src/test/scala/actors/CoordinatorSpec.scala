@@ -3,7 +3,6 @@ package actors
 import akka.actor.testkit.typed.scaladsl.{LoggingTestKit, ScalaTestWithActorTestKit}
 import org.scalatest.wordspec.AnyWordSpecLike
 import java.security.{KeyPair, KeyPairGenerator, PrivateKey, PublicKey}
-
 import util.Messages
 import util.Messages._
 
