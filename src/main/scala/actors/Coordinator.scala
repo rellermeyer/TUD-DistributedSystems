@@ -56,10 +56,15 @@ class Coordinator(context: ActorContext[CoordinatorMessage], keyTuple: KeyTuple,
       case m: Register =>
         val ss = stableStorage.getOrElseUpdate(m.t, new StableStorageItem())
         if (!ss.participants.contains(m.from)) {
+          if (verify(m.t.toString, m.s, masterPubKey)) {
+            ss.participants += m.from
+            ss.registrationLog(m.from) = m
+          }
+          else {
+            context.log.error("Incorrect signature")
+          }
 
 
-          ss.participants += m.from
-          ss.registrationLog(m.from) = m
         }
         else {
 
@@ -68,19 +73,24 @@ class Coordinator(context: ActorContext[CoordinatorMessage], keyTuple: KeyTuple,
         stableStorage.get(m.t) match {
           case Some(ss) =>
             if (ss.participants.contains(m.from)) {
-              m.vote match {
-                case util.Messages.Decision.COMMIT =>
-                  ss.decisionCertificate += (m.from -> DecisionCertificateEntry(ss.registrationLog(m.from), Option(m), None))
-                  val isPrimary = i == ss.v % (3 * f + 1)
-                  val enoughVotes = ss.decisionCertificate.size == ss.participants.size
-                  if (isPrimary && enoughVotes) {
-                    coordinators.foreach(coord => coord ! Messages.BaPrePrepare(ss.v, m.t, Decision.COMMIT, ss.decisionCertificate, context.self))
-                  }
-                case util.Messages.Decision.ABORT =>
-                  if (!ss.decisionCertificate.contains(m.from)) {
+              if (verify(m.t.toString, m.s, masterPubKey)) {
+                m.vote match {
+                  case util.Messages.Decision.COMMIT =>
                     ss.decisionCertificate += (m.from -> DecisionCertificateEntry(ss.registrationLog(m.from), Option(m), None))
-                    coordinators.foreach(coord => coord ! Messages.BaPrePrepare(ss.v, m.t, Decision.ABORT, ss.decisionCertificate, context.self))
-                  }
+                    val isPrimary = i == ss.v % (3 * f + 1)
+                    val enoughVotes = ss.decisionCertificate.size == ss.participants.size
+                    if (isPrimary && enoughVotes) {
+                      coordinators.foreach(coord => coord ! Messages.BaPrePrepare(ss.v, m.t, Decision.COMMIT, ss.decisionCertificate, context.self))
+                    }
+                  case util.Messages.Decision.ABORT =>
+                    if (!ss.decisionCertificate.contains(m.from)) {
+                      ss.decisionCertificate += (m.from -> DecisionCertificateEntry(ss.registrationLog(m.from), Option(m), None))
+                      coordinators.foreach(coord => coord ! Messages.BaPrePrepare(ss.v, m.t, Decision.ABORT, ss.decisionCertificate, context.self))
+                    }
+                }
+              }
+              else {
+                context.log.error("Incorrect signature")
               }
             }
             else {
