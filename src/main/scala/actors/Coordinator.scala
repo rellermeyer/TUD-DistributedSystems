@@ -13,8 +13,8 @@ import scala.collection.mutable
 
 
 object Coordinator {
-  def apply(privateKey: PrivateKey, publicKeys: IndexedSeq[PublicKey]): Behavior[CoordinatorMessage] = {
-    Behaviors.logMessages(Behaviors.setup(context => new Coordinator(context, privateKey, publicKeys)))
+  def apply(privateKey: PrivateKey, publicKeys: PubKeys, masterPubKey: PublicKey): Behavior[CoordinatorMessage] = {
+    Behaviors.logMessages(Behaviors.setup(context => new Coordinator(context, privateKey, publicKeys, masterPubKey: PublicKey)))
   }
 
   class StableStorageItem() {
@@ -37,7 +37,7 @@ object Coordinator {
 
 }
 
-class Coordinator(context: ActorContext[CoordinatorMessage],privateKey: PrivateKey, publicKeys: IndexedSeq[PublicKey]) extends AbstractBehavior[CoordinatorMessage](context) {
+class Coordinator(context: ActorContext[CoordinatorMessage], privateKey: PrivateKey, publicKeys: PubKeys, masterPubKey: PublicKey) extends AbstractBehavior[CoordinatorMessage](context) {
 
   import Coordinator._
 

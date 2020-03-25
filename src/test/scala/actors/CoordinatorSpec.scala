@@ -2,10 +2,12 @@ package actors
 
 import akka.actor.testkit.typed.scaladsl.{LoggingTestKit, ScalaTestWithActorTestKit}
 import org.scalatest.wordspec.AnyWordSpecLike
-import util.Messages
 import java.security.{KeyPair, KeyPairGenerator, PrivateKey, PublicKey}
 
+import util.Messages
 import util.Messages._
+
+import scala.collection.mutable
 
 class CoordinatorSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike {
   var testNr = 0
@@ -158,28 +160,42 @@ class CoordinatorSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike {
     var kpg: KeyPairGenerator = KeyPairGenerator.getInstance("RSA")
     kpg.initialize(2048)
 
-    var keyPairs = for (i <- 1 to nCoordinators+nAbortingParticipants+nCommittingParticipants) yield kpg.generateKeyPair
+    var masterKey = kpg.generateKeyPair
+    var keyPairs = for (i <- 1 to nCoordinators + nAbortingParticipants + nCommittingParticipants) yield kpg.generateKeyPair
 
-    var pubKeys = for (e <- keyPairs) yield e.getPublic
+
+    var pubKeys: PubKeys = mutable.Map()
+    var typeCounter: Int = 0
+    var actorCounter: Int = 0
+
+    for (e <- keyPairs) {
+      var pubKey = e.getPublic()
+      var signature = sign(pubKey.toString(), masterKey.getPrivate())
+      pubKeys += (typeCounter, actorCounter) -> (pubKey, signature)
+
+      actorCounter += 1
+      if (typeCounter == 0 && actorCounter == nCoordinators) {
+        typeCounter += 1
+        actorCounter = 0
+      }
+    }
 
 
     //
 
     for (x <- 0 until nCoordinators) {
-      cs(x) = spawn(Coordinator(keyPairs(x).getPrivate(),pubKeys), testNr + "Coordinator-" + x)
+      cs(x) = spawn(Coordinator(keyPairs(x).getPrivate(), pubKeys, masterKey.getPublic()), testNr + "Coordinator-" + x)
     }
     cs.foreach { x => x ! Messages.Setup(cs) }
     val ps = new Array[Messages.Participant](nCommittingParticipants + nAbortingParticipants)
     for (x <- 0 until nCommittingParticipants) {
-      ps(x) = spawn(Participant(cs, Decision.COMMIT, keyPairs(nCoordinators+x).getPrivate(),pubKeys), testNr + "Participant-" + x)
+      ps(x) = spawn(Participant(cs, Decision.COMMIT, keyPairs(nCoordinators + x).getPrivate(), pubKeys, masterKey.getPublic()), testNr + "Participant-" + x)
     }
     for (x <- nCommittingParticipants until nCommittingParticipants + nAbortingParticipants) {
-      ps(x) = spawn(Participant(cs, Decision.ABORT, keyPairs(nCoordinators+nCommittingParticipants+x).getPrivate(),pubKeys), testNr + "Participant-" + x)
+      ps(x) = spawn(Participant(cs, Decision.ABORT, keyPairs(nCoordinators + nCommittingParticipants + x).getPrivate(), pubKeys, masterKey.getPublic()), testNr + "Participant-" + x)
     }
     (cs, ps)
   }
-
-
 
 
 }

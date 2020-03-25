@@ -11,8 +11,8 @@ import scala.collection.mutable
 
 
 object Participant {
-  def apply(coordinators: Array[Coordinator], decision: Decision, privateKey: PrivateKey, publicKeys: IndexedSeq[PublicKey]): Behavior[ParticipantMessage] = {
-    Behaviors.logMessages(Behaviors.setup(context => new FixedDecisionParticipant(context, coordinators, decision,privateKey,publicKeys)))
+  def apply(coordinators: Array[Coordinator], decision: Decision, privateKey: PrivateKey, publicKeys: PubKeys, masterPubKey: PublicKey): Behavior[ParticipantMessage] = {
+    Behaviors.logMessages(Behaviors.setup(context => new FixedDecisionParticipant(context, coordinators, decision, privateKey, publicKeys, masterPubKey: PublicKey)))
   }
 
   class State(var s: TransactionState, val t: Transaction, val decisionLog: Array[Decision])
@@ -24,7 +24,7 @@ object Participant {
 
 }
 
-abstract class Participant(context: ActorContext[ParticipantMessage], coordinators: Array[Coordinator],privateKey: PrivateKey, publicKeys: IndexedSeq[PublicKey]) extends AbstractBehavior[ParticipantMessage](context) {
+abstract class Participant(context: ActorContext[ParticipantMessage], coordinators: Array[Coordinator], privateKey: PrivateKey, publicKeys: PubKeys, masterPubKey: PublicKey) extends AbstractBehavior[ParticipantMessage](context) {
 
   import Participant._
 
@@ -97,6 +97,6 @@ abstract class Participant(context: ActorContext[ParticipantMessage], coordinato
   def prepare(t: TransactionID): Decision
 }
 
-class FixedDecisionParticipant(context: ActorContext[ParticipantMessage], coordinators: Array[Coordinator], decision: Decision,privateKey: PrivateKey, publicKeys: IndexedSeq[PublicKey]) extends Participant(context, coordinators,privateKey: PrivateKey, publicKeys: IndexedSeq[PublicKey]) {
+class FixedDecisionParticipant(context: ActorContext[ParticipantMessage], coordinators: Array[Coordinator], decision: Decision, privateKey: PrivateKey, publicKeys: PubKeys, masterPubKey: PublicKey) extends Participant(context, coordinators, privateKey: PrivateKey, publicKeys: PubKeys, masterPubKey: PublicKey) {
   override def prepare(t: TransactionID): Decision = decision
 }
