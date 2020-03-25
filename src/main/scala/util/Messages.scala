@@ -43,9 +43,9 @@ object Messages {
 
   final case class Rollback(t: TransactionID, from: Coordinator) extends ParticipantMessage
 
-  final case class Register(t: TransactionID, s: SignatureTuple, from: Participant) extends CoordinatorMessage // TODO: add signature
+  final case class Register(t: TransactionID, s: SignatureTuple, from: Participant) extends CoordinatorMessage
 
-  final case class VotePrepared(t: TransactionID, vote: Decision, s: SignatureTuple, from: Participant) extends CoordinatorMessage // TODO: add signature
+  final case class VotePrepared(t: TransactionID, vote: Decision, s: SignatureTuple, from: Participant) extends CoordinatorMessage
 
   final case class Committed(t: TransactionID, commitResult: Decision, from: Participant) extends CoordinatorMessage
 
