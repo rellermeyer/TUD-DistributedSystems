@@ -12,10 +12,7 @@ object Messages {
   type View = Int
   type TransactionID = Int
   type DecisionCertificate = mutable.Map[Participant, DecisionCertificateEntry]
-  //type PubKeys = mutable.Map[(ActorType, ActorNumber), (PublicKey, Sign, ActorNumber)]
   type Digest = Int
-  //type ActorType = Int // 0 Coordinator, 1 Participant
-  //type ActorNumber = Int
   type Signature = Array[Byte]
   type SignatureTuple = (Signature, SignedPublicKey)
   type SignedPublicKey = (PublicKey, Signature)

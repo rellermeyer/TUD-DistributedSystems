@@ -155,32 +155,9 @@ class CoordinatorSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike {
   def spawnAll(nCoordinators: Int, nCommittingParticipants: Int, nAbortingParticipants: Int = 0): (Array[Messages.Coordinator], Array[Messages.Participant]) = {
     val cs = new Array[Messages.Coordinator](nCoordinators)
 
-    //
     var kpg: KeyPairGenerator = KeyPairGenerator.getInstance("RSA")
     kpg.initialize(2048)
-
     var masterKey = kpg.generateKeyPair
-    //var keyPairs = for (i <- 1 to nCoordinators + nAbortingParticipants + nCommittingParticipants) yield kpg.generateKeyPair
-
-
-    //var pubKeys: PubKeys = mutable.Map()
-    //var typeCounter: Int = 0
-    //var actorCounter: Int = 0
-
-    /*for (e <- keyPairs) {
-      var pubKey = e.getPublic()
-      var signature = sign(pubKey.toString(), masterKey.getPrivate())
-      pubKeys += (typeCounter, actorCounter) -> (pubKey, signature, actorCounter)
-
-      actorCounter += 1
-      if (typeCounter == 0 && actorCounter == nCoordinators) {
-        typeCounter += 1
-        actorCounter = 0
-      }
-    }*/
-
-
-    //
 
     for (x <- 0 until nCoordinators) {
       cs(x) = spawn(Coordinator(genSignedKey(kpg, masterKey), masterKey.getPublic()), testNr + "Coordinator-" + x)
@@ -200,6 +177,4 @@ class CoordinatorSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike {
     var keyPair = kpg.generateKeyPair
     return (keyPair.getPrivate, (keyPair.getPublic, sign(keyPair.getPublic.toString, masterKey.getPrivate)))
   }
-
-
 }
