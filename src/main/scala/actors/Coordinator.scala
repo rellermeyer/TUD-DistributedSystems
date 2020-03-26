@@ -177,7 +177,7 @@ class Coordinator(context: ActorContext[CoordinatorMessage], keyTuple: KeyTuple,
               }
               if (ss.baPrepareLog.count(p => p.o == m.o) >= 2 * f) {
                 //BaPrepared flag prevents duplicate messages
-                coordinators.foreach(coord => coord ! Messages.BaCommit(m.v, m.t, m.c, m.o, context.self))
+                coordinators.foreach(coord => coord ! Messages.BaCommit(m.v, m.t, m.c, m.o, sign(m.v.toString + m.t.toString + m.c.toString + m.o.toString + context.self.toString), context.self))
                 ss.baState = BaState.PREPARED
                 context.log.info("BaPrepared")
               }
@@ -196,19 +196,24 @@ class Coordinator(context: ActorContext[CoordinatorMessage], keyTuple: KeyTuple,
               context.log.debug("not expecting BaCommit")
               return this
             }
-            ss.baCommitLog += m
-            if (m.o == Decision.COMMIT) {
-              if (ss.baCommitLog.count(p => p.o == m.o) >= 2 * f) {
-                ss.participants.foreach(part => part ! Messages.Commit(m.t, context.self))
-                ss.baState = BaState.COMMITTED // or just drop the transaction?
-                context.log.info("BaCommitted")
+            if (verify(m.v.toString + m.t.toString + m.c.toString + m.o.toString + m.from.toString, m.s, masterPubKey)) {
+              ss.baCommitLog += m
+              if (m.o == Decision.COMMIT) {
+                if (ss.baCommitLog.count(p => p.o == m.o) >= 2 * f) {
+                  ss.participants.foreach(part => part ! Messages.Commit(m.t, context.self))
+                  ss.baState = BaState.COMMITTED // or just drop the transaction?
+                  context.log.info("BaCommitted")
+                }
+              }
+              else {
+                if (ss.baCommitLog.count(p => p.o == m.o) >= 2 * f) {
+                  ss.participants.foreach(part => part ! Messages.Rollback(m.t, context.self))
+                  context.log.info("BaCommitted abort")
+                }
               }
             }
             else {
-              if (ss.baCommitLog.count(p => p.o == m.o) >= 2 * f) {
-                ss.participants.foreach(part => part ! Messages.Rollback(m.t, context.self))
-                context.log.info("BaCommitted abort")
-              }
+              context.log.warn("Incorrect signature")
             }
           case None =>
         }

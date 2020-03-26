@@ -62,7 +62,7 @@ object Messages {
 
   final case class BaPrepare(v: View, t: TransactionID, c: Digest, o: Decision, s: SignatureTuple, from: Coordinator) extends CoordinatorMessage
 
-  final case class BaCommit(v: View, t: TransactionID, c: Digest, o: Decision, from: Coordinator) extends CoordinatorMessage
+  final case class BaCommit(v: View, t: TransactionID, c: Digest, o: Decision, s: SignatureTuple, from: Coordinator) extends CoordinatorMessage
 
   final case class BaPrePrepare(v: View, t: TransactionID, o: Decision, c: DecisionCertificate, from: Coordinator) extends CoordinatorMessage // from: PrimaryCoordinator
 
