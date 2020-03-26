@@ -207,7 +207,7 @@ class Coordinator(context: ActorContext[CoordinatorMessage], keyTuple: KeyTuple,
               }
               else {
                 if (ss.baCommitLog.count(p => p.o == m.o) >= 2 * f) {
-                  ss.participants.foreach(part => part ! Messages.Rollback(m.t, context.self))
+                  ss.participants.foreach(part => part ! Messages.Rollback(m.t, sign(m.t.toString + context.self.toString), context.self))
                   context.log.info("BaCommitted abort")
                 }
               }

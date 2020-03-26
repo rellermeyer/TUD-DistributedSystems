@@ -82,11 +82,15 @@ abstract class Participant(context: ActorContext[ParticipantMessage], coordinato
         transactions.get(m.t) match {
           case Some(s) => s.s match {
             case _ => {
-              val coordinatorIndex = coordinators.indexOf(m.from)
-              s.decisionLog(coordinatorIndex) = Decision.ABORT
-              if (s.decisionLog.count(x => x == Decision.ABORT) >= f + 1) {
-                context.log.info("Aborted transaction " + m.t)
-                transactions.remove(m.t)
+              if (verify(m.t.toString + m.from.toString, m.s, masterPubKey)) {
+                val coordinatorIndex = coordinators.indexOf(m.from)
+                s.decisionLog(coordinatorIndex) = Decision.ABORT
+                if (s.decisionLog.count(x => x == Decision.ABORT) >= f + 1) {
+                  context.log.info("Aborted transaction " + m.t)
+                  transactions.remove(m.t)
+                }
+              } else {
+                context.log.error("Incorrect signature")
               }
             }
             case _ =>
