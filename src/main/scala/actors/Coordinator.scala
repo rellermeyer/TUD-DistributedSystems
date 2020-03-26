@@ -141,14 +141,14 @@ class Coordinator(context: ActorContext[CoordinatorMessage], keyTuple: KeyTuple,
                     value.digest = hash(m.c)
                     context.log.debug("Digest:" + value.digest)
                     value.baPrePrepareLog += m
-                    coordinators.foreach(coord => coord ! Messages.BaPrepare(m.v, m.t, value.digest, Decision.COMMIT, context.self))
+                    coordinators.foreach(coord => coord ! Messages.BaPrepare(m.v, m.t, value.digest, Decision.COMMIT, sign(m.v.toString + m.t.toString + value.digest.toString + Decision.COMMIT.toString + context.self.toString), context.self))
                   }
                 case util.Messages.Decision.ABORT =>
                   //TODO: implement proper checks
                   value.digest = hash(m.c)
                   context.log.debug("Digest:" + value.digest)
                   value.baPrePrepareLog += m
-                  coordinators.foreach(coord => coord ! Messages.BaPrepare(m.v, m.t, value.digest, Decision.ABORT, context.self))
+                  coordinators.foreach(coord => coord ! Messages.BaPrepare(m.v, m.t, value.digest, Decision.ABORT, sign(m.v.toString + m.t.toString + value.digest.toString + Decision.ABORT.toString + context.self.toString), context.self))
               }
               if (changeView) {
                 context.log.warn("View change not implemented yet")
@@ -166,22 +166,26 @@ class Coordinator(context: ActorContext[CoordinatorMessage], keyTuple: KeyTuple,
               context.log.debug("not expecting BaPrepare")
               return this
             }
-            if (m.c == ss.digest) { //check digest // TODO: not sure if this is how it should be done
-              if (ss.baPrePrepareLog.exists(p => (p.o == m.o) && p.t == m.t)) { //check if same decision as in baPrePrepare
-                ss.baPrepareLog += m
-              } else
-                context.log.debug("proposed outcome different from BaPrePrepare stage")
-            } else {
-              context.log.debug("digest verification failed:" + m.c + " vs. " + ss.digest)
-            }
-            if (ss.baPrepareLog.count(p => p.o == m.o) >= 2 * f) {
-              //BaPrepared flag prevents duplicate messages
-              coordinators.foreach(coord => coord ! Messages.BaCommit(m.v, m.t, m.c, m.o, context.self))
-              ss.baState = BaState.PREPARED
-              context.log.info("BaPrepared")
-            }
-            else {
+            if (verify(m.v.toString + m.t.toString + m.c.toString + m.o.toString + m.from.toString, m.s, masterPubKey)) {
+              if (m.c == ss.digest) { //check digest // TODO: not sure if this is how it should be done
+                if (ss.baPrePrepareLog.exists(p => (p.o == m.o) && p.t == m.t)) { //check if same decision as in baPrePrepare
+                  ss.baPrepareLog += m
+                } else
+                  context.log.debug("proposed outcome different from BaPrePrepare stage")
+              } else {
+                context.log.debug("digest verification failed:" + m.c + " vs. " + ss.digest)
+              }
+              if (ss.baPrepareLog.count(p => p.o == m.o) >= 2 * f) {
+                //BaPrepared flag prevents duplicate messages
+                coordinators.foreach(coord => coord ! Messages.BaCommit(m.v, m.t, m.c, m.o, context.self))
+                ss.baState = BaState.PREPARED
+                context.log.info("BaPrepared")
+              }
+              else {
 
+              }
+            } else {
+              context.log.warn("Incorrect signature")
             }
           case None =>
         }
