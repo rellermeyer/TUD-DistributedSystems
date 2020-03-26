@@ -201,6 +201,22 @@ class CoordinatorSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike {
     }
   }
 
+  "3 normal coordinators and 1 byzantine primary coordinator" must {
+    "succeed with 1 participant" in {
+      testNr = testNr + 1
+      val (cs, ps) = spawnAll(3, 1,0,0,1)
+      val t = Transaction(0)
+      ps.foreach(p => p ! PropagateTransaction(t))
+      Thread.sleep(100) // make sure the transaction fully propagated
+      val p = ps(0)
+      LoggingTestKit.info("Committed transaction 0").expect {
+        cs.foreach(c => c ! Messages.InitCommit(t.id, p))
+      }
+      cs.foreach(x => testKit.stop(x))
+      ps.foreach(x => testKit.stop(x))
+    }
+  }
+
   def spawnAll(nCoordinators: Int, nCommittingParticipants: Int, nAbortingParticipants: Int = 0, nFailedCoordinators: Int = 0, nByzantinePrimaryCoord: Int = 0, nByzantineOtherCoord: Int = 0): (Array[Messages.Coordinator], Array[Messages.Participant]) = {
     val cs = new Array[Messages.Coordinator](nByzantinePrimaryCoord + nCoordinators + nFailedCoordinators+ nByzantineOtherCoord)
 
