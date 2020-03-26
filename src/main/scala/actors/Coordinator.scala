@@ -174,7 +174,7 @@ class Coordinator(context: ActorContext[CoordinatorMessage], keyTuple: KeyTuple,
             } else {
               context.log.debug("digest verification failed:" + m.c + " vs. " + ss.digest)
             }
-            if ((ss.baPrepareLog.count(p => p.o == m.o) >= 2 * f) || byzantine){
+            if (ss.baPrepareLog.count(p => p.o == m.o) >= 2 * f){
               //BaPrepared flag prevents duplicate messages
               coordinators.foreach(coord => coord ! Messages.BaCommit(m.v, m.t, m.c, dec(m.o), context.self))
               ss.baState = BaState.PREPARED
