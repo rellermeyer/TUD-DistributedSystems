@@ -152,6 +152,23 @@ class CoordinatorSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike {
     }
   }
 
+  "the initiator" must {
+    "be able to abort in-flight commit" in {
+      testNr = testNr + 1
+      val (cs, ps) = spawnAll(1, 1)
+      val t0 = Transaction(0)
+      ps.foreach(p => p ! PropagateTransaction(t0))
+      Thread.sleep(100) // make sure the transaction fully propagated
+      val p = ps(0)
+        cs.foreach(c => c ! Messages.InitCommit(t0.id, p))
+      LoggingTestKit.info("Aborted transaction 0").expect {
+        cs.foreach(c => c ! Messages.InitAbort(t0.id, p))
+      }
+      cs.foreach(x => testKit.stop(x))
+      ps.foreach(x => testKit.stop(x))
+    }
+  }
+
   def spawnAll(nCoordinators: Int, nCommittingParticipants: Int, nAbortingParticipants: Int = 0): (Array[Messages.Coordinator], Array[Messages.Participant]) = {
     val cs = new Array[Messages.Coordinator](nCoordinators)
 
