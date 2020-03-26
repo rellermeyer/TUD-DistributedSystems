@@ -12,8 +12,8 @@ import scala.collection.mutable
 
 
 object Coordinator {
-  def apply(keyTuple: KeyTuple, masterPubKey: PublicKey): Behavior[CoordinatorMessage] = {
-    Behaviors.logMessages(Behaviors.setup(context => new Coordinator(context, keyTuple, masterPubKey)))
+  def apply(keyTuple: KeyTuple, masterPubKey: PublicKey, operational: Boolean): Behavior[CoordinatorMessage] = {
+    Behaviors.logMessages(Behaviors.setup(context => new Coordinator(context, keyTuple, masterPubKey, operational)))
   }
 
   class StableStorageItem() {
@@ -36,7 +36,7 @@ object Coordinator {
 
 }
 
-class Coordinator(context: ActorContext[CoordinatorMessage], keyTuple: KeyTuple, masterPubKey: PublicKey) extends AbstractBehavior[CoordinatorMessage](context) {
+class Coordinator(context: ActorContext[CoordinatorMessage], keyTuple: KeyTuple, masterPubKey: PublicKey, operational: Boolean) extends AbstractBehavior[CoordinatorMessage](context) {
 
   import Coordinator._
 
@@ -47,7 +47,7 @@ class Coordinator(context: ActorContext[CoordinatorMessage], keyTuple: KeyTuple,
   var stableStorage: mutable.Map[TransactionID, StableStorageItem] = mutable.Map()
 
   override def onMessage(message: CoordinatorMessage): Behavior[CoordinatorMessage] = {
-    message match {
+    if (operational) message match {
       case Setup(coordinators) =>
         this.coordinators = coordinators
         f = (coordinators.length - 1) / 3
