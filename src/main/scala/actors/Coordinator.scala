@@ -200,7 +200,7 @@ class Coordinator(context: ActorContext[CoordinatorMessage], keyTuple: KeyTuple,
               ss.baCommitLog += m
               if (m.o == Decision.COMMIT) {
                 if (ss.baCommitLog.count(p => p.o == m.o) >= 2 * f) {
-                  ss.participants.foreach(part => part ! Messages.Commit(m.t, context.self))
+                  ss.participants.foreach(part => part ! Messages.Commit(m.t, sign(m.t.toString + context.self.toString), context.self))
                   ss.baState = BaState.COMMITTED // or just drop the transaction?
                   context.log.info("BaCommitted")
                 }

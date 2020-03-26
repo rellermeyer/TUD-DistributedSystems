@@ -60,8 +60,13 @@ abstract class Participant(context: ActorContext[ParticipantMessage], coordinato
         transactions.get(m.t) match {
           case Some(s) => s.s match {
             case PREPARED =>
-              val coordinatorIndex = coordinators.indexOf(m.from)
-              s.decisionLog(coordinatorIndex) = Decision.COMMIT
+              if (verify(m.t.toString + m.from.toString, m.s, masterPubKey)) {
+                val coordinatorIndex = coordinators.indexOf(m.from)
+                s.decisionLog(coordinatorIndex) = Decision.COMMIT
+              } else {
+                context.log.error("Incorrect signature")
+              }
+
           }
             if (s.decisionLog.count(x => x == Decision.COMMIT) >= f + 1) {
               // m.from ! Messages.Committed(null, m.o, context.self)
