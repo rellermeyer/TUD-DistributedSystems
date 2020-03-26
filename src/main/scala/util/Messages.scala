@@ -3,6 +3,9 @@ package util
 import akka.actor.typed.ActorRef
 import util.Messages.Decision.Decision
 import java.security.{PrivateKey, PublicKey}
+
+import util.Messages.sign
+
 import scala.collection.mutable
 import scala.math.BigInt
 
@@ -37,7 +40,7 @@ object Messages {
 
   final case class Setup(coordinators: Array[Coordinator]) extends CoordinatorMessage
 
-  final case class Prepare(t: TransactionID, from: Coordinator) extends ParticipantMessage
+  final case class Prepare(t: TransactionID, s: SignatureTuple, from: Coordinator) extends ParticipantMessage
 
   final case class Commit(t: TransactionID, from: Coordinator) extends ParticipantMessage
 
@@ -74,6 +77,10 @@ object Messages {
     s.initSign(privateKey)
     s.update(hash(data.getBytes()))
     return s.sign()
+  }
+
+  def sign(data: String, privateKey: PrivateKey, signedPublicKey: SignedPublicKey): SignatureTuple = {
+    return (sign(data, privateKey), signedPublicKey)
   }
 
   def verify(data: String, signature: Signature, publicKey: PublicKey): Boolean = {

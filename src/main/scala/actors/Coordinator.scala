@@ -41,6 +41,7 @@ class Coordinator(context: ActorContext[CoordinatorMessage], keyTuple: KeyTuple,
   import Coordinator._
 
   var privateKey = keyTuple._1
+  val signedPublicKey = keyTuple._2
   var coordinators: Array[Messages.Coordinator] = Array(context.self)
   var i = 0
   var f: Int = (coordinators.length - 1) / 3
@@ -101,7 +102,7 @@ class Coordinator(context: ActorContext[CoordinatorMessage], keyTuple: KeyTuple,
       case m: InitCommit =>
         stableStorage.get(m.t) match {
           case Some(ss) =>
-            ss.participants.foreach(p => p ! Messages.Prepare(m.t, context.self))
+            ss.participants.foreach(p => p ! Messages.Prepare(m.t, sign(m.t.toString + context.self.toString), context.self))
           case None =>
             context.log.error("not implemented")
         }
@@ -210,5 +211,9 @@ class Coordinator(context: ActorContext[CoordinatorMessage], keyTuple: KeyTuple,
       case Committed(t, commitResult, from) =>
     }
     this
+  }
+
+  def sign(data: String): SignatureTuple = {
+    return Messages.sign(data, privateKey, signedPublicKey)
   }
 }

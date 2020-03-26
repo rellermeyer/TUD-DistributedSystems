@@ -5,6 +5,8 @@ import akka.actor.typed.Behavior
 import akka.actor.typed.scaladsl.{AbstractBehavior, ActorContext, Behaviors}
 import util.Messages.Decision.Decision
 import java.security.{PrivateKey, PublicKey}
+
+import util.Messages
 import util.Messages._
 
 import scala.collection.mutable
@@ -36,19 +38,23 @@ abstract class Participant(context: ActorContext[ParticipantMessage], coordinato
   override def onMessage(message: ParticipantMessage): Behavior[ParticipantMessage] = {
     message match {
       case m: Prepare =>
-        transactions.get(m.t) match {
-          case Some(s) =>
-            prepare(m.t) match {
-              case util.Messages.Decision.COMMIT =>
-                s.s = PREPARED
-                m.from ! VotePrepared(m.t, Decision.COMMIT, (sign(m.t.toString() + Decision.COMMIT.toString + context.self.toString, privateKey), signedPublicKey), context.self)
-              case util.Messages.Decision.ABORT =>
-                // TODO: change into some aborted state?
-                m.from ! VotePrepared(m.t, Decision.ABORT, (sign(m.t.toString() + Decision.ABORT.toString + context.self.toString, privateKey), signedPublicKey), context.self)
-            }
-          case None =>
-            m.from ! VotePrepared(m.t, Decision.ABORT, (sign(m.t.toString(), privateKey), signedPublicKey), context.self)
-            context.log.error("Transaction not known")
+        if (verify(m.t.toString + m.from.toString, m.s, masterPubKey)) {
+          transactions.get(m.t) match {
+            case Some(s) =>
+              prepare(m.t) match {
+                case util.Messages.Decision.COMMIT =>
+                  s.s = PREPARED
+                  m.from ! VotePrepared(m.t, Decision.COMMIT, sign(m.t.toString() + Decision.COMMIT.toString + context.self.toString), context.self)
+                case util.Messages.Decision.ABORT =>
+                  // TODO: change into some aborted state?
+                  m.from ! VotePrepared(m.t, Decision.ABORT, sign(m.t.toString() + Decision.ABORT.toString + context.self.toString), context.self)
+              }
+            case None =>
+              m.from ! VotePrepared(m.t, Decision.ABORT, sign(m.t.toString), context.self)
+              context.log.error("Transaction not known")
+          }
+        } else {
+          context.log.error("Incorrect signature")
         }
       case m: Commit =>
         transactions.get(m.t) match {
@@ -91,9 +97,14 @@ abstract class Participant(context: ActorContext[ParticipantMessage], coordinato
           case None =>
             transactions += (m.t.id -> new State(ACTIVE, m.t, new Array(coordinators.length)))
         }
-        coordinators.foreach(c => c ! Register(m.t.id, (sign(m.t.id.toString() + context.self.toString, privateKey), signedPublicKey), context.self))
+        coordinators.foreach(c => c ! Register(m.t.id, sign(m.t.id.toString() + context.self.toString), context.self))
     }
     this
+  }
+
+
+  def sign(data: String): SignatureTuple ={
+    return Messages.sign(data, privateKey,signedPublicKey)
   }
 
   def prepare(t: TransactionID): Decision
