@@ -76,6 +76,7 @@ class Coordinator(context: ActorContext[CoordinatorMessage], keyTuple: KeyTuple,
               if (verify(m.t.toString + m.vote.toString + m.from.toString, m.s, masterPubKey)) {
                 m.vote match {
                   case util.Messages.Decision.COMMIT =>
+                    //TODO: create false decision certificate if byzantine
                     ss.decisionCertificate += (m.from -> DecisionCertificateEntry(ss.registrationLog(m.from), Option(m), None))
                     val isPrimary = i == ss.v % (3 * f + 1)
                     val enoughVotes = ss.decisionCertificate.size == ss.participants.size
@@ -110,6 +111,7 @@ class Coordinator(context: ActorContext[CoordinatorMessage], keyTuple: KeyTuple,
         stableStorage.get(m.t) match {
           case Some(ss) =>
             if (i == ss.v % (3 * f + 1)) { // primary
+              //TODO: create false decision certificate if byzantine
               ss.decisionCertificate += (m.from -> DecisionCertificateEntry(ss.registrationLog(m.from), None, Option(m)))
               coordinators.foreach(coord => coord ! Messages.BaPrePrepare(ss.v, m.t, dec(Decision.ABORT), ss.decisionCertificate, context.self))
             }
