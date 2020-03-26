@@ -103,8 +103,8 @@ abstract class Participant(context: ActorContext[ParticipantMessage], coordinato
   }
 
 
-  def sign(data: String): SignatureTuple ={
-    return Messages.sign(data, privateKey,signedPublicKey)
+  def sign(data: String): SignatureTuple = {
+    return Messages.sign(data, privateKey, signedPublicKey)
   }
 
   def prepare(t: TransactionID): Decision
