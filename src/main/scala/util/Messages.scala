@@ -103,7 +103,7 @@ object Messages {
     def sign[M](m: M, privateKey: PrivateKey): Array[Byte] = {
       val s: java.security.Signature = java.security.Signature.getInstance("SHA512withRSA");
       s.initSign(privateKey)
-      s.update(BigInt(m.hashCode()).toByteArray)
+      s.update(BigInt(m.hashCode()).toByteArray) // TODO: this is not secure. Sign the serialized message?
       s.sign()
     }
   }
