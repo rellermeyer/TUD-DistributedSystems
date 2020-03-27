@@ -47,10 +47,10 @@ The following tests were implemented using tests in/with Scala/Akka:
 - **Test 14:** Initiate the protocol and commit with 4 coordinator replicas and 1 participant, where the primary coordinator replica exhibits some byzantine behaviour.  
 - **Test 15:** Initiate the protocol and force a view change by creating a participant and a slow coordinator which will exceed the timeout.
 
-
 Further evaluations planned in the near future:
 
 - expanding the simulation of byzantine behaviour. The current implementation of byzantine behaviour only covers a fraction of the byzantine faulty space. Expanding this could be interesting, but simulating more byzantine behaviours would have a large impact on code complexity. Ultimately, we believe simulating all possible byzantine behaviours is impossible. If we simulate anything less, we can only prove the system is not byzantine fault tolerant, not that it is. It might be better to show byzantine behaviour tolerance by showing that our implementation conforms to the one described in the paper.  
+- running the system in a distributed manner: actors on different hosts should be able to communicate with each other
 
 ## Non-Functional Requirements
 
