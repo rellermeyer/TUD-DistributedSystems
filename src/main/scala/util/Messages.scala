@@ -1,8 +1,9 @@
 package util
 
+import java.security.{PrivateKey, PublicKey}
+
 import akka.actor.typed.ActorRef
 import util.Messages.Decision.Decision
-import java.security.{PrivateKey, PublicKey}
 
 import scala.collection.mutable
 import scala.math.BigInt
@@ -20,48 +21,45 @@ object Messages {
   type SignedPublicKey = (PublicKey, Signature)
   type KeyTuple = (PrivateKey, SignedPublicKey)
 
-  sealed trait ParticipantMessage{
-    def sign(privateKey: PrivateKey, signedPublicKey: SignedPublicKey)= new Signed(this, privateKey, signedPublicKey)
-    def fakesign()=new Signed(this)
+  sealed trait ParticipantMessage {
+    def sign(keyTuple: KeyTuple) = new Signed(this, keyTuple._1, keyTuple._2)
+
+    def fakesign() = new Signed(this)
   }
 
-  sealed trait CoordinatorMessage{
-    def sign(privateKey: PrivateKey, signedPublicKey: SignedPublicKey)= new Signed(this, privateKey, signedPublicKey)
-    def fakesign()=new Signed(this)
+  sealed trait CoordinatorMessage {
+    def sign(keyTuple: KeyTuple) = new Signed(this, keyTuple._1, keyTuple._2)
+
+    def fakesign() = new Signed(this)
   }
 
-  object Signed{
-    def sign[M](m: M, privateKey: PrivateKey): Array[Byte] ={
-      val s: java.security.Signature = java.security.Signature.getInstance("SHA512withRSA");
-      s.initSign(privateKey)
-      s.update(BigInt(m.hashCode()).toByteArray)
-      s.sign()
-    }
-  }
-  class Signed[M](val m: M, signature: Signature, publicKey: PublicKey, signaturePublicKey: Signature, empty: Int){
-    def this(t: M, privateKey: PrivateKey, publicKey: PublicKey, signaturePublicKey: Signature)={
+  sealed trait ViewChangeState
+
+  class Signed[M](val m: M, signature: Signature, publicKey: PublicKey, signaturePublicKey: Signature, empty: Int) {
+    def this(t: M, privateKey: PrivateKey, publicKey: PublicKey, signaturePublicKey: Signature) = {
       this(t, Signed.sign(t, privateKey), publicKey, signaturePublicKey, 0)
     }
-    def this(t: M, privateKey: PrivateKey, signedPublicKey: SignedPublicKey)={
+
+    def this(t: M, privateKey: PrivateKey, signedPublicKey: SignedPublicKey) = {
       this(t, privateKey, signedPublicKey._1, signedPublicKey._2)
     }
-    def this(t: M)={// fakesign
+
+    def this(t: M) = { // fakesign
       this(t, null, null, null, 0)
     }
-    def verify(masterKey: PublicKey):Boolean={
+
+    def verify(masterKey: PublicKey): Boolean = {
       val s: java.security.Signature = java.security.Signature.getInstance("SHA512withRSA");
       s.initVerify(publicKey)
       s.update(BigInt(m.hashCode()).toByteArray)
-      if(!s.verify(signature)) return false
+      if (!s.verify(signature)) return false
       s.initVerify(masterKey)
       s.update(BigInt(publicKey.hashCode()).toByteArray)
-      if(!s.verify(signaturePublicKey)) return false
+      if (!s.verify(signaturePublicKey)) return false
       // TODO: verify sender(from) in message
       true
     }
   }
-
-  sealed trait ViewChangeState
 
   case class DecisionCertificateEntry(registration: Messages.Register, vote: Option[VotePrepared], abort: Option[InitAbort])
 
@@ -100,6 +98,15 @@ object Messages {
   final case class BaCommit(v: View, t: TransactionID, c: Digest, o: Decision, from: Coordinator) extends CoordinatorMessage
 
   final case class BaPrePrepare(v: View, t: TransactionID, o: Decision, c: DecisionCertificate, from: Coordinator) extends CoordinatorMessage // from: PrimaryCoordinator
+
+  object Signed {
+    def sign[M](m: M, privateKey: PrivateKey): Array[Byte] = {
+      val s: java.security.Signature = java.security.Signature.getInstance("SHA512withRSA");
+      s.initSign(privateKey)
+      s.update(BigInt(m.hashCode()).toByteArray)
+      s.sign()
+    }
+  }
 
   object Decision extends Enumeration {
     type Decision = Value

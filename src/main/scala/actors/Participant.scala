@@ -25,12 +25,10 @@ object Participant {
 
 }
 
-abstract class Participant(context: ActorContext[Signed[ParticipantMessage]], coordinators: Array[Coordinator], keyTuple: KeyTuple, masterPubKey: PublicKey) extends AbstractBehavior[Signed[ParticipantMessage]](context) {
+abstract class Participant(context: ActorContext[Signed[ParticipantMessage]], coordinators: Array[Coordinator], keys: KeyTuple, masterPubKey: PublicKey) extends AbstractBehavior[Signed[ParticipantMessage]](context) {
 
   import Participant._
 
-  val privateKey = keyTuple._1
-  val signedPublicKey = keyTuple._2
   val f = (coordinators.length - 1) / 3
   val transactions: mutable.Map[TransactionID, State] = mutable.Map()
 
@@ -43,13 +41,13 @@ abstract class Participant(context: ActorContext[Signed[ParticipantMessage]], co
               prepare(m.t) match {
                 case util.Messages.Decision.COMMIT =>
                   s.s = PREPARED
-                  m.from ! VotePrepared(m.t, Decision.COMMIT, context.self).sign(privateKey, signedPublicKey)
+                  m.from ! VotePrepared(m.t, Decision.COMMIT, context.self).sign(keys)
                 case util.Messages.Decision.ABORT =>
                   // TODO: change into some aborted state?
-                  m.from ! VotePrepared(m.t, Decision.ABORT, context.self).sign(privateKey, signedPublicKey)
+                  m.from ! VotePrepared(m.t, Decision.ABORT, context.self).sign(keys)
               }
             case None =>
-              m.from ! VotePrepared(m.t, Decision.ABORT, context.self).sign(privateKey, signedPublicKey)
+              m.from ! VotePrepared(m.t, Decision.ABORT, context.self).sign(keys)
               context.log.error("Transaction not known")
           }
         } else {
@@ -105,7 +103,7 @@ abstract class Participant(context: ActorContext[Signed[ParticipantMessage]], co
           case None =>
             transactions += (m.t.id -> new State(ACTIVE, m.t, new Array(coordinators.length)))
         }
-        coordinators.foreach(c => c ! Register(m.t.id, context.self).sign(privateKey, signedPublicKey))
+        coordinators.foreach(c => c ! Register(m.t.id, context.self).sign(keys))
     }
     this
   }
