@@ -1,7 +1,19 @@
-# Byzantine Distributed Commit Protocol Implementation
-**IN4391 Distributed Systems - group 7**
+---
+title: "WIP: Final Report: Byzantine-CP"
+author: [Douwe Brinkhorst, Patrik Kron, Michael Leichtfried, Miguel Lucas]
+date: "2020-03-27"
+subject: "Distributed Systems (Group 7)"
+coursecode: "IN4391"
+keywords: [distributed, commit protocol, atomic commit, byzantine]
+lang: "en"
+titlepage: "true"
+titlepageTUDelft: "true"
+papersize: "a4"
+---
 
-We are Michael Leichtfried, Douwe Brinkhorst, Patrik Kron and Miguel Lucas, and we have implemented the system described in *"A Byzantine Fault Tolerant Distributed Commit Protocol"* by Wenbing Zhao (Department of Electrical and Computer Engineering, Cleveland State University).
+# Implementation
+
+In the past weeks we have implemented the system described in *"A Byzantine Fault Tolerant Distributed Commit Protocol"* by Wenbing Zhao (Department of Electrical and Computer Engineering, Cleveland State University).
 
 ## Introduction
 
@@ -40,3 +52,5 @@ We set objectives from the beginning in order to figure out and organise the wor
 
 - **Could have/Will not have**:
   - View change mechanism (this fetaure was not implemented by the paper authors either).
+
+[^bftdcp]: BFTDCP Byzantine Fault Tolerant Distributed Commit Protocol

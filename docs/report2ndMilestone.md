@@ -1,7 +1,19 @@
-# Byzantine Fault Tolerant Distributed Commit Protocol: Evaluation
-**IN4391 Distributed Systems - group 7**  
+---
+title: "Report Milestone 2: Byzantine-CP"
+author: [Douwe Brinkhorst, Patrik Kron, Michael Leichtfried, Miguel Lucas]
+date: "2020-03-27"
+subject: "Distributed Systems (Group 7)"
+coursecode: "IN4391"
+keywords: [distributed, commit protocol, atomic commit, byzantine]
+lang: "en"
+titlepage: "true"
+titlepageTUDelft: "true"
+papersize: "a4"
+---
 
-We are Michael Leichtfried, Douwe Brinkhorst, Patrik Kron and Miguel Lucas, and here we will describe how we are going to evaluate the BFTDC Protocol system described in *"A Byzantine Fault Tolerant Distributed Commit Protocol"* by Wenbing Zhao (Department of Electrical and Computer Engineering, Cleveland State University).
+# Evaluation
+
+In this report we will describe how we are going to evaluate the BFTDC[^bftdcp] Protocol system described in *"A Byzantine Fault Tolerant Distributed Commit Protocol"* by Wenbing Zhao (Department of Electrical and Computer Engineering, Cleveland State University).
 
 ## Setup
 
@@ -36,3 +48,5 @@ We are also considering the following in performing the evaluation:
 ### Additional features
 
 Implementing view changes is something we're working on.  
+
+[^bftdcp]: BFTDCP Byzantine Fault Tolerant Distributed Commit Protocol
