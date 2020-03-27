@@ -41,7 +41,7 @@ Byzantine Agreement Algorithm has three main phases:
 
 We set objectives from the beginning in order to figure out and organise the work that had to be done. The objective list was divided into categories to state the priority of each objective.
 
-- **Must have:** features the proyect must have in order to fulfill the basic requirements.
+- **Must have:** features the project must have in order to fulfill the basic requirements.
   - Implementation for coordinators.
   - Implementation for paticipants/initiators.
   - System testing infrastructure, including coordinator byzantine behaviour testing.
