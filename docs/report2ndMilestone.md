@@ -58,11 +58,7 @@ Further evaluations planned in the near future:
 
 - measuring throughput and latency in continuous operation
 
-For this, it might be interesting to implement a commit payload, as well as running the system in some distributed fashion (giving each actor its own JVM would help to show some of the distributed difficulties/overhead).  
-
-## Additional features
-
-Implementing view changes is something we're working on.  
+For this, it might be interesting to implement a commit payload, as well as running the system in some distributed fashion (giving each actor its own JVM would help to show some of the distributed difficulties/overhead).
 
 ## Footnotes
 
