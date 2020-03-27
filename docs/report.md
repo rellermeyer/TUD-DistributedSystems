@@ -11,9 +11,9 @@ titlepageTUDelft: "true"
 papersize: "a4"
 ---
 
-# Implementation
+# Implementation [&uarr;](./../README.md)
 
-In the past weeks we have implemented the system described in *"A Byzantine Fault Tolerant Distributed Commit Protocol"* by Wenbing Zhao (Department of Electrical and Computer Engineering, Cleveland State University).
+In the past weeks we have implemented the system described in *"A Byzantine Fault Tolerant Distributed Commit Protocol"* by Wenbing Zhao (Department of Electrical and Computer Engineering, Cleveland State University)[^1].
 
 ## Introduction
 
@@ -53,4 +53,6 @@ We set objectives from the beginning in order to figure out and organise the wor
 - **Could have/Will not have**:
   - View change mechanism (this fetaure was not implemented by the paper authors either).
 
-[^bftdcp]: BFTDCP Byzantine Fault Tolerant Distributed Commit Protocol
+## Footnotes
+
+[^1]: https://ieeexplore.ieee.org/document/4351387

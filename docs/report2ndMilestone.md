@@ -11,9 +11,9 @@ titlepageTUDelft: "true"
 papersize: "a4"
 ---
 
-# Evaluation
+# Evaluation [&uarr;](./../README.md)
 
-In this report we will describe how we are going to evaluate the BFTDC[^bftdcp] Protocol system described in *"A Byzantine Fault Tolerant Distributed Commit Protocol"* by Wenbing Zhao (Department of Electrical and Computer Engineering, Cleveland State University).
+In this report we will describe how we are going to evaluate the BFTDC[^1] Protocol system described in *"A Byzantine Fault Tolerant Distributed Commit Protocol"* by Wenbing Zhao (Department of Electrical and Computer Engineering, Cleveland State University).
 
 ## Setup
 
@@ -48,5 +48,7 @@ We are also considering the following in performing the evaluation:
 ### Additional features
 
 Implementing view changes is something we're working on.  
+
+## Footnotes
 
 [^bftdcp]: BFTDCP Byzantine Fault Tolerant Distributed Commit Protocol
