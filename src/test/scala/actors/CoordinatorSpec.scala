@@ -14,11 +14,11 @@ class CoordinatorSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike {
       testNr = testNr + 1
       val (cs, ps) = spawnAll(1, 1)
       val t = Transaction(0)
-      ps.foreach(p => p ! PropagateTransaction(t))
+      ps.foreach(p => p ! PropagateTransaction(t).fakesign())
       Thread.sleep(100) // make sure the transaction fully propagated
       val p = ps(0)
       LoggingTestKit.info("Committed transaction 0").expect {
-        cs.foreach(c => c ! Messages.InitCommit(t.id, p))
+        cs.foreach(c => c ! Messages.InitCommit(t.id, p).fakesign())
       }
       cs.foreach(x => testKit.stop(x))
       ps.foreach(x => testKit.stop(x))
@@ -27,11 +27,11 @@ class CoordinatorSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike {
       testNr = testNr + 1
       val (cs, ps) = spawnAll(4, 1)
       val t = Transaction(0)
-      ps.foreach(p => p ! PropagateTransaction(t))
+      ps.foreach(p => p ! PropagateTransaction(t).fakesign())
       Thread.sleep(100) // make sure the transaction fully propagated
       val p = ps(0)
       LoggingTestKit.info("Committed transaction 0").expect {
-        cs.foreach(c => c ! Messages.InitCommit(t.id, p))
+        cs.foreach(c => c ! Messages.InitCommit(t.id, p).fakesign())
       }
       cs.foreach(x => testKit.stop(x))
       ps.foreach(x => testKit.stop(x))
@@ -40,11 +40,11 @@ class CoordinatorSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike {
       testNr = testNr + 1
       val (cs, ps) = spawnAll(1, 4)
       val t = Transaction(0)
-      ps.foreach(p => p ! PropagateTransaction(t))
+      ps.foreach(p => p ! PropagateTransaction(t).fakesign())
       Thread.sleep(100) // make sure the transaction fully propagated
       val p = ps(0)
       LoggingTestKit.info("Committed transaction 0").withOccurrences(4).expect {
-        cs.foreach(c => c ! Messages.InitCommit(t.id, p))
+        cs.foreach(c => c ! Messages.InitCommit(t.id, p).fakesign())
       }
       cs.foreach(x => testKit.stop(x))
       ps.foreach(x => testKit.stop(x))
@@ -53,11 +53,11 @@ class CoordinatorSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike {
       testNr = testNr + 1
       val (cs, ps) = spawnAll(1, 1)
       val t = Transaction(0)
-      ps.foreach(p => p ! PropagateTransaction(t))
+      ps.foreach(p => p ! PropagateTransaction(t).fakesign())
       Thread.sleep(100) // make sure the transaction fully propagated
       val p = ps(0)
       LoggingTestKit.info("Aborted transaction 0").expect {
-        cs.foreach(c => c ! Messages.InitAbort(t.id, p))
+        cs.foreach(c => c ! Messages.InitAbort(t.id, p).fakesign())
       }
       cs.foreach(x => testKit.stop(x))
       ps.foreach(x => testKit.stop(x))
@@ -66,11 +66,11 @@ class CoordinatorSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike {
       testNr = testNr + 1
       val (cs, ps) = spawnAll(4, 1)
       val t = Transaction(0)
-      ps.foreach(p => p ! PropagateTransaction(t))
+      ps.foreach(p => p ! PropagateTransaction(t).fakesign())
       Thread.sleep(100) // make sure the transaction fully propagated
       val p = ps(0)
       LoggingTestKit.info("Aborted transaction 0").expect {
-        cs.foreach(c => c ! Messages.InitAbort(t.id, p))
+        cs.foreach(c => c ! Messages.InitAbort(t.id, p).fakesign())
       }
       cs.foreach(x => testKit.stop(x))
       ps.foreach(x => testKit.stop(x))
@@ -79,11 +79,11 @@ class CoordinatorSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike {
       testNr = testNr + 1
       val (cs, ps) = spawnAll(1, 4)
       val t = Transaction(0)
-      ps.foreach(p => p ! PropagateTransaction(t))
+      ps.foreach(p => p ! PropagateTransaction(t).fakesign())
       Thread.sleep(100) // make sure the transaction fully propagated
       val p = ps(0)
       LoggingTestKit.info("Aborted transaction 0").withOccurrences(4).expect {
-        cs.foreach(c => c ! Messages.InitAbort(t.id, p))
+        cs.foreach(c => c ! Messages.InitAbort(t.id, p).fakesign())
       }
       cs.foreach(x => testKit.stop(x))
       ps.foreach(x => testKit.stop(x))
@@ -94,11 +94,11 @@ class CoordinatorSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike {
       testNr = testNr + 1
       val (cs, ps) = spawnAll(1, 0, 1)
       val t = Transaction(0)
-      ps.foreach(p => p ! PropagateTransaction(t))
+      ps.foreach(p => p ! PropagateTransaction(t).fakesign())
       Thread.sleep(100) // make sure the transaction fully propagated
       val p = ps(0)
       LoggingTestKit.info("Aborted transaction 0").withOccurrences(1).expect {
-        cs.foreach(c => c ! Messages.InitCommit(t.id, p))
+        cs.foreach(c => c ! Messages.InitCommit(t.id, p).fakesign())
       }
       cs.foreach(x => testKit.stop(x))
       ps.foreach(x => testKit.stop(x))
@@ -107,11 +107,11 @@ class CoordinatorSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike {
       testNr = testNr + 1
       val (cs, ps) = spawnAll(1, 4, 1)
       val t = Transaction(0)
-      ps.foreach(p => p ! PropagateTransaction(t))
+      ps.foreach(p => p ! PropagateTransaction(t).fakesign())
       Thread.sleep(100) // make sure the transaction fully propagated
       val p = ps(0)
       LoggingTestKit.info("Aborted transaction 0").withOccurrences(5).expect {
-        cs.foreach(c => c ! Messages.InitCommit(t.id, p))
+        cs.foreach(c => c ! Messages.InitCommit(t.id, p).fakesign())
       }
       cs.foreach(x => testKit.stop(x))
       ps.foreach(x => testKit.stop(x))
@@ -120,11 +120,11 @@ class CoordinatorSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike {
       testNr = testNr + 1
       val (cs, ps) = spawnAll(4, 4, 1)
       val t = Transaction(0)
-      ps.foreach(p => p ! PropagateTransaction(t))
+      ps.foreach(p => p ! PropagateTransaction(t).fakesign())
       Thread.sleep(100) // make sure the transaction fully propagated
       val p = ps(0)
       LoggingTestKit.info("Aborted transaction 0").withOccurrences(5).expect {
-        cs.foreach(c => c ! Messages.InitCommit(t.id, p))
+        cs.foreach(c => c ! Messages.InitCommit(t.id, p).fakesign())
       }
       cs.foreach(x => testKit.stop(x))
       ps.foreach(x => testKit.stop(x))
@@ -135,16 +135,16 @@ class CoordinatorSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike {
       testNr = testNr + 1
       val (cs, ps) = spawnAll(1, 1)
       val t0 = Transaction(0)
-      ps.foreach(p => p ! PropagateTransaction(t0))
+      ps.foreach(p => p ! PropagateTransaction(t0).fakesign())
       val t1 = Transaction(1)
-      ps.foreach(p => p ! PropagateTransaction(t1))
+      ps.foreach(p => p ! PropagateTransaction(t1).fakesign())
       Thread.sleep(100) // make sure the transaction fully propagated
       val p = ps(0)
       LoggingTestKit.info("Committed transaction 0").expect {
-        cs.foreach(c => c ! Messages.InitCommit(t0.id, p))
+        cs.foreach(c => c ! Messages.InitCommit(t0.id, p).fakesign())
       }
       LoggingTestKit.info("Committed transaction 1").expect {
-        cs.foreach(c => c ! Messages.InitCommit(t1.id, p))
+        cs.foreach(c => c ! Messages.InitCommit(t1.id, p).fakesign())
       }
       cs.foreach(x => testKit.stop(x))
       ps.foreach(x => testKit.stop(x))
@@ -156,12 +156,12 @@ class CoordinatorSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike {
       testNr = testNr + 1
       val (cs, ps) = spawnAll(1, 1)
       val t0 = Transaction(0)
-      ps.foreach(p => p ! PropagateTransaction(t0))
+      ps.foreach(p => p ! PropagateTransaction(t0).fakesign())
       Thread.sleep(100) // make sure the transaction fully propagated
       val p = ps(0)
-      cs.foreach(c => c ! Messages.InitCommit(t0.id, p))
+      cs.foreach(c => c ! Messages.InitCommit(t0.id, p).fakesign())
       LoggingTestKit.info("Aborted transaction 0").expect {
-        cs.foreach(c => c ! Messages.InitAbort(t0.id, p))
+        cs.foreach(c => c ! Messages.InitAbort(t0.id, p).fakesign())
       }
       cs.foreach(x => testKit.stop(x))
       ps.foreach(x => testKit.stop(x))
@@ -173,11 +173,11 @@ class CoordinatorSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike {
       testNr = testNr + 1
       val (cs, ps) = spawnAll(3, 1, 0, 1)
       val t = Transaction(0)
-      ps.foreach(p => p ! PropagateTransaction(t))
+      ps.foreach(p => p ! PropagateTransaction(t).fakesign())
       Thread.sleep(100) // make sure the transaction fully propagated
       val p = ps(0)
       LoggingTestKit.info("Committed transaction 0").expect {
-        cs.foreach(c => c ! Messages.InitCommit(t.id, p))
+        cs.foreach(c => c ! Messages.InitCommit(t.id, p).fakesign())
       }
       cs.foreach(x => testKit.stop(x))
       ps.foreach(x => testKit.stop(x))
@@ -189,11 +189,11 @@ class CoordinatorSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike {
       testNr = testNr + 1
       val (cs, ps) = spawnAll(3, 1, 0, 0, 0, 1)
       val t = Transaction(0)
-      ps.foreach(p => p ! PropagateTransaction(t))
+      ps.foreach(p => p ! PropagateTransaction(t).fakesign())
       Thread.sleep(100) // make sure the transaction fully propagated
       val p = ps(0)
       LoggingTestKit.info("Committed transaction 0").expect {
-        cs.foreach(c => c ! Messages.InitCommit(t.id, p))
+        cs.foreach(c => c ! Messages.InitCommit(t.id, p).fakesign())
       }
       cs.foreach(x => testKit.stop(x))
       ps.foreach(x => testKit.stop(x))
@@ -205,11 +205,11 @@ class CoordinatorSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike {
       testNr = testNr + 1
       val (cs, ps) = spawnAll(3, 1, 0, 0, 1)
       val t = Transaction(0)
-      ps.foreach(p => p ! PropagateTransaction(t))
+      ps.foreach(p => p ! PropagateTransaction(t).fakesign())
       Thread.sleep(100) // make sure the transaction fully propagated
       val p = ps(0)
       LoggingTestKit.info("Committed transaction 0").expect {
-        cs.foreach(c => c ! Messages.InitCommit(t.id, p))
+        cs.foreach(c => c ! Messages.InitCommit(t.id, p).fakesign())
       }
       cs.foreach(x => testKit.stop(x))
       ps.foreach(x => testKit.stop(x))
@@ -235,7 +235,7 @@ class CoordinatorSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike {
     for (x <- nByzantinePrimaryCoord + nCoordinators + nFailedCoordinators until nByzantinePrimaryCoord + nCoordinators + nFailedCoordinators + nByzantineOtherCoord) {
       cs(x) = spawn(Coordinator(genSignedKey(kpg, masterKey), masterKey.getPublic(), operational = true, byzantine = true), testNr + "Coordinator-" + x)
     }
-    cs.foreach { x => x ! Messages.Setup(cs) }
+    cs.foreach { x => x ! Messages.Setup(cs).fakesign() }
     val ps = new Array[Messages.Participant](nCommittingParticipants + nAbortingParticipants)
     for (x <- 0 until nCommittingParticipants) {
       ps(x) = spawn(Participant(cs, Decision.COMMIT, genSignedKey(kpg, masterKey), masterKey.getPublic()), testNr + "Participant-" + x)
@@ -247,7 +247,10 @@ class CoordinatorSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike {
   }
 
   def genSignedKey(kpg: KeyPairGenerator, masterKey: KeyPair): (PrivateKey, SignedPublicKey) = {
-    var keyPair = kpg.generateKeyPair
-    return (keyPair.getPrivate, (keyPair.getPublic, sign(keyPair.getPublic.toString, masterKey.getPrivate)))
+    val keyPair = kpg.generateKeyPair
+    val s: java.security.Signature = java.security.Signature.getInstance("SHA512withRSA");
+    s.initSign(masterKey.getPrivate)
+    s.update(BigInt(keyPair.getPublic.hashCode()).toByteArray)
+    (keyPair.getPrivate, (keyPair.getPublic, s.sign()))
   }
 }

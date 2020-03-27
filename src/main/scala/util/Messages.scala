@@ -4,15 +4,13 @@ import akka.actor.typed.ActorRef
 import util.Messages.Decision.Decision
 import java.security.{PrivateKey, PublicKey}
 
-import util.Messages.sign
-
 import scala.collection.mutable
 import scala.math.BigInt
 
 object Messages {
 
-  type Coordinator = ActorRef[CoordinatorMessage]
-  type Participant = ActorRef[ParticipantMessage]
+  type Coordinator = ActorRef[Signed[CoordinatorMessage]]
+  type Participant = ActorRef[Signed[ParticipantMessage]]
   type View = Int
   type TransactionID = Int
   type DecisionCertificate = mutable.Map[Participant, DecisionCertificateEntry]
@@ -22,9 +20,46 @@ object Messages {
   type SignedPublicKey = (PublicKey, Signature)
   type KeyTuple = (PrivateKey, SignedPublicKey)
 
-  sealed trait ParticipantMessage
+  sealed trait ParticipantMessage{
+    def sign(privateKey: PrivateKey, signedPublicKey: SignedPublicKey)= new Signed(this, privateKey, signedPublicKey)
+    def fakesign()=new Signed(this)
+  }
 
-  sealed trait CoordinatorMessage
+  sealed trait CoordinatorMessage{
+    def sign(privateKey: PrivateKey, signedPublicKey: SignedPublicKey)= new Signed(this, privateKey, signedPublicKey)
+    def fakesign()=new Signed(this)
+  }
+
+  object Signed{
+    def sign[M](m: M, privateKey: PrivateKey): Array[Byte] ={
+      val s: java.security.Signature = java.security.Signature.getInstance("SHA512withRSA");
+      s.initSign(privateKey)
+      s.update(BigInt(m.hashCode()).toByteArray)
+      s.sign()
+    }
+  }
+  class Signed[M](val m: M, signature: Signature, publicKey: PublicKey, signaturePublicKey: Signature, empty: Int){
+    def this(t: M, privateKey: PrivateKey, publicKey: PublicKey, signaturePublicKey: Signature)={
+      this(t, Signed.sign(t, privateKey), publicKey, signaturePublicKey, 0)
+    }
+    def this(t: M, privateKey: PrivateKey, signedPublicKey: SignedPublicKey)={
+      this(t, privateKey, signedPublicKey._1, signedPublicKey._2)
+    }
+    def this(t: M)={// fakesign
+      this(t, null, null, null, 0)
+    }
+    def verify(masterKey: PublicKey):Boolean={
+      val s: java.security.Signature = java.security.Signature.getInstance("SHA512withRSA");
+      s.initVerify(publicKey)
+      s.update(BigInt(m.hashCode()).toByteArray)
+      if(!s.verify(signature)) return false
+      s.initVerify(masterKey)
+      s.update(BigInt(publicKey.hashCode()).toByteArray)
+      if(!s.verify(signaturePublicKey)) return false
+      // TODO: verify sender(from) in message
+      true
+    }
+  }
 
   sealed trait ViewChangeState
 
@@ -40,15 +75,15 @@ object Messages {
 
   final case class Setup(coordinators: Array[Coordinator]) extends CoordinatorMessage
 
-  final case class Prepare(t: TransactionID, s: SignatureTuple, from: Coordinator) extends ParticipantMessage
+  final case class Prepare(t: TransactionID, from: Coordinator) extends ParticipantMessage
 
-  final case class Commit(t: TransactionID, s: SignatureTuple, from: Coordinator) extends ParticipantMessage
+  final case class Commit(t: TransactionID, from: Coordinator) extends ParticipantMessage
 
-  final case class Rollback(t: TransactionID, s: SignatureTuple, from: Coordinator) extends ParticipantMessage
+  final case class Rollback(t: TransactionID, from: Coordinator) extends ParticipantMessage
 
-  final case class Register(t: TransactionID, s: SignatureTuple, from: Participant) extends CoordinatorMessage
+  final case class Register(t: TransactionID, from: Participant) extends CoordinatorMessage
 
-  final case class VotePrepared(t: TransactionID, vote: Decision, s: SignatureTuple, from: Participant) extends CoordinatorMessage
+  final case class VotePrepared(t: TransactionID, vote: Decision, from: Participant) extends CoordinatorMessage
 
   final case class Committed(t: TransactionID, commitResult: Decision, from: Participant) extends CoordinatorMessage
 
@@ -60,56 +95,15 @@ object Messages {
 
   final case class ViewChange(new_v: View, t: TransactionID, p: ViewChangeState, from: Coordinator) extends CoordinatorMessage
 
-  final case class BaPrepare(v: View, t: TransactionID, c: Digest, o: Decision, s: SignatureTuple, from: Coordinator) extends CoordinatorMessage
+  final case class BaPrepare(v: View, t: TransactionID, c: Digest, o: Decision, from: Coordinator) extends CoordinatorMessage
 
-  final case class BaCommit(v: View, t: TransactionID, c: Digest, o: Decision, s: SignatureTuple, from: Coordinator) extends CoordinatorMessage
+  final case class BaCommit(v: View, t: TransactionID, c: Digest, o: Decision, from: Coordinator) extends CoordinatorMessage
 
   final case class BaPrePrepare(v: View, t: TransactionID, o: Decision, c: DecisionCertificate, from: Coordinator) extends CoordinatorMessage // from: PrimaryCoordinator
 
   object Decision extends Enumeration {
     type Decision = Value
     val COMMIT, ABORT = Value
-  }
-
-
-  def sign(data: String, privateKey: PrivateKey): Signature = {
-    var s: java.security.Signature = java.security.Signature.getInstance("SHA512withRSA");
-    s.initSign(privateKey)
-    s.update(hash(data.getBytes()))
-    return s.sign()
-  }
-
-  def sign(data: String, privateKey: PrivateKey, signedPublicKey: SignedPublicKey): SignatureTuple = {
-    return (sign(data, privateKey), signedPublicKey)
-  }
-
-  def verify(data: String, signature: Signature, publicKey: PublicKey): Boolean = {
-    var s: java.security.Signature = java.security.Signature.getInstance("SHA512withRSA");
-    s.initVerify(publicKey)
-    s.update(hash(data.getBytes()))
-
-    return s.verify(signature)
-  }
-
-  def verify(data: String, signatureTuple: SignatureTuple, masterPublicKey: PublicKey): Boolean = {
-    var signature = signatureTuple._1
-    var signatureSignature = signatureTuple._2._2
-    var signaturePublicKey = signatureTuple._2._1
-    if (verify(signaturePublicKey.toString, signatureSignature, masterPublicKey)) { //Check if public key should be trusted
-      return verify(data, signature, signaturePublicKey) // Check if data is signed by public key
-    } else {
-      //Untrusted public key
-      return false
-    }
-  }
-
-  def hash(data: DecisionCertificate): Int = {
-    scala.util.hashing.MurmurHash3.mapHash(data)
-  }
-
-  def hash(data: Array[Byte]): Array[Byte] = {
-    var i = scala.util.hashing.MurmurHash3.bytesHash(data)
-    BigInt(i).toByteArray
   }
 
 }

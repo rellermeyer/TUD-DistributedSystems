@@ -1,20 +1,16 @@
 package controllers
 
-import java.security.{KeyPair, KeyPairGenerator, PrivateKey, PublicKey}
+import java.security.{KeyPair, KeyPairGenerator, PrivateKey}
 
 import actors.{Coordinator, Participant}
 import akka.actor.typed.javadsl.Behaviors
 import akka.actor.typed.{ActorSystem, Behavior}
 import util.Messages
-import util.Messages.{Decision, PropagateTransaction, SignedPublicKey, Transaction, sign}
+import util.Messages.{Decision, PropagateTransaction, SignedPublicKey, Transaction}
 
 
 object ActorStart {
 
-  def genSignedKey(kpg: KeyPairGenerator, masterKey: KeyPair): (PrivateKey, SignedPublicKey) = {
-    var keyPair = kpg.generateKeyPair
-    return (keyPair.getPrivate, (keyPair.getPublic, sign(keyPair.getPublic.toString, masterKey.getPrivate)))
-  }
   def apply(): Behavior[ActorStartMessage] = Behaviors.logMessages(Behaviors.setup { context =>
     context.getLog.info("Creating actors and sending start messages");
 
@@ -26,14 +22,14 @@ object ActorStart {
 
       // Create coordinators
       val coordinators: Array[Messages.Coordinator] = Array(
-        context.spawn(Coordinator(genSignedKey(kpg, masterKey), masterKey.getPublic(),operational = true, byzantine = false), "Coordinator---1"),
-        context.spawn(Coordinator(genSignedKey(kpg, masterKey), masterKey.getPublic(),operational = true, byzantine = false), "Coordinator---2"),
-        context.spawn(Coordinator(genSignedKey(kpg, masterKey), masterKey.getPublic(),operational = true, byzantine = false), "Coordinator---3"),
-        context.spawn(Coordinator(genSignedKey(kpg, masterKey), masterKey.getPublic(),operational = true, byzantine = false), "Coordinator---4")
+        context.spawn(Coordinator(genSignedKey(kpg, masterKey), masterKey.getPublic(), operational = true, byzantine = false), "Coordinator---1"),
+        context.spawn(Coordinator(genSignedKey(kpg, masterKey), masterKey.getPublic(), operational = true, byzantine = false), "Coordinator---2"),
+        context.spawn(Coordinator(genSignedKey(kpg, masterKey), masterKey.getPublic(), operational = true, byzantine = false), "Coordinator---3"),
+        context.spawn(Coordinator(genSignedKey(kpg, masterKey), masterKey.getPublic(), operational = true, byzantine = false), "Coordinator---4")
       )
 
       // Send coordinators set of coordinators
-      coordinators.foreach { x => x ! Messages.Setup(coordinators) }
+      coordinators.foreach { x => x ! Messages.Setup(coordinators).fakesign() }
 
       // Create participant(s)
       val participants: Set[Messages.Participant] = Set(
@@ -50,19 +46,27 @@ object ActorStart {
       for (id <- 0 until numberOfTransactions) {
         transactions(id) = Transaction(id);
         for (x <- participants) {
-          x ! PropagateTransaction(transactions(id))
+          x ! PropagateTransaction(transactions(id)).fakesign()
         }
       }
       Thread.sleep(1000)
       // - start the distributed commit
       for (id <- 0 until numberOfTransactions) {
-        coordinators.foreach(c => c ! Messages.InitCommit(transactions(id).id, participants.head))
+        coordinators.foreach(c => c ! Messages.InitCommit(transactions(id).id, participants.head).fakesign())
         Thread.sleep(500)
       }
 
       Behaviors.same
     }
   })
+
+  def genSignedKey(kpg: KeyPairGenerator, masterKey: KeyPair): (PrivateKey, SignedPublicKey) = {
+    val keyPair = kpg.generateKeyPair
+    val s: java.security.Signature = java.security.Signature.getInstance("SHA512withRSA");
+    s.initSign(masterKey.getPrivate)
+    s.update(BigInt(keyPair.getPublic.hashCode()).toByteArray)
+    (keyPair.getPrivate, (keyPair.getPublic, s.sign()))
+  }
 
   final case class ActorStartMessage()
 

@@ -5,7 +5,6 @@ import java.security.PublicKey
 import actors.Participant.TransactionState.{ACTIVE, PREPARED, TransactionState}
 import akka.actor.typed.Behavior
 import akka.actor.typed.scaladsl.{AbstractBehavior, ActorContext, Behaviors}
-import util.Messages
 import util.Messages.Decision.Decision
 import util.Messages._
 
@@ -13,7 +12,7 @@ import scala.collection.mutable
 
 
 object Participant {
-  def apply(coordinators: Array[Coordinator], decision: Decision, keyTuple: KeyTuple, masterPubKey: PublicKey): Behavior[ParticipantMessage] = {
+  def apply(coordinators: Array[Coordinator], decision: Decision, keyTuple: KeyTuple, masterPubKey: PublicKey): Behavior[Signed[ParticipantMessage]] = {
     Behaviors.logMessages(Behaviors.setup(context => new FixedDecisionParticipant(context, coordinators, decision, keyTuple, masterPubKey)))
   }
 
@@ -26,7 +25,7 @@ object Participant {
 
 }
 
-abstract class Participant(context: ActorContext[ParticipantMessage], coordinators: Array[Coordinator], keyTuple: KeyTuple, masterPubKey: PublicKey) extends AbstractBehavior[ParticipantMessage](context) {
+abstract class Participant(context: ActorContext[Signed[ParticipantMessage]], coordinators: Array[Coordinator], keyTuple: KeyTuple, masterPubKey: PublicKey) extends AbstractBehavior[Signed[ParticipantMessage]](context) {
 
   import Participant._
 
@@ -35,22 +34,22 @@ abstract class Participant(context: ActorContext[ParticipantMessage], coordinato
   val f = (coordinators.length - 1) / 3
   val transactions: mutable.Map[TransactionID, State] = mutable.Map()
 
-  override def onMessage(message: ParticipantMessage): Behavior[ParticipantMessage] = {
-    message match {
+  override def onMessage(message: Signed[ParticipantMessage]): Behavior[Signed[ParticipantMessage]] = {
+    message.m match {
       case m: Prepare =>
-        if (verify(m.t.toString + m.from.toString, m.s, masterPubKey)) {
+        if (message.verify(masterPubKey)) {
           transactions.get(m.t) match {
             case Some(s) =>
               prepare(m.t) match {
                 case util.Messages.Decision.COMMIT =>
                   s.s = PREPARED
-                  m.from ! VotePrepared(m.t, Decision.COMMIT, sign(m.t.toString() + Decision.COMMIT.toString + context.self.toString), context.self)
+                  m.from ! VotePrepared(m.t, Decision.COMMIT, context.self).sign(privateKey, signedPublicKey)
                 case util.Messages.Decision.ABORT =>
                   // TODO: change into some aborted state?
-                  m.from ! VotePrepared(m.t, Decision.ABORT, sign(m.t.toString() + Decision.ABORT.toString + context.self.toString), context.self)
+                  m.from ! VotePrepared(m.t, Decision.ABORT, context.self).sign(privateKey, signedPublicKey)
               }
             case None =>
-              m.from ! VotePrepared(m.t, Decision.ABORT, sign(m.t.toString), context.self)
+              m.from ! VotePrepared(m.t, Decision.ABORT, context.self).sign(privateKey, signedPublicKey)
               context.log.error("Transaction not known")
           }
         } else {
@@ -60,7 +59,7 @@ abstract class Participant(context: ActorContext[ParticipantMessage], coordinato
         transactions.get(m.t) match {
           case Some(s) => s.s match {
             case PREPARED =>
-              if (verify(m.t.toString + m.from.toString, m.s, masterPubKey)) {
+              if (message.verify(masterPubKey)) {
                 val coordinatorIndex = coordinators.indexOf(m.from)
                 s.decisionLog(coordinatorIndex) = Decision.COMMIT
               } else {
@@ -82,7 +81,7 @@ abstract class Participant(context: ActorContext[ParticipantMessage], coordinato
         transactions.get(m.t) match {
           case Some(s) => s.s match {
             case _ => {
-              if (verify(m.t.toString + m.from.toString, m.s, masterPubKey)) {
+              if (message.verify(masterPubKey)) {
                 val coordinatorIndex = coordinators.indexOf(m.from)
                 s.decisionLog(coordinatorIndex) = Decision.ABORT
                 if (s.decisionLog.count(x => x == Decision.ABORT) >= f + 1) {
@@ -106,20 +105,15 @@ abstract class Participant(context: ActorContext[ParticipantMessage], coordinato
           case None =>
             transactions += (m.t.id -> new State(ACTIVE, m.t, new Array(coordinators.length)))
         }
-        coordinators.foreach(c => c ! Register(m.t.id, sign(m.t.id.toString() + context.self.toString), context.self))
+        coordinators.foreach(c => c ! Register(m.t.id, context.self).sign(privateKey, signedPublicKey))
     }
     this
-  }
-
-
-  def sign(data: String): SignatureTuple = {
-    return Messages.sign(data, privateKey, signedPublicKey)
   }
 
   def prepare(t: TransactionID): Decision
 
 }
 
-class FixedDecisionParticipant(context: ActorContext[ParticipantMessage], coordinators: Array[Coordinator], decision: Decision, keyTuple: KeyTuple, masterPubKey: PublicKey) extends Participant(context, coordinators, keyTuple: KeyTuple, masterPubKey: PublicKey) {
+class FixedDecisionParticipant(context: ActorContext[Signed[ParticipantMessage]], coordinators: Array[Coordinator], decision: Decision, keyTuple: KeyTuple, masterPubKey: PublicKey) extends Participant(context, coordinators, keyTuple: KeyTuple, masterPubKey: PublicKey) {
   override def prepare(t: TransactionID): Decision = decision
 }
