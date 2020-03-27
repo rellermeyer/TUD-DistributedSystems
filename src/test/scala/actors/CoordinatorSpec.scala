@@ -227,6 +227,8 @@ class CoordinatorSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike {
       LoggingTestKit.info("View change not implemented.").expect {
         cs.foreach(c => c ! InitCommit(t0.id, p).fakesign())
       }
+      cs.foreach(x => testKit.stop(x))
+      ps.foreach(x => testKit.stop(x))
     }
   }
 

@@ -123,7 +123,7 @@ class Coordinator(context: ActorContext[Signed[CoordinatorMessage]], keys: KeyTu
         }
 
       case m: ViewChange =>
-        context.log.debug("View change not implemented.")
+        context.log.info("View change not implemented.")
 
       case m: BaPrePrepare =>
 
