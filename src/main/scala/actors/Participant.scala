@@ -50,7 +50,7 @@ abstract class Participant(context: ActorContext[Signed[ParticipantMessage]], co
               if(!s.registrations.contains(m.from)) {
                 s.registrations += m.from
               }
-              if(s.registrations.size >= f + 1) {
+              if(s.registrations.size >= 2 * f + 1) {
                 s.initiator ! PropagationReply(m.t, context.self).sign(keys)
               }
             case None =>
