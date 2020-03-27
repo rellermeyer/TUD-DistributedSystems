@@ -56,7 +56,9 @@ Further evaluations planned in the near future:
 
 Further evaluations planned in the near future:
 
-- measuring throughput and latency in continuous operation. For this, it might be interesting to implement a commit payload, as well as running the system in some distributed fashion (giving each actor its own JVM would help to show some of the distributed difficulties/overhead).  
+- measuring throughput and latency in continuous operation
+
+For this, it might be interesting to implement a commit payload, as well as running the system in some distributed fashion (giving each actor its own JVM would help to show some of the distributed difficulties/overhead).  
 
 ## Additional features
 
