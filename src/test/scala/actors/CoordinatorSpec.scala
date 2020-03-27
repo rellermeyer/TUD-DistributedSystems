@@ -169,6 +169,22 @@ class CoordinatorSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike {
     }
   }
 
+  "a coordinator" must {
+    "be able to suggest a view change if the timeout is exceeded" in{
+      testNr = testNr + 1
+      val (cs,ps) = spawnAll(1,1)
+      val t0 = Transaction(0)
+      ps.foreach(p => p ! PropagateTransaction(t0))
+      Thread.sleep(100)
+      val p = ps(0)
+      LoggingTestKit.info("View change not implemented.").expect {
+        cs.foreach(c => c ! InitCommit(t0.id, p))
+      }
+      cs.foreach(x => testKit.stop(x))
+      ps.foreach(x => testKit.stop(x))
+    }
+  }
+
   def spawnAll(nCoordinators: Int, nCommittingParticipants: Int, nAbortingParticipants: Int = 0): (Array[Messages.Coordinator], Array[Messages.Participant]) = {
     val cs = new Array[Messages.Coordinator](nCoordinators)
 
