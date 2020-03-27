@@ -12,8 +12,8 @@ import scala.collection.mutable
 
 
 object Coordinator {
-  def apply(keyTuple: KeyTuple, masterPubKey: PublicKey): Behavior[CoordinatorMessage] = {
-    Behaviors.logMessages(Behaviors.setup(context => new Coordinator(context, keyTuple, masterPubKey)))
+  def apply(keyTuple: KeyTuple, masterPubKey: PublicKey, operational: Boolean, byzantine: Boolean): Behavior[CoordinatorMessage] = {
+    Behaviors.logMessages(Behaviors.setup(context => new Coordinator(context, keyTuple, masterPubKey, operational, byzantine)))
   }
 
   class StableStorageItem() {
@@ -36,18 +36,20 @@ object Coordinator {
 
 }
 
-class Coordinator(context: ActorContext[CoordinatorMessage], keyTuple: KeyTuple, masterPubKey: PublicKey) extends AbstractBehavior[CoordinatorMessage](context) {
+class Coordinator(context: ActorContext[CoordinatorMessage], keyTuple: KeyTuple, masterPubKey: PublicKey, operational: Boolean, byzantine: Boolean) extends AbstractBehavior[CoordinatorMessage](context) {
 
   import Coordinator._
 
   var privateKey = keyTuple._1
+  val signedPublicKey = keyTuple._2
   var coordinators: Array[Messages.Coordinator] = Array(context.self)
   var i = 0
   var f: Int = (coordinators.length - 1) / 3
   var stableStorage: mutable.Map[TransactionID, StableStorageItem] = mutable.Map()
+  var toggledFlag = false
 
   override def onMessage(message: CoordinatorMessage): Behavior[CoordinatorMessage] = {
-    message match {
+    if (operational) message match {
       case Setup(coordinators) =>
         this.coordinators = coordinators
         f = (coordinators.length - 1) / 3
@@ -75,16 +77,17 @@ class Coordinator(context: ActorContext[CoordinatorMessage], keyTuple: KeyTuple,
               if (verify(m.t.toString + m.vote.toString + m.from.toString, m.s, masterPubKey)) {
                 m.vote match {
                   case util.Messages.Decision.COMMIT =>
+                    //TODO: create false decision certificate if byzantine
                     ss.decisionCertificate += (m.from -> DecisionCertificateEntry(ss.registrationLog(m.from), Option(m), None))
                     val isPrimary = i == ss.v % (3 * f + 1)
                     val enoughVotes = ss.decisionCertificate.size == ss.participants.size
                     if (isPrimary && enoughVotes) {
-                      coordinators.foreach(coord => coord ! Messages.BaPrePrepare(ss.v, m.t, Decision.COMMIT, ss.decisionCertificate, context.self))
+                      coordinators.foreach(coord => coord ! Messages.BaPrePrepare(ss.v, m.t, dec(Decision.COMMIT), ss.decisionCertificate, context.self))
                     }
                   case util.Messages.Decision.ABORT =>
                     if (!ss.decisionCertificate.contains(m.from)) {
                       ss.decisionCertificate += (m.from -> DecisionCertificateEntry(ss.registrationLog(m.from), Option(m), None))
-                      coordinators.foreach(coord => coord ! Messages.BaPrePrepare(ss.v, m.t, Decision.ABORT, ss.decisionCertificate, context.self))
+                      coordinators.foreach(coord => coord ! Messages.BaPrePrepare(ss.v, m.t, dec(Decision.ABORT), ss.decisionCertificate, context.self))
                     }
                 }
               }
@@ -101,7 +104,7 @@ class Coordinator(context: ActorContext[CoordinatorMessage], keyTuple: KeyTuple,
       case m: InitCommit =>
         stableStorage.get(m.t) match {
           case Some(ss) =>
-            ss.participants.foreach(p => p ! Messages.Prepare(m.t, context.self))
+            ss.participants.foreach(p => p ! Messages.Prepare(m.t, sign(m.t.toString + context.self.toString), context.self))
           case None =>
             context.log.error("not implemented")
         }
@@ -109,8 +112,9 @@ class Coordinator(context: ActorContext[CoordinatorMessage], keyTuple: KeyTuple,
         stableStorage.get(m.t) match {
           case Some(ss) =>
             if (i == ss.v % (3 * f + 1)) { // primary
+              //TODO: create false decision certificate if byzantine
               ss.decisionCertificate += (m.from -> DecisionCertificateEntry(ss.registrationLog(m.from), None, Option(m)))
-              coordinators.foreach(coord => coord ! Messages.BaPrePrepare(ss.v, m.t, Decision.ABORT, ss.decisionCertificate, context.self))
+              coordinators.foreach(coord => coord ! Messages.BaPrePrepare(ss.v, m.t, dec(Decision.ABORT), ss.decisionCertificate, context.self))
             }
           case None =>
             context.log.error("not implemented")
@@ -140,14 +144,15 @@ class Coordinator(context: ActorContext[CoordinatorMessage], keyTuple: KeyTuple,
                     value.digest = hash(m.c)
                     context.log.debug("Digest:" + value.digest)
                     value.baPrePrepareLog += m
-                    coordinators.foreach(coord => coord ! Messages.BaPrepare(m.v, m.t, value.digest, Decision.COMMIT, context.self))
+                    coordinators.foreach(coord => coord ! Messages.BaPrepare(m.v, m.t, value.digest, dec(Decision.COMMIT), sign(m.v.toString + m.t.toString + value.digest.toString + Decision.COMMIT.toString + context.self.toString), context.self))
                   }
                 case util.Messages.Decision.ABORT =>
                   //TODO: implement proper checks
                   value.digest = hash(m.c)
                   context.log.debug("Digest:" + value.digest)
                   value.baPrePrepareLog += m
-                  coordinators.foreach(coord => coord ! Messages.BaPrepare(m.v, m.t, value.digest, Decision.ABORT, context.self))
+                  coordinators.foreach(coord => coord ! Messages.BaPrepare(m.v, m.t, value.digest, dec(Decision.ABORT), sign(m.v.toString + m.t.toString + value.digest.toString + Decision.ABORT.toString + context.self.toString), context.self))
+
               }
               if (changeView) {
                 context.log.warn("View change not implemented yet")
@@ -165,22 +170,26 @@ class Coordinator(context: ActorContext[CoordinatorMessage], keyTuple: KeyTuple,
               context.log.debug("not expecting BaPrepare")
               return this
             }
-            if (m.c == ss.digest) { //check digest // TODO: not sure if this is how it should be done
-              if (ss.baPrePrepareLog.exists(p => (p.o == m.o) && p.t == m.t)) { //check if same decision as in baPrePrepare
-                ss.baPrepareLog += m
-              } else
-                context.log.debug("proposed outcome different from BaPrePrepare stage")
-            } else {
-              context.log.debug("digest verification failed:" + m.c + " vs. " + ss.digest)
-            }
-            if (ss.baPrepareLog.count(p => p.o == m.o) >= 2 * f) {
-              //BaPrepared flag prevents duplicate messages
-              coordinators.foreach(coord => coord ! Messages.BaCommit(m.v, m.t, m.c, m.o, context.self))
-              ss.baState = BaState.PREPARED
-              context.log.info("BaPrepared")
-            }
-            else {
+            if (verify(m.v.toString + m.t.toString + m.c.toString + m.o.toString + m.from.toString, m.s, masterPubKey)) {
+              if (m.c == ss.digest) { //check digest // TODO: not sure if this is how it should be done
+                if (ss.baPrePrepareLog.exists(p => (p.o == m.o) && p.t == m.t)) { //check if same decision as in baPrePrepare
+                  ss.baPrepareLog += m
+                } else
+                  context.log.debug("proposed outcome different from BaPrePrepare stage")
+              } else {
+                context.log.debug("digest verification failed:" + m.c + " vs. " + ss.digest)
+              }
+              if (ss.baPrepareLog.count(p => p.o == m.o) >= 2 * f) {
+                //BaPrepared flag prevents duplicate messages
+                coordinators.foreach(coord => coord ! Messages.BaCommit(m.v, m.t, m.c, dec(m.o), sign(m.v.toString + m.t.toString + m.c.toString + m.o.toString + context.self.toString), context.self))
+                ss.baState = BaState.PREPARED
+                context.log.info("BaPrepared")
+              }
+              else {
 
+              }
+            } else {
+              context.log.warn("Incorrect signature")
             }
           case None =>
         }
@@ -192,17 +201,29 @@ class Coordinator(context: ActorContext[CoordinatorMessage], keyTuple: KeyTuple,
               return this
             }
             ss.baCommitLog += m
-            if (m.o == Decision.COMMIT) {
-              if (ss.baCommitLog.count(p => p.o == m.o) >= 2 * f) {
-                ss.participants.foreach(part => part ! Messages.Commit(m.t, context.self))
-                ss.baState = BaState.COMMITTED // or just drop the transaction?
-                context.log.info("BaCommitted")
-              }
-            }
-            else {
-              if (ss.baCommitLog.count(p => p.o == m.o) >= 2 * f) {
-                ss.participants.foreach(part => part ! Messages.Rollback(m.t, context.self))
-                context.log.info("BaCommitted abort")
+            if (verify(m.v.toString + m.t.toString + m.c.toString + m.o.toString + m.from.toString, m.s, masterPubKey)) {
+              if (byzantine) {
+                if (m.o==Decision.ABORT) {
+                  ss.participants.foreach(part => part ! Messages.Commit(m.t, sign(m.t.toString + context.self.toString), context.self))
+                  context.log.info("Byzantine BaCommitted")
+                } else {
+                  ss.participants.foreach(part => part ! Messages.Rollback(m.t, sign(m.t.toString + context.self.toString), context.self))
+                  context.log.info("Byzantine BaCommitted abort")
+                }
+              } else {
+                if (m.o == Decision.COMMIT) {
+                  if (ss.baCommitLog.count(p => p.o == m.o) >= 2 * f) {
+                    ss.participants.foreach(part => part ! Messages.Commit(m.t, sign(m.t.toString + context.self.toString), context.self))
+                    ss.baState = BaState.COMMITTED // or just drop the transaction?
+                    context.log.info("BaCommitted")
+                  }
+                }
+                else {
+                  if (ss.baCommitLog.count(p => p.o == m.o) >= 2 * f) {
+                    ss.participants.foreach(part => part ! Messages.Rollback(m.t, sign(m.t.toString + context.self.toString), context.self))
+                    context.log.info("BaCommitted abort")
+                  }
+                }
               }
             }
           case None =>
@@ -210,5 +231,18 @@ class Coordinator(context: ActorContext[CoordinatorMessage], keyTuple: KeyTuple,
       case Committed(t, commitResult, from) =>
     }
     this
+  }
+  def dec(d: Decision): Decision = {
+    if (byzantine){
+      toggledFlag = !toggledFlag
+      if(toggledFlag) {
+        if (d == Decision.COMMIT) Decision.ABORT
+        else Decision.COMMIT
+      } else d
+    } else d
+  }
+
+  def sign(data: String): SignatureTuple = {
+    return Messages.sign(data, privateKey, signedPublicKey)
   }
 }

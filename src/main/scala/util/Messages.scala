@@ -3,6 +3,9 @@ package util
 import akka.actor.typed.ActorRef
 import util.Messages.Decision.Decision
 import java.security.{PrivateKey, PublicKey}
+
+import util.Messages.sign
+
 import scala.collection.mutable
 import scala.math.BigInt
 
@@ -37,11 +40,11 @@ object Messages {
 
   final case class Setup(coordinators: Array[Coordinator]) extends CoordinatorMessage
 
-  final case class Prepare(t: TransactionID, from: Coordinator) extends ParticipantMessage
+  final case class Prepare(t: TransactionID, s: SignatureTuple, from: Coordinator) extends ParticipantMessage
 
-  final case class Commit(t: TransactionID, from: Coordinator) extends ParticipantMessage
+  final case class Commit(t: TransactionID, s: SignatureTuple, from: Coordinator) extends ParticipantMessage
 
-  final case class Rollback(t: TransactionID, from: Coordinator) extends ParticipantMessage
+  final case class Rollback(t: TransactionID, s: SignatureTuple, from: Coordinator) extends ParticipantMessage
 
   final case class Register(t: TransactionID, s: SignatureTuple, from: Participant) extends CoordinatorMessage
 
@@ -57,9 +60,9 @@ object Messages {
 
   final case class ViewChange(new_v: View, t: TransactionID, p: ViewChangeState, from: Coordinator) extends CoordinatorMessage
 
-  final case class BaPrepare(v: View, t: TransactionID, c: Digest, o: Decision, from: Coordinator) extends CoordinatorMessage
+  final case class BaPrepare(v: View, t: TransactionID, c: Digest, o: Decision, s: SignatureTuple, from: Coordinator) extends CoordinatorMessage
 
-  final case class BaCommit(v: View, t: TransactionID, c: Digest, o: Decision, from: Coordinator) extends CoordinatorMessage
+  final case class BaCommit(v: View, t: TransactionID, c: Digest, o: Decision, s: SignatureTuple, from: Coordinator) extends CoordinatorMessage
 
   final case class BaPrePrepare(v: View, t: TransactionID, o: Decision, c: DecisionCertificate, from: Coordinator) extends CoordinatorMessage // from: PrimaryCoordinator
 
@@ -74,6 +77,10 @@ object Messages {
     s.initSign(privateKey)
     s.update(hash(data.getBytes()))
     return s.sign()
+  }
+
+  def sign(data: String, privateKey: PrivateKey, signedPublicKey: SignedPublicKey): SignatureTuple = {
+    return (sign(data, privateKey), signedPublicKey)
   }
 
   def verify(data: String, signature: Signature, publicKey: PublicKey): Boolean = {
