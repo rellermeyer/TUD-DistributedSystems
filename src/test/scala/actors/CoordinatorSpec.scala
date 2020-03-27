@@ -1,12 +1,11 @@
 package actors
 
+import java.security.{KeyPair, KeyPairGenerator, PrivateKey}
+
 import akka.actor.testkit.typed.scaladsl.{LoggingTestKit, ScalaTestWithActorTestKit}
 import org.scalatest.wordspec.AnyWordSpecLike
-import java.security.{KeyPair, KeyPairGenerator, PrivateKey, PublicKey}
 import util.Messages
 import util.Messages._
-
-import scala.collection.mutable
 
 class CoordinatorSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike {
   var testNr = 0
@@ -160,7 +159,7 @@ class CoordinatorSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike {
       ps.foreach(p => p ! PropagateTransaction(t0))
       Thread.sleep(100) // make sure the transaction fully propagated
       val p = ps(0)
-        cs.foreach(c => c ! Messages.InitCommit(t0.id, p))
+      cs.foreach(c => c ! Messages.InitCommit(t0.id, p))
       LoggingTestKit.info("Aborted transaction 0").expect {
         cs.foreach(c => c ! Messages.InitAbort(t0.id, p))
       }
@@ -172,7 +171,7 @@ class CoordinatorSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike {
   "3 normal coordinators and 1 failed coordinator" must {
     "succeed with 1 participant" in {
       testNr = testNr + 1
-      val (cs, ps) = spawnAll(3, 1,0,1)
+      val (cs, ps) = spawnAll(3, 1, 0, 1)
       val t = Transaction(0)
       ps.foreach(p => p ! PropagateTransaction(t))
       Thread.sleep(100) // make sure the transaction fully propagated
@@ -188,7 +187,7 @@ class CoordinatorSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike {
   "3 normal coordinators and 1 byzantine non-primary coordinator" must {
     "succeed with 1 participant" in {
       testNr = testNr + 1
-      val (cs, ps) = spawnAll(3, 1,0,0,0,1)
+      val (cs, ps) = spawnAll(3, 1, 0, 0, 0, 1)
       val t = Transaction(0)
       ps.foreach(p => p ! PropagateTransaction(t))
       Thread.sleep(100) // make sure the transaction fully propagated
@@ -204,7 +203,7 @@ class CoordinatorSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike {
   "3 normal coordinators and 1 byzantine primary coordinator" must {
     "succeed with 1 participant" in {
       testNr = testNr + 1
-      val (cs, ps) = spawnAll(3, 1,0,0,1)
+      val (cs, ps) = spawnAll(3, 1, 0, 0, 1)
       val t = Transaction(0)
       ps.foreach(p => p ! PropagateTransaction(t))
       Thread.sleep(100) // make sure the transaction fully propagated
@@ -218,17 +217,17 @@ class CoordinatorSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike {
   }
 
   def spawnAll(nCoordinators: Int, nCommittingParticipants: Int, nAbortingParticipants: Int = 0, nFailedCoordinators: Int = 0, nByzantinePrimaryCoord: Int = 0, nByzantineOtherCoord: Int = 0): (Array[Messages.Coordinator], Array[Messages.Participant]) = {
-    val cs = new Array[Messages.Coordinator](nByzantinePrimaryCoord + nCoordinators + nFailedCoordinators+ nByzantineOtherCoord)
+    val cs = new Array[Messages.Coordinator](nByzantinePrimaryCoord + nCoordinators + nFailedCoordinators + nByzantineOtherCoord)
 
     var kpg: KeyPairGenerator = KeyPairGenerator.getInstance("RSA")
     kpg.initialize(2048)
     var masterKey = kpg.generateKeyPair
 
     for (x <- 0 until nByzantinePrimaryCoord) {
-      cs(x) = spawn(Coordinator(genSignedKey(kpg, masterKey), masterKey.getPublic(),operational = true, byzantine = true), testNr + "Coordinator-" + x)
+      cs(x) = spawn(Coordinator(genSignedKey(kpg, masterKey), masterKey.getPublic(), operational = true, byzantine = true), testNr + "Coordinator-" + x)
     }
     for (x <- nByzantinePrimaryCoord until nByzantinePrimaryCoord + nCoordinators) {
-      cs(x) = spawn(Coordinator(genSignedKey(kpg, masterKey), masterKey.getPublic(),operational = true, byzantine = false), testNr + "Coordinator-" + x)
+      cs(x) = spawn(Coordinator(genSignedKey(kpg, masterKey), masterKey.getPublic(), operational = true, byzantine = false), testNr + "Coordinator-" + x)
     }
     for (x <- nByzantinePrimaryCoord + nCoordinators until nByzantinePrimaryCoord + nCoordinators + nFailedCoordinators) {
       cs(x) = spawn(Coordinator(genSignedKey(kpg, masterKey), masterKey.getPublic(), operational = false, byzantine = false), testNr + "Coordinator-" + x)

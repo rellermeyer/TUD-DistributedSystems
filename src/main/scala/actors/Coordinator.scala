@@ -1,6 +1,7 @@
 package actors
 
-import java.security.{PrivateKey, PublicKey}
+import java.security.PublicKey
+
 import actors.Coordinator.BaState.BaState
 import akka.actor.typed.Behavior
 import akka.actor.typed.scaladsl.{AbstractBehavior, ActorContext, Behaviors}
@@ -40,8 +41,8 @@ class Coordinator(context: ActorContext[CoordinatorMessage], keyTuple: KeyTuple,
 
   import Coordinator._
 
-  var privateKey = keyTuple._1
   val signedPublicKey = keyTuple._2
+  var privateKey = keyTuple._1
   var coordinators: Array[Messages.Coordinator] = Array(context.self)
   var i = 0
   var f: Int = (coordinators.length - 1) / 3
@@ -203,7 +204,7 @@ class Coordinator(context: ActorContext[CoordinatorMessage], keyTuple: KeyTuple,
             ss.baCommitLog += m
             if (verify(m.v.toString + m.t.toString + m.c.toString + m.o.toString + m.from.toString, m.s, masterPubKey)) {
               if (byzantine) {
-                if (m.o==Decision.ABORT) {
+                if (m.o == Decision.ABORT) {
                   ss.participants.foreach(part => part ! Messages.Commit(m.t, sign(m.t.toString + context.self.toString), context.self))
                   context.log.info("Byzantine BaCommitted")
                 } else {
@@ -232,10 +233,11 @@ class Coordinator(context: ActorContext[CoordinatorMessage], keyTuple: KeyTuple,
     }
     this
   }
+
   def dec(d: Decision): Decision = {
-    if (byzantine){
+    if (byzantine) {
       toggledFlag = !toggledFlag
-      if(toggledFlag) {
+      if (toggledFlag) {
         if (d == Decision.COMMIT) Decision.ABORT
         else Decision.COMMIT
       } else d

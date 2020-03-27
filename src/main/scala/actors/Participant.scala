@@ -1,12 +1,12 @@
 package actors
 
+import java.security.PublicKey
+
 import actors.Participant.TransactionState.{ACTIVE, PREPARED, TransactionState}
 import akka.actor.typed.Behavior
 import akka.actor.typed.scaladsl.{AbstractBehavior, ActorContext, Behaviors}
-import util.Messages.Decision.Decision
-import java.security.{PrivateKey, PublicKey}
-
 import util.Messages
+import util.Messages.Decision.Decision
 import util.Messages._
 
 import scala.collection.mutable
