@@ -27,7 +27,7 @@ In this report we will describe how we are going to evaluate the BFTDC[^1] Proto
 The functional requirements were evaluated using Scala tests (```ScalaTestWithActorTestKit```).
 
 Along with the development we have built a set of tests which tested every feature we implemented. This way we ensured that every module did its work properly.  
-We have built a total of 14 tests through which Coordinators and Participants exange messages and perform the corresponding message verification and decision making processes. These tests ensure the implementation correctness by creating protocol instances and making coordinator replicas and participants conduct several distributed commit protocols. Different number of coordinator replicas and participants is used to test  the system's resilience to multiple message passing. Faulty participant behaviour is also tested by sending abort messages in the middle of a commit transaction.
+We have built a total of 15 tests through which Coordinators and Participants exange messages and perform the corresponding message verification and decision making processes. These tests ensure the implementation correctness by creating protocol instances and making coordinator replicas and participants conduct several distributed commit protocols. Different number of coordinator replicas and participants is used to test  the system's resilience to multiple message passing. Faulty participant behaviour is also tested by sending abort messages in the middle of a commit transaction.
 
 The following tests were implemented using tests in/with Scala/Akka:
 
@@ -45,6 +45,8 @@ The following tests were implemented using tests in/with Scala/Akka:
 - **Test 12:** Initiate the protocol and commit with 4 coordinator replicas and 1 participant, where one of the coordinator replicas is nonresponsive.  
 - **Test 13:** Initiate the protocol and commit with 4 coordinator replicas and 1 participant, where one of the nonprimary coordinator replicas exhibits some byzantine behaviour.  
 - **Test 14:** Initiate the protocol and commit with 4 coordinator replicas and 1 participant, where the primary coordinator replica exhibits some byzantine behaviour.  
+- **Test 15:** Initiate the protocol and force a view change by creating a participant and a slow coordinator which will exceed the timeout.
+
 
 Further evaluations planned in the near future:
 
