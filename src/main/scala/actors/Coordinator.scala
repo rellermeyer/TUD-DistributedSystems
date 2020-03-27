@@ -43,7 +43,7 @@ class Coordinator(context: ActorContext[Signed[CoordinatorMessage]], keys: KeyTu
   import Coordinator._
 
   var coordinators: Array[Messages.Coordinator] = Array(context.self)
-  var i = 0
+  var i: Int = 0
   var f: Int = (coordinators.length - 1) / 3
   var stableStorage: mutable.Map[TransactionID, StableStorageItem] = mutable.Map()
   var toggledFlag = false

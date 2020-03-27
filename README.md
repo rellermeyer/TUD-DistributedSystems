@@ -4,7 +4,7 @@ This repository contains an implementation for the protocol described in the pap
 
 ## Reports
 
-- [Milestone 1 (Email)](docs/milestone1_email.md)
+- [Milestone 1 (Initial Design - Email to TA)](docs/milestone1_email.md)
 - [Milestone 2 (Evaluation)](docs/report2ndMilestone.md)
 - [WIP: Final Report (About the protocol and so much more!)](docs/report.md)
 - [Other Stuff](docs/other.md)
