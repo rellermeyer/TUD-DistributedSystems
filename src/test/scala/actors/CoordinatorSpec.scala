@@ -9,16 +9,19 @@ import util.Messages._
 
 class CoordinatorSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike {
   var testNr = 0
+  // abortTimer used to delay the initAbort
+  // too early and the registration is not complete
+  // too late and the transaction is already committed
+  //TODO: create 'abortingInitiator' that is participant 0 and sends initAbort some delay after its own initCommit
+  val abortTimer = 40
+
   "A transaction" must {
     "succeed with 1 coordinator and 1 participant" in {
       testNr = testNr + 1
       val (cs, ps) = spawnAll(1, 1)
       val t = Transaction(0)
-      ps.foreach(p => p ! PropagateTransaction(t).fakesign())
-      Thread.sleep(100) // make sure the transaction fully propagated
-      val p = ps(0)
       LoggingTestKit.info("Committed transaction 0").expect {
-        cs.foreach(c => c ! Messages.InitCommit(t.id, p).fakesign())
+        ps.foreach(p => p ! PropagateTransaction(t, ps(0)).fakesign())
       }
       cs.foreach(x => testKit.stop(x))
       ps.foreach(x => testKit.stop(x))
@@ -27,11 +30,8 @@ class CoordinatorSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike {
       testNr = testNr + 1
       val (cs, ps) = spawnAll(4, 1)
       val t = Transaction(0)
-      ps.foreach(p => p ! PropagateTransaction(t).fakesign())
-      Thread.sleep(100) // make sure the transaction fully propagated
-      val p = ps(0)
       LoggingTestKit.info("Committed transaction 0").expect {
-        cs.foreach(c => c ! Messages.InitCommit(t.id, p).fakesign())
+        ps.foreach(p => p ! PropagateTransaction(t, ps(0)).fakesign())
       }
       cs.foreach(x => testKit.stop(x))
       ps.foreach(x => testKit.stop(x))
@@ -40,176 +40,173 @@ class CoordinatorSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike {
       testNr = testNr + 1
       val (cs, ps) = spawnAll(1, 4)
       val t = Transaction(0)
-      ps.foreach(p => p ! PropagateTransaction(t).fakesign())
-      Thread.sleep(100) // make sure the transaction fully propagated
-      val p = ps(0)
       LoggingTestKit.info("Committed transaction 0").withOccurrences(4).expect {
-        cs.foreach(c => c ! Messages.InitCommit(t.id, p).fakesign())
-      }
-      cs.foreach(x => testKit.stop(x))
-      ps.foreach(x => testKit.stop(x))
-    }
-    "abort with 1 coordinator and 1 participant (participant should never be asked to prepare)" in {
-      testNr = testNr + 1
-      val (cs, ps) = spawnAll(1, 1)
-      val t = Transaction(0)
-      ps.foreach(p => p ! PropagateTransaction(t).fakesign())
-      Thread.sleep(100) // make sure the transaction fully propagated
-      val p = ps(0)
-      LoggingTestKit.info("Aborted transaction 0").expect {
-        cs.foreach(c => c ! Messages.InitAbort(t.id, p).fakesign())
-      }
-      cs.foreach(x => testKit.stop(x))
-      ps.foreach(x => testKit.stop(x))
-    }
-    "abort with 4 coordinators and 1 participant (participant should never be asked to prepare)" in {
-      testNr = testNr + 1
-      val (cs, ps) = spawnAll(4, 1)
-      val t = Transaction(0)
-      ps.foreach(p => p ! PropagateTransaction(t).fakesign())
-      Thread.sleep(100) // make sure the transaction fully propagated
-      val p = ps(0)
-      LoggingTestKit.info("Aborted transaction 0").expect {
-        cs.foreach(c => c ! Messages.InitAbort(t.id, p).fakesign())
-      }
-      cs.foreach(x => testKit.stop(x))
-      ps.foreach(x => testKit.stop(x))
-    }
-    "abort with 1 coordinator and 4 participants (participant should never be asked to prepare)" in {
-      testNr = testNr + 1
-      val (cs, ps) = spawnAll(1, 4)
-      val t = Transaction(0)
-      ps.foreach(p => p ! PropagateTransaction(t).fakesign())
-      Thread.sleep(100) // make sure the transaction fully propagated
-      val p = ps(0)
-      LoggingTestKit.info("Aborted transaction 0").withOccurrences(4).expect {
-        cs.foreach(c => c ! Messages.InitAbort(t.id, p).fakesign())
+        ps.foreach(p => p ! PropagateTransaction(t, ps(0)).fakesign())
       }
       cs.foreach(x => testKit.stop(x))
       ps.foreach(x => testKit.stop(x))
     }
   }
-  "A participant" must {
-    "be able to abort a transaction" in {
+  // starting an abort without having started the respective commit did not make any practical sense
+  // it also required extra work to implement for this new version so was removed instead
+    "A participant" must {
+      "be able to abort a transaction" in {
+        testNr = testNr + 1
+        val (cs, ps) = spawnAll(1, 0, 1)
+        val t = Transaction(0)
+        LoggingTestKit.info("Aborted transaction 0").withOccurrences(1).expect {
+          ps.foreach(p => p ! PropagateTransaction(t, ps(0)).fakesign())
+        }
+        cs.foreach(x => testKit.stop(x))
+        ps.foreach(x => testKit.stop(x))
+      }
+      "be able to unilaterally abort a transaction (1 coordinator)" in {
+        testNr = testNr + 1
+        val (cs, ps) = spawnAll(1, 4, 1)
+        val t = Transaction(0)
+        LoggingTestKit.info("Aborted transaction 0").withOccurrences(5).expect {
+          ps.foreach(p => p ! PropagateTransaction(t, ps(0)).fakesign())
+        }
+        cs.foreach(x => testKit.stop(x))
+        ps.foreach(x => testKit.stop(x))
+      }
+      "be able to unilaterally abort a transaction (4 coordinators)" in {
+        testNr = testNr + 1
+        val (cs, ps) = spawnAll(4, 4, 1)
+        val t = Transaction(0)
+        LoggingTestKit.info("Aborted transaction 0").withOccurrences(5).expect {
+          ps.foreach(p => p ! PropagateTransaction(t, ps(0)).fakesign())
+        }
+        cs.foreach(x => testKit.stop(x))
+        ps.foreach(x => testKit.stop(x))
+      }
+    }
+
+    "2 transactions" must {
+      "succeed" in {
+        testNr = testNr + 1
+        val (cs, ps) = spawnAll(1, 1)
+        val t0 = Transaction(0)
+        val t1 = Transaction(1)
+        LoggingTestKit.info("Committed transaction 0").expect {
+          ps.foreach(p => p ! PropagateTransaction(t0, ps(0)).fakesign())
+        }
+        LoggingTestKit.info("Committed transaction 1").expect {
+          ps.foreach(p => p ! PropagateTransaction(t1, ps(0)).fakesign())
+        }
+        cs.foreach(x => testKit.stop(x))
+        ps.foreach(x => testKit.stop(x))
+      }
+    }
+
+    "3 normal coordinators and 1 failed coordinator" must {
+      "succeed with 1 participant" in {
+        testNr = testNr + 1
+        val (cs, ps) = spawnAll(3, 1, 0, 1)
+        val t = Transaction(0)
+        LoggingTestKit.info("Committed transaction 0").expect {
+          ps.foreach(p => p ! PropagateTransaction(t, ps(0)).fakesign())
+        }
+        cs.foreach(x => testKit.stop(x))
+        ps.foreach(x => testKit.stop(x))
+      }
+    }
+
+    "3 normal coordinators and 1 byzantine non-primary coordinator" must {
+      "succeed with 1 participant" in {
+        testNr = testNr + 1
+        val (cs, ps) = spawnAll(3, 1, 0, 0, 0, 1)
+        val t = Transaction(0)
+        LoggingTestKit.info("Committed transaction 0").expect {
+          ps.foreach(p => p ! PropagateTransaction(t, ps(0)).fakesign())
+        }
+        cs.foreach(x => testKit.stop(x))
+        ps.foreach(x => testKit.stop(x))
+      }
+    }
+
+    "3 normal coordinators and 1 byzantine primary coordinator" must {
+      "succeed with 1 participant" in {
+        testNr = testNr + 1
+        val (cs, ps) = spawnAll(3, 1, 0, 0, 1)
+        val t = Transaction(0)
+        LoggingTestKit.info("Committed transaction 0").expect {
+          ps.foreach(p => p ! PropagateTransaction(t, ps(0)).fakesign())
+        }
+        cs.foreach(x => testKit.stop(x))
+        ps.foreach(x => testKit.stop(x))
+      }
+    }
+  "The initiator" must {
+    "be able to abort an in-flight transaction" in {
       testNr = testNr + 1
-      val (cs, ps) = spawnAll(1, 0, 1)
+      val (cs, ps) = spawnAll(1, 1, 0)
       val t = Transaction(0)
-      ps.foreach(p => p ! PropagateTransaction(t).fakesign())
-      Thread.sleep(100) // make sure the transaction fully propagated
-      val p = ps(0)
       LoggingTestKit.info("Aborted transaction 0").withOccurrences(1).expect {
-        cs.foreach(c => c ! Messages.InitCommit(t.id, p).fakesign())
+        ps.foreach(p => p ! PropagateTransaction(t, ps(0)).fakesign())
+        Thread.sleep(abortTimer)
+        cs.foreach(c => c ! InitAbort(t.id, ps(0)).fakesign())
       }
       cs.foreach(x => testKit.stop(x))
       ps.foreach(x => testKit.stop(x))
     }
-    "be able to unilaterally abort a transaction (1 coordinator)" in {
+    "be able to abort with 4 coordinators" in {
       testNr = testNr + 1
-      val (cs, ps) = spawnAll(1, 4, 1)
+      val (cs, ps) = spawnAll(4, 1, 0)
       val t = Transaction(0)
-      ps.foreach(p => p ! PropagateTransaction(t).fakesign())
-      Thread.sleep(100) // make sure the transaction fully propagated
-      val p = ps(0)
-      LoggingTestKit.info("Aborted transaction 0").withOccurrences(5).expect {
-        cs.foreach(c => c ! Messages.InitCommit(t.id, p).fakesign())
+      LoggingTestKit.info("Aborted transaction 0").withOccurrences(1).expect {
+        ps.foreach(p => p ! PropagateTransaction(t, ps(0)).fakesign())
+        Thread.sleep(abortTimer)
+        cs.foreach(c => c ! InitAbort(t.id, ps(0)).fakesign())
       }
       cs.foreach(x => testKit.stop(x))
       ps.foreach(x => testKit.stop(x))
     }
-    "be able to unilaterally abort a transaction (4 coordinators)" in {
+    "be able to abort with 4 participants" in {
       testNr = testNr + 1
-      val (cs, ps) = spawnAll(4, 4, 1)
+      val (cs, ps) = spawnAll(1, 4, 0)
       val t = Transaction(0)
-      ps.foreach(p => p ! PropagateTransaction(t).fakesign())
-      Thread.sleep(100) // make sure the transaction fully propagated
-      val p = ps(0)
-      LoggingTestKit.info("Aborted transaction 0").withOccurrences(5).expect {
-        cs.foreach(c => c ! Messages.InitCommit(t.id, p).fakesign())
+      LoggingTestKit.info("Aborted transaction 0").withOccurrences(4).expect {
+        ps.foreach(p => p ! PropagateTransaction(t, ps(0)).fakesign())
+        Thread.sleep(abortTimer)
+        cs.foreach(c => c ! InitAbort(t.id, ps(0)).fakesign())
       }
       cs.foreach(x => testKit.stop(x))
       ps.foreach(x => testKit.stop(x))
     }
-  }
-  "2 transactions" must {
-    "succeed" in {
-      testNr = testNr + 1
-      val (cs, ps) = spawnAll(1, 1)
-      val t0 = Transaction(0)
-      ps.foreach(p => p ! PropagateTransaction(t0).fakesign())
-      val t1 = Transaction(1)
-      ps.foreach(p => p ! PropagateTransaction(t1).fakesign())
-      Thread.sleep(100) // make sure the transaction fully propagated
-      val p = ps(0)
-      LoggingTestKit.info("Committed transaction 0").expect {
-        cs.foreach(c => c ! Messages.InitCommit(t0.id, p).fakesign())
-      }
-      LoggingTestKit.info("Committed transaction 1").expect {
-        cs.foreach(c => c ! Messages.InitCommit(t1.id, p).fakesign())
-      }
-      cs.foreach(x => testKit.stop(x))
-      ps.foreach(x => testKit.stop(x))
-    }
-  }
 
-  "the initiator" must {
-    "be able to abort in-flight commit" in {
-      testNr = testNr + 1
-      val (cs, ps) = spawnAll(1, 1)
-      val t0 = Transaction(0)
-      ps.foreach(p => p ! PropagateTransaction(t0).fakesign())
-      Thread.sleep(100) // make sure the transaction fully propagated
-      val p = ps(0)
-      cs.foreach(c => c ! Messages.InitCommit(t0.id, p).fakesign())
-      LoggingTestKit.info("Aborted transaction 0").expect {
-        cs.foreach(c => c ! Messages.InitAbort(t0.id, p).fakesign())
-      }
-      cs.foreach(x => testKit.stop(x))
-      ps.foreach(x => testKit.stop(x))
-    }
-  }
-
-  "3 normal coordinators and 1 failed coordinator" must {
-    "succeed with 1 participant" in {
+    "be able to abort with 3 coordinators + 1 nonresponsive" in {
       testNr = testNr + 1
       val (cs, ps) = spawnAll(3, 1, 0, 1)
       val t = Transaction(0)
-      ps.foreach(p => p ! PropagateTransaction(t).fakesign())
-      Thread.sleep(100) // make sure the transaction fully propagated
-      val p = ps(0)
-      LoggingTestKit.info("Committed transaction 0").expect {
-        cs.foreach(c => c ! Messages.InitCommit(t.id, p).fakesign())
+      LoggingTestKit.info("Aborted transaction 0").withOccurrences(1).expect {
+        ps.foreach(p => p ! PropagateTransaction(t, ps(0)).fakesign())
+        Thread.sleep(abortTimer)
+        cs.foreach(c => c ! InitAbort(t.id, ps(0)).fakesign())
       }
       cs.foreach(x => testKit.stop(x))
       ps.foreach(x => testKit.stop(x))
     }
-  }
-
-  "3 normal coordinators and 1 byzantine non-primary coordinator" must {
-    "succeed with 1 participant" in {
+    "be able to abort with 3 coordinators + 1 byzantine nonprimary" in {
       testNr = testNr + 1
-      val (cs, ps) = spawnAll(3, 1, 0, 0, 0, 1)
+      val (cs, ps) = spawnAll(3, 1, 0,0,0,1)
       val t = Transaction(0)
-      ps.foreach(p => p ! PropagateTransaction(t).fakesign())
-      Thread.sleep(100) // make sure the transaction fully propagated
-      val p = ps(0)
-      LoggingTestKit.info("Committed transaction 0").expect {
-        cs.foreach(c => c ! Messages.InitCommit(t.id, p).fakesign())
+      LoggingTestKit.info("Aborted transaction 0").withOccurrences(1).expect {
+        ps.foreach(p => p ! PropagateTransaction(t, ps(0)).fakesign())
+        Thread.sleep(abortTimer)
+        cs.foreach(c => c ! InitAbort(t.id, ps(0)).fakesign())
       }
       cs.foreach(x => testKit.stop(x))
       ps.foreach(x => testKit.stop(x))
     }
-  }
-
-  "3 normal coordinators and 1 byzantine primary coordinator" must {
-    "succeed with 1 participant" in {
+    "be able to abort with 3 coordinators + 1 byzantine primary" in {
       testNr = testNr + 1
-      val (cs, ps) = spawnAll(3, 1, 0, 0, 1)
+      val (cs, ps) = spawnAll(3, 1, 0,0,1)
       val t = Transaction(0)
-      ps.foreach(p => p ! PropagateTransaction(t).fakesign())
-      Thread.sleep(100) // make sure the transaction fully propagated
-      val p = ps(0)
-      LoggingTestKit.info("Committed transaction 0").expect {
-        cs.foreach(c => c ! Messages.InitCommit(t.id, p).fakesign())
+      LoggingTestKit.info("Aborted transaction 0").withOccurrences(1).expect {
+        ps.foreach(p => p ! PropagateTransaction(t, ps(0)).fakesign())
+        Thread.sleep(abortTimer)
+        cs.foreach(c => c ! InitAbort(t.id, ps(0)).fakesign())
       }
       cs.foreach(x => testKit.stop(x))
       ps.foreach(x => testKit.stop(x))

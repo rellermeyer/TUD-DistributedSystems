@@ -59,6 +59,7 @@ class Coordinator(context: ActorContext[Signed[CoordinatorMessage]], keys: KeyTu
           if (message.verify(masterPubKey)) {
             ss.participants += m.from
             ss.registrationLog(m.from) = m
+            m.from ! ConfirmRegistration(m.t,context.self).sign(keys)
           }
           else {
             context.log.error("Incorrect signature")

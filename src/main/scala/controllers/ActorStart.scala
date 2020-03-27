@@ -46,16 +46,9 @@ object ActorStart {
       for (id <- 0 until numberOfTransactions) {
         transactions(id) = Transaction(id);
         for (x <- participants) {
-          x ! PropagateTransaction(transactions(id)).fakesign()
+          x ! PropagateTransaction(transactions(id),participants.head).fakesign()
         }
       }
-      Thread.sleep(1000)
-      // - start the distributed commit
-      for (id <- 0 until numberOfTransactions) {
-        coordinators.foreach(c => c ! Messages.InitCommit(transactions(id).id, participants.head).fakesign())
-        Thread.sleep(500)
-      }
-
       Behaviors.same
     }
   })

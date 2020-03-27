@@ -81,11 +81,15 @@ object Messages {
 
   final case class Register(t: TransactionID, from: Participant) extends CoordinatorMessage
 
+  final case class ConfirmRegistration(t: TransactionID, from: Coordinator) extends ParticipantMessage
+
   final case class VotePrepared(t: TransactionID, vote: Decision, from: Participant) extends CoordinatorMessage
 
   final case class Committed(t: TransactionID, commitResult: Decision, from: Participant) extends CoordinatorMessage
 
-  final case class PropagateTransaction(t: Transaction) extends ParticipantMessage // from: Initiator
+  final case class PropagateTransaction(t: Transaction, from: Participant) extends ParticipantMessage // from: Initiator
+
+  final case class PropagationReply(t: TransactionID, from: Participant) extends ParticipantMessage // from: Participant
 
   final case class InitCommit(t: TransactionID, from: Participant) extends CoordinatorMessage // from: Initiator
 
