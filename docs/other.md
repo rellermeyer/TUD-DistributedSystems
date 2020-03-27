@@ -68,6 +68,8 @@ Initially it was not clear that the initiator propagates the transaction to all 
 "When the primary for view v+1 receives 2f+1 valid view change messages[...], it [...] multicasts a new view message for view v+1."
 -- what if the new primary is byzantine (and does not send out the new view), how is it guaranteed that another replica takes over to view v+2
 
+Initially it was not clear whether the initiator should send the commit request to the primary coordinator only.
+
 ## Insights
 
 "The initiator is regarded as a special participant" -> The initiator will also receive the commits/aborts by the coordinators.
