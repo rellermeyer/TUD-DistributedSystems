@@ -5,7 +5,7 @@ We are Michael Leichtfried, Douwe Brinkhorst, Patrik Kron and Miguel Lucas, and 
 ## Setup
 Along with the development we have built a set of tests which tested every feature we implemented. This way we ensured that every module did its work properly.
 We have built a total of 14 tests through which Coordinators and Participants exange messages and perform the corresponding message verification and decision making processes. These tests ensure the implementation correctness by creating protocol instances and making coordinator replicas and participants conduct several distributed commit protocols. Different number of coordinator replicas and participants is used to test  the system's resilience to multiple message passing. Faulty participant behaviour is also tested by sending abort messages in the middle of a commit transaction.
-### Tests
+### Implemented (functional) tests
 
  **Test 1:** Initiate the protocol and commit with 1 coordinator replica and 1 participant.
  **Test 2:** Initiate the protocol and commit with 4 coordinator replicas and 1 participant.
@@ -21,4 +21,11 @@ We have built a total of 14 tests through which Coordinators and Participants ex
  **Test 12:** Initiate the protocol and commit with 4 coordinator replicas and 1 participant, where one of the coordinator replicas is nonresponsive.
  **Test 13:** Initiate the protocol and commit with 4 coordinator replicas and 1 participant, where one of the nonprimary coordinator replicas exhibits some byzantine behaviour.
  **Test 14:** Initiate the protocol and commit with 4 coordinator replicas and 1 participant, where the primary coordinator replica exhibits some byzantine behaviour.
-  
+ 
+### Further evaluation
+We are also considering the following in performing the evaluation:
+- expanding the simulation of byzantine behaviour. The current implementation of byzantine behaviour only covers a fraction of the byzantine faulty space. Expanding this could be interesting, but simulating more byzantine behaviours would have a large impact on code complexity. Ultimately, we believe simulating all possible byzantine behaviours is impossible. If we simulate anything less, we can only prove the system is not byzantine fault tolerant, not that it is. It might be better to show byzantine behaviour tolerance by showing that our implementation conforms to the one described in the paper.
+- measuring throughput and latency in continuous operation. For this, it might be interesting to implement a commit payload, as well as running the system in some distributed fashion (giving each actor its own JVM would help to show some of the distributed difficulties/overhead).
+
+### Additional features
+Implementing view changes is something we're working on.
