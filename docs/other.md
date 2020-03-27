@@ -62,6 +62,12 @@ p.42 "Because the participant p is correct and responded to the initiator's requ
 
 Initially it was not clear that the initiator propagates the transaction to all participants, as the Introduction specifically mentions the participants-have-to-know-all-other-participants as a drawback of another protocol.
 
+"A backup suspects the primary and initiates a view change immediately if the ba-pre-prepare message fails the verification"  
+-- shouldn't the view-changes be voted on?
+
+"When the primary for view v+1 receives 2f+1 valid view change messages[...], it [...] multicasts a new view message for view v+1."
+-- what if the new primary is byzantine (and does not send out the new view), how is it guaranteed that another replica takes over to view v+2
+
 ## Insights
 
 "The initiator is regarded as a special participant" -> The initiator will also receive the commits/aborts by the coordinators.
@@ -71,6 +77,10 @@ Initially it was not clear that the initiator propagates the transaction to all 
 ## Thoughts
 
 It seems to be somewhat careless that the paper authors have not implemented view changes. We therefore assume that no full implementation of this protocol exists up to now.
+
+Pseudo-code: The paper never mentions if the funcitons are thought to be executed on coordinator or participant side.
+
+The paper mentions WS-AT a few times, but they have made it more clear that it that they assume strong knowledge of WS-AT. Reading WS-AT helped a lot!
 
 ### About running it in a distributed fashion
 
