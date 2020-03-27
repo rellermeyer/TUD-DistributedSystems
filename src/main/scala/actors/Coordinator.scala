@@ -13,8 +13,8 @@ import scala.collection.mutable
 
 
 object Coordinator {
-  def apply(keyTuple: KeyTuple, masterPubKey: PublicKey, operational: Boolean, byzantine: Boolean): Behavior[Signed[CoordinatorMessage]] = {
-    Behaviors.logMessages(Behaviors.setup(context => new Coordinator(context, keyTuple, masterPubKey, operational, byzantine)))
+  def apply(keyTuple: KeyTuple, masterPubKey: PublicKey, operational: Boolean, byzantine: Boolean, slow: Boolean): Behavior[Signed[CoordinatorMessage]] = {
+    Behaviors.logMessages(Behaviors.setup(context => new Coordinator(context, keyTuple, masterPubKey, operational, byzantine,slow)))
   }
 
   class StableStorageItem() {
@@ -28,6 +28,7 @@ object Coordinator {
     var v: View = 0
     var baState: BaState = BaState.INITIAL
     var digest: Digest = 0
+    var timeOut_View: (View,Long) = (0,0)
   }
 
   object BaState extends Enumeration {
@@ -37,7 +38,7 @@ object Coordinator {
 
 }
 
-class Coordinator(context: ActorContext[Signed[CoordinatorMessage]], keys: KeyTuple, masterPubKey: PublicKey, operational: Boolean, byzantine: Boolean) extends AbstractBehavior[Signed[CoordinatorMessage]](context) {
+class Coordinator(context: ActorContext[Signed[CoordinatorMessage]], keys: KeyTuple, masterPubKey: PublicKey, operational: Boolean, byzantine: Boolean, slow: Boolean) extends AbstractBehavior[Signed[CoordinatorMessage]](context) {
 
   import Coordinator._
 
@@ -46,10 +47,12 @@ class Coordinator(context: ActorContext[Signed[CoordinatorMessage]], keys: KeyTu
   var f: Int = (coordinators.length - 1) / 3
   var stableStorage: mutable.Map[TransactionID, StableStorageItem] = mutable.Map()
   var toggledFlag = false
+  var timeOut = 100
 
   override def onMessage(message: Signed[CoordinatorMessage]): Behavior[Signed[CoordinatorMessage]] = {
     if (operational) message.m match {
       case Setup(coordinators) =>
+        if(slow) timeOut = 1
         this.coordinators = coordinators
         f = (coordinators.length - 1) / 3
         i = coordinators.indexOf(this.context.self)
@@ -118,8 +121,12 @@ class Coordinator(context: ActorContext[Signed[CoordinatorMessage]], keys: KeyTu
           case None =>
             context.log.error("not implemented")
         }
+
       case m: ViewChange =>
+        context.log.debug("View change not implemented.")
+
       case m: BaPrePrepare =>
+
         stableStorage.get(m.t) match {
           case Some(value) => {
             //TODO: check if message is from primary
@@ -140,6 +147,7 @@ class Coordinator(context: ActorContext[Signed[CoordinatorMessage]], keys: KeyTu
                   }
                   )
                   if (!changeView) {
+                    value.timeOut_View = (m.v,System.currentTimeMillis())
                     value.digest = m.c.hashCode()
                     context.log.debug("Digest:" + value.digest)
                     value.baPrePrepareLog += m
@@ -147,15 +155,15 @@ class Coordinator(context: ActorContext[Signed[CoordinatorMessage]], keys: KeyTu
                   }
                 case util.Messages.Decision.ABORT =>
                   //TODO: implement proper checks
+                  value.timeOut_View = (m.v,System.currentTimeMillis())
                   value.digest = m.c.hashCode()
                   context.log.debug("Digest:" + value.digest)
                   value.baPrePrepareLog += m
                   coordinators.foreach(coord => coord ! Messages.BaPrepare(m.v, m.t, value.digest, dec(Decision.ABORT), context.self).sign(keys))
-
               }
               if (changeView) {
-                context.log.warn("View change not implemented yet")
-                // TODO: implement view change
+                val P = ViewChangeStateBaNotPrePrepared(m.v,m.t,value.decisionCertificate)
+                coordinators.foreach(coord => coord ! ViewChange(m.v + 1,m.t,P,context.self).sign(keys))                // TODO: implement view change
                 // TODO: abort?
               }
             }
@@ -165,6 +173,8 @@ class Coordinator(context: ActorContext[Signed[CoordinatorMessage]], keys: KeyTu
       case m: BaPrepare =>
         stableStorage.get(m.t) match {
           case Some(ss) =>
+            var changeView = false
+
             if (ss.baState != BaState.INITIAL) {
               context.log.debug("not expecting BaPrepare")
               return this
@@ -173,19 +183,29 @@ class Coordinator(context: ActorContext[Signed[CoordinatorMessage]], keys: KeyTu
               if (m.c == ss.digest) { //check digest // TODO: not sure if this is how it should be done
                 if (ss.baPrePrepareLog.exists(p => (p.o == m.o) && p.t == m.t)) { //check if same decision as in baPrePrepare
                   ss.baPrepareLog += m
-                } else
+                } else {
                   context.log.debug("proposed outcome different from BaPrePrepare stage")
+                  changeView = true
+                }
               } else {
                 context.log.debug("digest verification failed:" + m.c + " vs. " + ss.digest)
+                changeView = true
               }
-              if (ss.baPrepareLog.count(p => p.o == m.o) >= 2 * f) {
-                //BaPrepared flag prevents duplicate messages
-                coordinators.foreach(coord => coord ! Messages.BaCommit(m.v, m.t, m.c, dec(m.o), context.self).sign(keys))
-                ss.baState = BaState.PREPARED
-                context.log.info("BaPrepared")
+              if(ss.timeOut_View._1 != m.v || ((System.currentTimeMillis() - ss.timeOut_View._2) > timeOut)){
+                context.log.debug("Timeout or view verification failed. "+m.v+" == "+ss.timeOut_View._1+" | "+System.currentTimeMillis()+" "+ss.timeOut_View._2)
+                changeView = true
               }
-              else {
-
+              if(!changeView) {
+                if (ss.baPrepareLog.count(p => p.o == m.o) >= 2 * f) {
+                  //BaPrepared flag prevents duplicate messages
+                  coordinators.foreach(coord => coord ! Messages.BaCommit(m.v, m.t, m.c, dec(m.o), context.self).sign(keys))
+                  ss.baState = BaState.PREPARED
+                  context.log.info("BaPrepared")
+                }
+              }else {
+                context.log.debug("TimedOut or verifiaction failed. Init view change.")
+                val P = ViewChangeStateBaPrePrepared(m.v,m.t,m.o,ss.baPrePrepareLog.head.c)
+                coordinators.foreach(coord => coord ! ViewChange(m.v + 1,m.t,P,context.self).sign(keys))
               }
             } else {
               context.log.warn("Incorrect signature")
@@ -195,35 +215,50 @@ class Coordinator(context: ActorContext[Signed[CoordinatorMessage]], keys: KeyTu
       case m: BaCommit =>
         stableStorage.get(m.t) match {
           case Some(ss) =>
+            var changeView = false
+
             if (ss.baState != BaState.PREPARED) {
               context.log.debug("not expecting BaCommit")
               return this
             }
             ss.baCommitLog += m
+            if (ss.timeOut_View._1 != m.v || ((System.currentTimeMillis() - ss.timeOut_View._2) > timeOut)) {
+              changeView = true
+            }
             if (message.verify(masterPubKey)) {
-              if (byzantine) {
-                if (m.o == Decision.ABORT) {
-                  ss.participants.foreach(part => part ! Messages.Commit(m.t, context.self).sign(keys))
-                  context.log.info("Byzantine BaCommitted")
+              if (!changeView) {
+                if (byzantine) {
+                  if (m.o == Decision.ABORT) {
+                    ss.participants.foreach(part => part ! Messages.Commit(m.t, context.self).sign(keys))
+                    context.log.info("Byzantine BaCommitted")
+                  } else {
+                    ss.participants.foreach(part => part ! Messages.Rollback(m.t, context.self).sign(keys))
+                    context.log.info("Byzantine BaCommitted abort")
+                  }
                 } else {
-                  ss.participants.foreach(part => part ! Messages.Rollback(m.t, context.self).sign(keys))
-                  context.log.info("Byzantine BaCommitted abort")
+                  if (m.o == Decision.COMMIT) {
+                    if (ss.baCommitLog.count(p => p.o == m.o) >= 2 * f) {
+                      ss.participants.foreach(part => part ! Messages.Commit(m.t, context.self).sign(keys))
+                      ss.baState = BaState.COMMITTED // or just drop the transaction?
+                      context.log.info("BaCommitted")
+                    }
+                  }
+                  else {
+                    if (ss.baCommitLog.count(p => p.o == m.o) >= 2 * f) {
+                      ss.participants.foreach(part => part ! Messages.Rollback(m.t, context.self).sign(keys))
+                      context.log.info("BaCommitted abort")
+                    }
+                  }
                 }
               } else {
-                if (m.o == Decision.COMMIT) {
-                  if (ss.baCommitLog.count(p => p.o == m.o) >= 2 * f) {
-                    ss.participants.foreach(part => part ! Messages.Commit(m.t, context.self).sign(keys))
-                    ss.baState = BaState.COMMITTED // or just drop the transaction?
-                    context.log.info("BaCommitted")
-                  }
-                }
-                else {
-                  if (ss.baCommitLog.count(p => p.o == m.o) >= 2 * f) {
-                    ss.participants.foreach(part => part ! Messages.Rollback(m.t, context.self).sign(keys))
-                    context.log.info("BaCommitted abort")
-                  }
-                }
+                context.log.debug("TimedOut. Init view change.")
+                val P = ViewChangeStateBaPrepared(m.v, m.t, m.o, ss.baPrePrepareLog.head.c, ss.baPrepareLog)
+                coordinators.foreach(coord => coord ! ViewChange(m.v + 1, m.t, P, context.self).sign(keys))
               }
+            } else {
+              context.log.debug("TimedOut. Init view change.")
+              val P = ViewChangeStateBaPrepared(m.v, m.t, m.o, ss.baPrePrepareLog.head.c, ss.baPrepareLog)
+              coordinators.foreach(coord => coord ! ViewChange(m.v + 1, m.t, P, context.self).sign(keys))
             }
           case None =>
         }

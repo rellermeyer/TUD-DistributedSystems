@@ -22,10 +22,10 @@ object ActorStart {
 
       // Create coordinators
       val coordinators: Array[Messages.Coordinator] = Array(
-        context.spawn(Coordinator(genSignedKey(kpg, masterKey), masterKey.getPublic(), operational = true, byzantine = false), "Coordinator---1"),
-        context.spawn(Coordinator(genSignedKey(kpg, masterKey), masterKey.getPublic(), operational = true, byzantine = false), "Coordinator---2"),
-        context.spawn(Coordinator(genSignedKey(kpg, masterKey), masterKey.getPublic(), operational = true, byzantine = false), "Coordinator---3"),
-        context.spawn(Coordinator(genSignedKey(kpg, masterKey), masterKey.getPublic(), operational = true, byzantine = false), "Coordinator---4")
+        context.spawn(Coordinator(genSignedKey(kpg, masterKey), masterKey.getPublic(), operational = true, byzantine = false, slow = false), "Coordinator---1"),
+        context.spawn(Coordinator(genSignedKey(kpg, masterKey), masterKey.getPublic(), operational = true, byzantine = false, slow = false), "Coordinator---2"),
+        context.spawn(Coordinator(genSignedKey(kpg, masterKey), masterKey.getPublic(), operational = true, byzantine = false, slow = false), "Coordinator---3"),
+        context.spawn(Coordinator(genSignedKey(kpg, masterKey), masterKey.getPublic(), operational = true, byzantine = false, slow = false), "Coordinator---4")
       )
 
       // Send coordinators set of coordinators
