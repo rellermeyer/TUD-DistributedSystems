@@ -13,6 +13,8 @@ papersize: "a4"
 
 # Evaluation [&uarr;](./../README.md)
 
+>Please send me your codebase along side a short report that discusses how you are going to evaluate the implemented system. (e.g., what metrics, what is the setup, which experiments, etc.)
+
 In this report we will describe how we are going to evaluate the BFTDC[^1] Protocol system described in *"A Byzantine Fault Tolerant Distributed Commit Protocol"* by Wenbing Zhao (Department of Electrical and Computer Engineering, Cleveland State University).
 
 ## Functional requirements
@@ -46,7 +48,7 @@ The following tests were implemented using tests in/with Scala/Akka:
 
 Further evaluations planned in the near future:
 
-- measuring throughput and latency in continuous operation. For this, it might be interesting to implement a commit payload, as well as running the system in some distributed fashion (giving each actor its own JVM would help to show some of the distributed difficulties/overhead).  
+- expanding the simulation of byzantine behaviour. The current implementation of byzantine behaviour only covers a fraction of the byzantine faulty space. Expanding this could be interesting, but simulating more byzantine behaviours would have a large impact on code complexity. Ultimately, we believe simulating all possible byzantine behaviours is impossible. If we simulate anything less, we can only prove the system is not byzantine fault tolerant, not that it is. It might be better to show byzantine behaviour tolerance by showing that our implementation conforms to the one described in the paper.  
 
 ## Non-Functional Requirements
 
