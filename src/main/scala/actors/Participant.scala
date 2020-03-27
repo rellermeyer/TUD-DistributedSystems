@@ -43,7 +43,6 @@ abstract class Participant(context: ActorContext[Signed[ParticipantMessage]], co
                   s.s = PREPARED
                   m.from ! VotePrepared(m.t, Decision.COMMIT, context.self).sign(keys)
                 case util.Messages.Decision.ABORT =>
-                  // TODO: change into some aborted state?
                   m.from ! VotePrepared(m.t, Decision.ABORT, context.self).sign(keys)
               }
             case None =>
