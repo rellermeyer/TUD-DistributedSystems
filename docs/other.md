@@ -84,6 +84,8 @@ Pseudo-code: The paper never mentions if the funcitons are thought to be execute
 
 The paper mentions WS-AT a few times, but they have made it more clear that it that they assume strong knowledge of WS-AT. Reading WS-AT helped a lot!
 
+Implementation: As we're implementing a commit protocol which is based on messages, it makes sense to use a framework for passing messages. As we are restricted to Scala and akka seems to be one of the most-used frameworks (actor framework) for that purpose, we chose to use that. We decided against directly implementing participants and coordinators as a FSM as our team is more familiar with more imperative programming. Furthermore, in the beginning we were not sure if we understood all parts of the paper.
+
 ### About running it in a distributed fashion
 
 The idea to get our implementation running in a distributed fashion is:
