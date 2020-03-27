@@ -29,7 +29,7 @@ abstract class Participant(context: ActorContext[Signed[ParticipantMessage]], co
 
   import Participant._
 
-  val f = (coordinators.length - 1) / 3
+  val f: Int = (coordinators.length - 1) / 3
   val transactions: mutable.Map[TransactionID, State] = mutable.Map()
 
   override def onMessage(message: Signed[ParticipantMessage]): Behavior[Signed[ParticipantMessage]] = {
