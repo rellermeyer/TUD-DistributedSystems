@@ -19,12 +19,12 @@ In this report we will describe how we are going to evaluate the BFTDC[^1] Proto
 
 ## Functional requirements
 
+Functional requirements were evaluated using Scala tests (```ScalaTestWithActorTestKit```). We considered:
+
 - Basic Committing
 - Aborting
 - Unilateral aborting
-- Byzantine behavior
-
-The functional requirements were evaluated using Scala tests (```ScalaTestWithActorTestKit```).
+- Byzantine behavior tolerance
 
 Along with the development we have built a set of tests which tested every feature we implemented. This way we ensured that every module did its work properly.  
 We have built a total of 15 tests through which Coordinators and Participants exange messages and perform the corresponding message verification and decision making processes. These tests ensure the implementation correctness by creating protocol instances and making coordinator replicas and participants conduct several distributed commit protocols. Different number of coordinator replicas and participants is used to test  the system's resilience to multiple message passing. Faulty participant behaviour is also tested by sending abort messages in the middle of a commit transaction.
