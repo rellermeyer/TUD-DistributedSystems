@@ -219,7 +219,7 @@ class CoordinatorSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike {
   "a coordinator" must {
     "be able to suggest a view change if the timeout is exceeded" in {
       testNr = testNr + 1
-      val (cs, ps) = spawnAll(0, 1, 0,0,0,0,1)
+      val (cs, ps) = spawnAll(0, 1, 0, 0, 0, 0, 1)
       val t0 = Transaction(0)
       ps.foreach(p => p ! PropagateTransaction(t0).fakesign())
       Thread.sleep(100)
@@ -234,12 +234,12 @@ class CoordinatorSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike {
 
   def spawnAll(nCoordinators: Int, nCommittingParticipants: Int, nAbortingParticipants: Int = 0, nFailedCoordinators: Int = 0, nByzantinePrimaryCoord: Int = 0, nByzantineOtherCoord: Int = 0, nSlowCoord: Int = 0): (Array[Messages.Coordinator], Array[Messages.Participant]) = {
     val cs = new Array[Messages.Coordinator](nByzantinePrimaryCoord + nCoordinators + nFailedCoordinators + nByzantineOtherCoord + nSlowCoord)
-  //def spawnAll(nCoordinators: Int, nCommittingParticipants: Int, nAbortingParticipants: Int = 0): (Array[Messages.Coordinator], Array[Messages.Participant]) = {
+    //def spawnAll(nCoordinators: Int, nCommittingParticipants: Int, nAbortingParticipants: Int = 0): (Array[Messages.Coordinator], Array[Messages.Participant]) = {
     //val cs = new Array[Messages.Coordinator](nCoordinators)
 
-    var kpg: KeyPairGenerator = KeyPairGenerator.getInstance("RSA")
+    val kpg: KeyPairGenerator = KeyPairGenerator.getInstance("RSA")
     kpg.initialize(2048)
-    var masterKey = kpg.generateKeyPair
+    val masterKey = kpg.generateKeyPair
 
     for (x <- 0 until nByzantinePrimaryCoord) {
       cs(x) = spawn(Coordinator(genSignedKey(kpg, masterKey), masterKey.getPublic(), operational = true, byzantine = true, slow = false), testNr + "Coordinator-" + x)

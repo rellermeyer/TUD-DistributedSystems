@@ -14,7 +14,7 @@ import scala.collection.mutable
 
 object Coordinator {
   def apply(keyTuple: KeyTuple, masterPubKey: PublicKey, operational: Boolean, byzantine: Boolean, slow: Boolean): Behavior[Signed[CoordinatorMessage]] = {
-    Behaviors.logMessages(Behaviors.setup(context => new Coordinator(context, keyTuple, masterPubKey, operational, byzantine,slow)))
+    Behaviors.logMessages(Behaviors.setup(context => new Coordinator(context, keyTuple, masterPubKey, operational, byzantine, slow)))
   }
 
   class StableStorageItem() {
@@ -28,7 +28,7 @@ object Coordinator {
     var v: View = 0
     var baState: BaState = BaState.INITIAL
     var digest: Digest = 0
-    var timeOut_View: (View,Long) = (0,0)
+    var timeOut_View: (View, Long) = (0, 0)
   }
 
   object BaState extends Enumeration {
@@ -52,7 +52,7 @@ class Coordinator(context: ActorContext[Signed[CoordinatorMessage]], keys: KeyTu
   override def onMessage(message: Signed[CoordinatorMessage]): Behavior[Signed[CoordinatorMessage]] = {
     if (operational) message.m match {
       case Setup(coordinators) =>
-        if(slow) timeOut = 1
+        if (slow) timeOut = 1
         this.coordinators = coordinators
         f = (coordinators.length - 1) / 3
         i = coordinators.indexOf(this.context.self)
@@ -147,7 +147,7 @@ class Coordinator(context: ActorContext[Signed[CoordinatorMessage]], keys: KeyTu
                   }
                   )
                   if (!changeView) {
-                    value.timeOut_View = (m.v,System.currentTimeMillis())
+                    value.timeOut_View = (m.v, System.currentTimeMillis())
                     value.digest = m.c.hashCode()
                     context.log.debug("Digest:" + value.digest)
                     value.baPrePrepareLog += m
@@ -155,15 +155,15 @@ class Coordinator(context: ActorContext[Signed[CoordinatorMessage]], keys: KeyTu
                   }
                 case util.Messages.Decision.ABORT =>
                   //TODO: implement proper checks
-                  value.timeOut_View = (m.v,System.currentTimeMillis())
+                  value.timeOut_View = (m.v, System.currentTimeMillis())
                   value.digest = m.c.hashCode()
                   context.log.debug("Digest:" + value.digest)
                   value.baPrePrepareLog += m
                   coordinators.foreach(coord => coord ! Messages.BaPrepare(m.v, m.t, value.digest, dec(Decision.ABORT), context.self).sign(keys))
               }
               if (changeView) {
-                val P = ViewChangeStateBaNotPrePrepared(m.v,m.t,value.decisionCertificate)
-                coordinators.foreach(coord => coord ! ViewChange(m.v + 1,m.t,P,context.self).sign(keys))                // TODO: implement view change
+                val P = ViewChangeStateBaNotPrePrepared(m.v, m.t, value.decisionCertificate)
+                coordinators.foreach(coord => coord ! ViewChange(m.v + 1, m.t, P, context.self).sign(keys)) // TODO: implement view change
                 // TODO: abort?
               }
             }
@@ -191,21 +191,21 @@ class Coordinator(context: ActorContext[Signed[CoordinatorMessage]], keys: KeyTu
                 context.log.debug("digest verification failed:" + m.c + " vs. " + ss.digest)
                 changeView = true
               }
-              if(ss.timeOut_View._1 != m.v || ((System.currentTimeMillis() - ss.timeOut_View._2) > timeOut)){
-                context.log.debug("Timeout or view verification failed. "+m.v+" == "+ss.timeOut_View._1+" | "+System.currentTimeMillis()+" "+ss.timeOut_View._2)
+              if (ss.timeOut_View._1 != m.v || ((System.currentTimeMillis() - ss.timeOut_View._2) > timeOut)) {
+                context.log.debug("Timeout or view verification failed. " + m.v + " == " + ss.timeOut_View._1 + " | " + System.currentTimeMillis() + " " + ss.timeOut_View._2)
                 changeView = true
               }
-              if(!changeView) {
+              if (!changeView) {
                 if (ss.baPrepareLog.count(p => p.o == m.o) >= 2 * f) {
                   //BaPrepared flag prevents duplicate messages
                   coordinators.foreach(coord => coord ! Messages.BaCommit(m.v, m.t, m.c, dec(m.o), context.self).sign(keys))
                   ss.baState = BaState.PREPARED
                   context.log.info("BaPrepared")
                 }
-              }else {
+              } else {
                 context.log.debug("TimedOut or verifiaction failed. Init view change.")
-                val P = ViewChangeStateBaPrePrepared(m.v,m.t,m.o,ss.baPrePrepareLog.head.c)
-                coordinators.foreach(coord => coord ! ViewChange(m.v + 1,m.t,P,context.self).sign(keys))
+                val P = ViewChangeStateBaPrePrepared(m.v, m.t, m.o, ss.baPrePrepareLog.head.c)
+                coordinators.foreach(coord => coord ! ViewChange(m.v + 1, m.t, P, context.self).sign(keys))
               }
             } else {
               context.log.warn("Incorrect signature")
