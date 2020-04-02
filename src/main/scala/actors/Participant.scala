@@ -65,7 +65,12 @@ abstract class Participant(context: ActorContext[Signed[ParticipantMessage]], co
                 s.readyParticipants += m.from
               }
               if(s.readyParticipants.size == participants.size) {
-                coordinators.foreach(c => c ! InitCommit(m.t, context.self).fakesign()) //TODO: proper signing
+                prepare(m.t) match {
+                  case Decision.COMMIT =>
+                    coordinators.foreach(c => c ! InitCommit(m.t, context.self).sign(keys))
+                  case Decision.ABORT =>
+                    coordinators.foreach(c => c ! InitAbort(m.t, context.self).sign(keys))
+                }
               }
               //TODO: if some timeout has passed, send initAbort instead
             case None =>
@@ -83,7 +88,6 @@ abstract class Participant(context: ActorContext[Signed[ParticipantMessage]], co
                   s.s = PREPARED
                   m.from ! VotePrepared(m.t, Decision.COMMIT, context.self).sign(keys)
                 case util.Messages.Decision.ABORT =>
-                  // TODO: change into some aborted state?
                   m.from ! VotePrepared(m.t, Decision.ABORT, context.self).sign(keys)
               }
             case None =>
