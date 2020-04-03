@@ -53,6 +53,15 @@ We set objectives from the beginning in order to figure out and organise the wor
 - **Could have/Will not have**:
   - View change mechanism (this fetaure was not implemented by the paper authors either).
 
+## Evaluation
+All tests were performed with 4 coordinators. In each test, 100 transactions were committed. From this, the average latency and throughput were calculated.
+Test 1: 2 participants 
+Average latency (ms): 347
+Throughput (transactions/s): 2.878526
+Test 2: 4 participants 
+Average latency (ms): 488
+Throughput (transactions/s): 2.0465384
+
 ## Footnotes
 
 [^1]: https://ieeexplore.ieee.org/document/4351387
