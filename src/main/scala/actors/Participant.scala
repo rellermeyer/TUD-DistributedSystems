@@ -3,11 +3,10 @@ package actors
 import java.security.PublicKey
 
 import actors.Participant.TransactionState.{ACTIVE, PREPARED, TransactionState}
-import akka.actor.typed.Behavior
+import akka.actor.typed.{ActorRef, Behavior}
 import akka.actor.typed.scaladsl.{AbstractBehavior, ActorContext, Behaviors}
 import util.Messages.Decision.Decision
 import util.Messages._
-
 import scala.collection.mutable
 
 
@@ -16,7 +15,8 @@ object Participant {
     Behaviors.logMessages(Behaviors.setup(context => new FixedDecisionParticipant(context, coordinators, decision, keyTuple, masterPubKey)))
   }
 
-  class State(var s: TransactionState, val t: Transaction, val decisionLog: Array[Decision])
+  type Participant = ActorRef[Signed[ParticipantMessage]]
+  class State(var s: TransactionState, val t: Transaction, val decisionLog: Array[Decision],val registrations: mutable.Set[Coordinator], val initiator: Participant, val readyParticipants: mutable.Set[Participant])
 
   object TransactionState extends Enumeration {
     type TransactionState = Value
@@ -30,10 +30,55 @@ abstract class Participant(context: ActorContext[Signed[ParticipantMessage]], co
   import Participant._
 
   val f: Int = (coordinators.length - 1) / 3
+  val participants: Array[Participant.Participant] = Array(context.self)
   val transactions: mutable.Map[TransactionID, State] = mutable.Map()
 
   override def onMessage(message: Signed[ParticipantMessage]): Behavior[Signed[ParticipantMessage]] = {
     message.m match {
+      case m: PropagateTransaction =>
+        transactions.get(m.t.id) match {
+          case Some(s) =>
+            context.log.warn("Transaction known, no action needed")
+          case None =>
+            transactions += (m.t.id -> new State(ACTIVE, m.t, new Array(coordinators.length), mutable.Set().empty,m.from,mutable.Set().empty))
+        }
+        coordinators.foreach(c => c ! Register(m.t.id, context.self).sign(keys))
+      case m: ConfirmRegistration =>
+        if(message.verify(masterPubKey)) {
+          transactions.get(m.t) match {
+            case Some(s) =>
+              if(!s.registrations.contains(m.from)) {
+                s.registrations += m.from
+              }
+              if(s.registrations.size >= 2 * f + 1) {
+                s.initiator ! PropagationReply(m.t, context.self).sign(keys)
+              }
+            case None =>
+              context.log.error("Transaction not known")
+          }
+        }
+      case m: PropagationReply =>
+        if(message.verify(masterPubKey)) {
+          transactions.get(m.t) match {
+            case Some(s) =>
+              if(!s.readyParticipants.contains(m.from)) {
+                s.readyParticipants += m.from
+              }
+              if(s.readyParticipants.size == participants.size) {
+                prepare(m.t) match {
+                  case Decision.COMMIT =>
+                    coordinators.foreach(c => c ! InitCommit(m.t, context.self).sign(keys))
+                  case Decision.ABORT =>
+                    coordinators.foreach(c => c ! InitAbort(m.t, context.self).sign(keys))
+                }
+              }
+              //TODO: if some timeout has passed, send initAbort instead
+            case None =>
+              context.log.error("Transaction not known")
+          }
+        } else {
+          context.log.error("Incorrect signature")
+        }
       case m: Prepare =>
         if (message.verify(masterPubKey)) {
           transactions.get(m.t) match {
@@ -89,20 +134,10 @@ abstract class Participant(context: ActorContext[Signed[ParticipantMessage]], co
                 context.log.error("Incorrect signature")
               }
             }
-            case _ =>
           }
           case None =>
         }
       }
-
-      case m: PropagateTransaction =>
-        transactions.get(m.t.id) match {
-          case Some(s) =>
-            context.log.warn("Transaction known, no action needed")
-          case None =>
-            transactions += (m.t.id -> new State(ACTIVE, m.t, new Array(coordinators.length)))
-        }
-        coordinators.foreach(c => c ! Register(m.t.id, context.self).sign(keys))
     }
     this
   }

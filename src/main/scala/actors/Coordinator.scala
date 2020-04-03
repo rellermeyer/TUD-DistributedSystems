@@ -62,6 +62,7 @@ class Coordinator(context: ActorContext[Signed[CoordinatorMessage]], keys: KeyTu
           if (message.verify(masterPubKey)) {
             ss.participants += m.from
             ss.registrationLog(m.from) = m
+            m.from ! ConfirmRegistration(m.t,context.self).sign(keys)
           }
           else {
             context.log.error("Incorrect signature")
@@ -104,22 +105,26 @@ class Coordinator(context: ActorContext[Signed[CoordinatorMessage]], keys: KeyTu
             context.log.error("Not implemented")
         }
       case m: InitCommit =>
-        stableStorage.get(m.t) match {
-          case Some(ss) =>
-            ss.participants.foreach(p => p ! Messages.Prepare(m.t, context.self).sign(keys))
-          case None =>
-            context.log.error("not implemented")
+        if(message.verify(masterPubKey)) {
+          stableStorage.get(m.t) match {
+            case Some(ss) =>
+              ss.participants.foreach(p => p ! Messages.Prepare(m.t, context.self).sign(keys))
+            case None =>
+              context.log.error("not implemented")
+          }
         }
       case m: InitAbort =>
-        stableStorage.get(m.t) match {
-          case Some(ss) =>
-            if (i == ss.v % (3 * f + 1)) { // primary
-              //TODO: create false decision certificate if byzantine
-              ss.decisionCertificate += (m.from -> DecisionCertificateEntry(ss.registrationLog(m.from), None, Option(m)))
-              coordinators.foreach(coord => coord ! Messages.BaPrePrepare(ss.v, m.t, dec(Decision.ABORT), ss.decisionCertificate, context.self).sign(keys))
-            }
-          case None =>
-            context.log.error("not implemented")
+        if(message.verify(masterPubKey)) {
+          stableStorage.get(m.t) match {
+            case Some(ss) =>
+              if (i == ss.v % (3 * f + 1)) { // primary
+                //TODO: create false decision certificate if byzantine
+                ss.decisionCertificate += (m.from -> DecisionCertificateEntry(ss.registrationLog(m.from), None, Option(m)))
+                coordinators.foreach(coord => coord ! Messages.BaPrePrepare(ss.v, m.t, dec(Decision.ABORT), ss.decisionCertificate, context.self).sign(keys))
+              }
+            case None =>
+              context.log.error("not implemented")
+          }
         }
 
       case m: ViewChange =>
