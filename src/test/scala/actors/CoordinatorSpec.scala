@@ -187,6 +187,49 @@ class CoordinatorSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike {
     }
   }
 
+  "Latency & throughput test" must {
+    "2 participants" in {
+      testNr = testNr + 1
+      latencyThroughputTest(2)
+    }
+    "4 participants" in {
+      testNr = testNr + 1
+      latencyThroughputTest(4)
+    }/* //tests below still fail
+    "6 participants" in {
+      testNr = testNr + 1
+      latencyThroughputTest(6)
+    }
+    "8 participants" in {
+      testNr = testNr + 1
+      latencyThroughputTest(8)
+    }
+    "10 participants" in {
+      testNr = testNr + 1
+      latencyThroughputTest(10)
+    }*/
+  }
+
+  def latencyThroughputTest(nParticipants: Int) = {
+    val (cs, ps) = spawnAll(4, nParticipants)
+    val numberOfTransactions = 100
+    var totalLatency: Long = 0
+    val timerStart = System.currentTimeMillis()
+    for (id <- 0 until numberOfTransactions) {
+      val latencyTimerStart: Long = System.currentTimeMillis()
+      val t = Transaction(id)
+      LoggingTestKit.info("Committed transaction " + id).withOccurrences(nParticipants).expect {
+        ps.foreach(p => p ! PropagateTransaction(t, ps(0)).fakesign())
+      }
+      totalLatency += System.currentTimeMillis() - latencyTimerStart
+    }
+    val delay = System.currentTimeMillis() - timerStart
+    cs.foreach(x => testKit.stop(x))
+    ps.foreach(x => testKit.stop(x))
+    println("Average latency (ms): " + (totalLatency/numberOfTransactions))
+    println("Throughput (transactions/s): " + numberOfTransactions/(delay.toFloat/1000))
+  }
+
   def spawnAll(nCoordinators: Int, nCommittingParticipants: Int, nAbortingParticipants: Int = 0, nFailedCoordinators: Int = 0, nByzantinePrimaryCoord: Int = 0, nByzantineOtherCoord: Int = 0): (Array[Messages.Coordinator], Array[Messages.Participant]) = {
     val cs = new Array[Messages.Coordinator](nByzantinePrimaryCoord + nCoordinators + nFailedCoordinators + nByzantineOtherCoord)
 
