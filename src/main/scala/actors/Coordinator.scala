@@ -88,13 +88,15 @@ class Coordinator(context: ActorContext[Signed[CoordinatorMessage]]
                   val enoughVotes = ss.decisionCertificate.size == ss.participants.size
                   if (isPrimary && enoughVotes) {
                     val decision = changeDecisionIfByzantine(Decision.COMMIT)
-                    coordinators.foreach(coord => coord ! Messages.BaPrePrepare(ss.v, m.t, decision, ss.decisionCertificate, context.self).sign(keys))
+                    val baPrePrepare = Messages.BaPrePrepare(ss.v, m.t, decision, ss.decisionCertificate.clone, context.self).sign(keys)
+                    coordinators.foreach(coord => coord ! baPrePrepare)
                   }
                 case util.Messages.Decision.ABORT =>
                   if (!ss.decisionCertificate.contains(m.from)) {
                     ss.decisionCertificate += (m.from -> DecisionCertificateEntry(ss.registrationLog(m.from), Option(m), None))
                     val decision = changeDecisionIfByzantine(Decision.ABORT)
-                    coordinators.foreach(coord => coord ! Messages.BaPrePrepare(ss.v, m.t, decision, ss.decisionCertificate, context.self).sign(keys))
+                    val baPrePrepare = Messages.BaPrePrepare(ss.v, m.t, decision, ss.decisionCertificate.clone, context.self).sign(keys)
+                    coordinators.foreach(coord => coord ! baPrePrepare)
                   }
               }
             }
@@ -118,7 +120,8 @@ class Coordinator(context: ActorContext[Signed[CoordinatorMessage]]
               //TODO: create false decision certificate if byzantine
               ss.decisionCertificate += (m.from -> DecisionCertificateEntry(ss.registrationLog(m.from), None, Option(m)))
               val decision = changeDecisionIfByzantine(Decision.ABORT)
-              coordinators.foreach(coord => coord ! Messages.BaPrePrepare(ss.v, m.t, decision, ss.decisionCertificate, context.self).sign(keys))
+              val baPrePrepare = Messages.BaPrePrepare(ss.v, m.t, decision, ss.decisionCertificate.clone, context.self).sign(keys)
+              coordinators.foreach(coord => coord ! baPrePrepare)
             }
           case None =>
             context.log.error("not implemented")
