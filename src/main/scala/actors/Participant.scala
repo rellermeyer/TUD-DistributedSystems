@@ -127,7 +127,8 @@ abstract class Participant(context: ActorContext[Signed[ParticipantMessage]]
               } else {
                 context.log.error("Incorrect signature")
               }
-
+            case _ =>
+              context.log.error(s"unexpected state, should be PREPARED instead of {s.s}")
           }
             if (s.decisionLog.count(x => x == Decision.COMMIT) >= f + 1) {
               // m.from ! Messages.Committed(null, m.o, context.self)
