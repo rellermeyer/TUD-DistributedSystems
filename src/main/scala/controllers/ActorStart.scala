@@ -6,7 +6,7 @@ import actors.{Coordinator, Participant}
 import akka.actor.typed.javadsl.Behaviors
 import akka.actor.typed.{ActorSystem, Behavior}
 import util.Messages
-import util.Messages.{Decision, PropagateTransaction, SignedPublicKey, Transaction}
+import util.Messages.{AppointInitiator, Decision, PropagateTransaction, SignedPublicKey, Transaction}
 
 
 object ActorStart {
@@ -32,10 +32,8 @@ object ActorStart {
       coordinators.foreach { x => x ! Messages.Setup(coordinators).fakesign() }
 
       // Create participant(s)
-      val participants: Set[Messages.Participant] = Set(
-        context.spawn(Participant(coordinators, Decision.COMMIT, genSignedKey(kpg, masterKey), masterKey.getPublic()), "PartInitiator-1")
-      )
-
+      val participants = new Array[Messages.Participant](1)
+      participants(0) = context.spawn(Participant(coordinators, Decision.COMMIT, genSignedKey(kpg, masterKey), masterKey.getPublic()), "PartInitiator-1")
 
       // Let the participant start messaging the coordinator
 
@@ -43,11 +41,10 @@ object ActorStart {
       // - propagate
       val numberOfTransactions = 100
       val transactions = new Array[Transaction](numberOfTransactions)
+      val p = participants.head
       for (id <- 0 until numberOfTransactions) {
         transactions(id) = Transaction(id);
-        for (x <- participants) {
-          x ! PropagateTransaction(transactions(id),participants.head).fakesign()
-        }
+        p ! AppointInitiator(transactions(id),Decision.COMMIT,participants,p).fakesign()
       }
       Behaviors.same
     }
