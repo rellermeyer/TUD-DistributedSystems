@@ -55,7 +55,12 @@ class Coordinator(context: ActorContext[Signed[CoordinatorMessage]]
   var timeOut = 500
 
   override def onMessage(message: Signed[CoordinatorMessage]): Behavior[Signed[CoordinatorMessage]] = {
-    if (operational) message.m match {
+    if (!message.verify(masterPubKey)) {
+      context.log.warn("Message dropped, incorrect signature")
+      return this
+    }
+    if (!operational) return this
+    message.m match {
       case Setup(coordinators) =>
         if (slow) timeOut = 1
         this.coordinators = coordinators
@@ -64,43 +69,31 @@ class Coordinator(context: ActorContext[Signed[CoordinatorMessage]]
       case m: Register =>
         val ss = stableStorage.getOrElseUpdate(m.t, new StableStorageItem())
         if (!ss.participants.contains(m.from)) {
-          if (message.verify(masterPubKey)) {
-            ss.participants += m.from
-            ss.registrationLog(m.from) = m
-            m.from ! ConfirmRegistration(m.t, m.from, context.self).sign(keys)
-          }
-          else {
-            context.log.error("Incorrect signature")
-          }
-
-
+          ss.participants += m.from
+          ss.registrationLog(m.from) = m
+          m.from ! ConfirmRegistration(m.t, m.from, context.self).sign(keys)
         }
         else {
-
+          context.log.info("Messages.Register dropped, participant is already registered")
         }
       case m: VotePrepared =>
         stableStorage.get(m.t) match {
           case Some(ss) =>
             if (ss.participants.contains(m.from)) {
-              if (message.verify(masterPubKey)) {
-                m.vote match {
-                  case util.Messages.Decision.COMMIT =>
-                    //TODO: create false decision certificate if byzantine
+              m.vote match {
+                case util.Messages.Decision.COMMIT =>
+                  //TODO: create false decision certificate if byzantine
+                  ss.decisionCertificate += (m.from -> DecisionCertificateEntry(ss.registrationLog(m.from), Option(m), None))
+                  val isPrimary = i == ss.v % (3 * f + 1)
+                  val enoughVotes = ss.decisionCertificate.size == ss.participants.size
+                  if (isPrimary && enoughVotes) {
+                    coordinators.foreach(coord => coord ! Messages.BaPrePrepare(ss.v, m.t, dec(Decision.COMMIT), ss.decisionCertificate, context.self).sign(keys))
+                  }
+                case util.Messages.Decision.ABORT =>
+                  if (!ss.decisionCertificate.contains(m.from)) {
                     ss.decisionCertificate += (m.from -> DecisionCertificateEntry(ss.registrationLog(m.from), Option(m), None))
-                    val isPrimary = i == ss.v % (3 * f + 1)
-                    val enoughVotes = ss.decisionCertificate.size == ss.participants.size
-                    if (isPrimary && enoughVotes) {
-                      coordinators.foreach(coord => coord ! Messages.BaPrePrepare(ss.v, m.t, dec(Decision.COMMIT), ss.decisionCertificate, context.self).sign(keys))
-                    }
-                  case util.Messages.Decision.ABORT =>
-                    if (!ss.decisionCertificate.contains(m.from)) {
-                      ss.decisionCertificate += (m.from -> DecisionCertificateEntry(ss.registrationLog(m.from), Option(m), None))
-                      coordinators.foreach(coord => coord ! Messages.BaPrePrepare(ss.v, m.t, dec(Decision.ABORT), ss.decisionCertificate, context.self).sign(keys))
-                    }
-                }
-              }
-              else {
-                context.log.error("Incorrect signature")
+                    coordinators.foreach(coord => coord ! Messages.BaPrePrepare(ss.v, m.t, dec(Decision.ABORT), ss.decisionCertificate, context.self).sign(keys))
+                  }
               }
             }
             else {
@@ -110,30 +103,30 @@ class Coordinator(context: ActorContext[Signed[CoordinatorMessage]]
             context.log.error("Not implemented")
         }
       case m: InitCommit =>
-        if (message.verify(masterPubKey)) {
-          stableStorage.get(m.t) match {
-            case Some(ss) =>
-              ss.participants.foreach(p => p ! Messages.Prepare(m.t, context.self).sign(keys))
-            case None =>
-              context.log.error("not implemented")
-          }
+        stableStorage.get(m.t) match {
+          case Some(ss) =>
+            ss.participants.foreach(p => p ! Messages.Prepare(m.t, context.self).sign(keys))
+          case None =>
+            context.log.error("not implemented")
         }
       case m: InitAbort =>
-        if (message.verify(masterPubKey)) {
-          stableStorage.get(m.t) match {
-            case Some(ss) =>
-              if (i == ss.v % (3 * f + 1)) { // primary
-                //TODO: create false decision certificate if byzantine
-                ss.decisionCertificate += (m.from -> DecisionCertificateEntry(ss.registrationLog(m.from), None, Option(m)))
-                coordinators.foreach(coord => coord ! Messages.BaPrePrepare(ss.v, m.t, dec(Decision.ABORT), ss.decisionCertificate, context.self).sign(keys))
-              }
-            case None =>
-              context.log.error("not implemented")
-          }
+        stableStorage.get(m.t) match {
+          case Some(ss) =>
+            if (i == ss.v % (3 * f + 1)) { // primary
+              //TODO: create false decision certificate if byzantine
+              ss.decisionCertificate += (m.from -> DecisionCertificateEntry(ss.registrationLog(m.from), None, Option(m)))
+              coordinators.foreach(coord => coord ! Messages.BaPrePrepare(ss.v, m.t, dec(Decision.ABORT), ss.decisionCertificate, context.self).sign(keys))
+            }
+          case None =>
+            context.log.error("not implemented")
         }
 
       case m: ViewChange =>
-        context.log.info("View change not implemented.")
+        stableStorage.get(m.t) match {
+          case Some(value) =>
+            context.log.error("View change requested but not implemented yet.")
+          case None =>
+        }
 
       case m: BaPrePrepare =>
 
@@ -188,36 +181,32 @@ class Coordinator(context: ActorContext[Signed[CoordinatorMessage]]
               context.log.debug("not expecting BaPrepare")
               return this
             }
-            if (message.verify(masterPubKey)) {
-              if (m.c == ss.digest) { //check digest // TODO: not sure if this is how it should be done
-                if (ss.baPrePrepareLog.exists(p => (p.o == m.o) && p.t == m.t)) { //check if same decision as in baPrePrepare
-                  ss.baPrepareLog += m
-                } else {
-                  context.log.debug("proposed outcome different from BaPrePrepare stage")
-                  changeView = true
-                }
+            if (m.c == ss.digest) { //check digest // TODO: not sure if this is how it should be done
+              if (ss.baPrePrepareLog.exists(p => (p.o == m.o) && p.t == m.t)) { //check if same decision as in baPrePrepare
+                ss.baPrepareLog += m
               } else {
-                context.log.debug("digest verification failed:" + m.c + " vs. " + ss.digest)
+                context.log.debug("proposed outcome different from BaPrePrepare stage")
                 changeView = true
-              }
-              if (ss.timeOut_View._1 != m.v || ((System.currentTimeMillis() - ss.timeOut_View._2) > timeOut)) {
-                context.log.debug("Timeout or view verification failed. " + m.v + " == " + ss.timeOut_View._1 + " | " + System.currentTimeMillis() + " " + ss.timeOut_View._2)
-                changeView = true
-              }
-              if (!changeView) {
-                if (ss.baPrepareLog.count(p => p.o == m.o) >= 2 * f) {
-                  //BaPrepared flag prevents duplicate messages
-                  coordinators.foreach(coord => coord ! Messages.BaCommit(m.v, m.t, m.c, dec(m.o), context.self).sign(keys))
-                  ss.baState = BaState.PREPARED
-                  context.log.info("BaPrepared")
-                }
-              } else {
-                context.log.debug("TimedOut or verification failed. Init view change.")
-                val P = ViewChangeStateBaPrePrepared(m.v, m.t, m.o, ss.baPrePrepareLog.head.c)
-                coordinators.foreach(coord => coord ! ViewChange(m.v + 1, m.t, P, context.self).sign(keys))
               }
             } else {
-              context.log.warn("Incorrect signature")
+              context.log.debug("digest verification failed:" + m.c + " vs. " + ss.digest)
+              changeView = true
+            }
+            if (ss.timeOut_View._1 != m.v || ((System.currentTimeMillis() - ss.timeOut_View._2) > timeOut)) {
+              context.log.debug("Timeout or view verification failed. " + m.v + " == " + ss.timeOut_View._1 + " | " + System.currentTimeMillis() + " " + ss.timeOut_View._2)
+              changeView = true
+            }
+            if (!changeView) {
+              if (ss.baPrepareLog.count(p => p.o == m.o) >= 2 * f) {
+                //BaPrepared flag prevents duplicate messages
+                coordinators.foreach(coord => coord ! Messages.BaCommit(m.v, m.t, m.c, dec(m.o), context.self).sign(keys))
+                ss.baState = BaState.PREPARED
+                context.log.info("BaPrepared")
+              }
+            } else {
+              context.log.debug("TimedOut or verification failed. Init view change.")
+              val P = ViewChangeStateBaPrePrepared(m.v, m.t, m.o, ss.baPrePrepareLog.head.c)
+              coordinators.foreach(coord => coord ! ViewChange(m.v + 1, m.t, P, context.self).sign(keys))
             }
           case None =>
         }
@@ -234,35 +223,29 @@ class Coordinator(context: ActorContext[Signed[CoordinatorMessage]]
             if (ss.timeOut_View._1 != m.v || ((System.currentTimeMillis() - ss.timeOut_View._2) > timeOut)) {
               changeView = true
             }
-            if (message.verify(masterPubKey)) {
-              if (!changeView) {
-                if (byzantine) {
-                  if (m.o == Decision.ABORT) {
-                    ss.participants.foreach(part => part ! Messages.Commit(m.t, context.self).sign(keys))
-                    context.log.info("Byzantine BaCommitted")
-                  } else {
-                    ss.participants.foreach(part => part ! Messages.Rollback(m.t, context.self).sign(keys))
-                    context.log.info("Byzantine BaCommitted abort")
-                  }
+            if (!changeView) {
+              if (byzantine) {
+                if (m.o == Decision.ABORT) {
+                  ss.participants.foreach(part => part ! Messages.Commit(m.t, context.self).sign(keys))
+                  context.log.info("Byzantine BaCommitted")
                 } else {
-                  if (m.o == Decision.COMMIT) {
-                    if (ss.baCommitLog.count(p => p.o == m.o) >= 2 * f) {
-                      ss.participants.foreach(part => part ! Messages.Commit(m.t, context.self).sign(keys))
-                      ss.baState = BaState.COMMITTED // or just drop the transaction?
-                      context.log.info("BaCommitted")
-                    }
-                  }
-                  else {
-                    if (ss.baCommitLog.count(p => p.o == m.o) >= 2 * f) {
-                      ss.participants.foreach(part => part ! Messages.Rollback(m.t, context.self).sign(keys))
-                      context.log.info("BaCommitted abort")
-                    }
-                  }
+                  ss.participants.foreach(part => part ! Messages.Rollback(m.t, context.self).sign(keys))
+                  context.log.info("Byzantine BaCommitted abort")
                 }
               } else {
-                context.log.debug("TimedOut. Init view change.")
-                val P = ViewChangeStateBaPrepared(m.v, m.t, m.o, ss.baPrePrepareLog.head.c, ss.baPrepareLog)
-                coordinators.foreach(coord => coord ! ViewChange(m.v + 1, m.t, P, context.self).sign(keys))
+                if (m.o == Decision.COMMIT) {
+                  if (ss.baCommitLog.count(p => p.o == m.o) >= 2 * f) {
+                    ss.participants.foreach(part => part ! Messages.Commit(m.t, context.self).sign(keys))
+                    ss.baState = BaState.COMMITTED // or just drop the transaction?
+                    context.log.info("BaCommitted")
+                  }
+                }
+                else {
+                  if (ss.baCommitLog.count(p => p.o == m.o) >= 2 * f) {
+                    ss.participants.foreach(part => part ! Messages.Rollback(m.t, context.self).sign(keys))
+                    context.log.info("BaCommitted abort")
+                  }
+                }
               }
             } else {
               context.log.debug("TimedOut. Init view change.")

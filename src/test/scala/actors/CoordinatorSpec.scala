@@ -279,6 +279,7 @@ class CoordinatorSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike {
     val kpg: KeyPairGenerator = KeyPairGenerator.getInstance("RSA")
     kpg.initialize(2048)
     val masterKey = kpg.generateKeyPair
+    val setupKeyPair = genSignedKey(kpg, masterKey)
 
     for (x <- 0 until nByzantinePrimaryCoord) {
       cs(x) = spawn(Coordinator(new Coordinator(_, genSignedKey(kpg, masterKey), masterKey.getPublic(), operational = true, byzantine = true, slow = false)), testNr + "Coordinator-" + x)
@@ -295,7 +296,7 @@ class CoordinatorSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike {
     for (x <- nByzantinePrimaryCoord + nCoordinators + nFailedCoordinators + nByzantineOtherCoord until nByzantinePrimaryCoord + nCoordinators + nFailedCoordinators + nByzantineOtherCoord + nSlowCoord) {
       cs(x) = spawn(Coordinator(new Coordinator(_, genSignedKey(kpg, masterKey), masterKey.getPublic(), operational = true, byzantine = false, slow = true)), testNr + "Coordinator-" + x)
     }
-    cs.foreach { x => x ! Messages.Setup(cs).fakesign() }
+    cs.foreach { x => x ! Messages.Setup(cs).sign(setupKeyPair) }
     val ps = new Array[Messages.ParticipantRef](nCommittingParticipants + nAbortingParticipants)
     for (x <- 0 until nCommittingParticipants) {
       ps(x) = spawn(Participant(new FixedDecisionParticipant(_, cs, Decision.COMMIT, genSignedKey(kpg, masterKey), masterKey.getPublic())), testNr + "Participant-" + x)

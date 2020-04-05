@@ -29,8 +29,6 @@ object Messages {
 
   sealed trait CoordinatorMessage {
     def sign(keyTuple: KeyTuple) = new Signed(this, keyTuple._1, keyTuple._2)
-
-    def fakesign() = new Signed(this)
   }
 
   sealed trait ViewChangeState
@@ -49,6 +47,7 @@ object Messages {
     }
 
     def verify(masterKey: PublicKey): Boolean = {
+      if (publicKey == null) return false
       val s: java.security.Signature = java.security.Signature.getInstance("SHA512withRSA")
       s.initVerify(publicKey)
       s.update(BigInt(m.hashCode()).toByteArray)

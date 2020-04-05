@@ -19,6 +19,7 @@ object ActorStart {
       val kpg: KeyPairGenerator = KeyPairGenerator.getInstance("RSA")
       kpg.initialize(2048)
       val masterKey = kpg.generateKeyPair
+      val setupKeyPair = genSignedKey(kpg, masterKey)
 
       // Create coordinators
       val coordinators: Array[Messages.CoordinatorRef] = Array(
@@ -29,7 +30,7 @@ object ActorStart {
       )
 
       // Send coordinators set of coordinators
-      coordinators.foreach { x => x ! Messages.Setup(coordinators).fakesign() }
+      coordinators.foreach { x => x ! Messages.Setup(coordinators).sign(setupKeyPair) }
 
       // Create participant(s)
       val participants = new Array[Messages.ParticipantRef](1)

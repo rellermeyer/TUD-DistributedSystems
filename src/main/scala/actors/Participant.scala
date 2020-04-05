@@ -53,7 +53,7 @@ abstract class Participant(context: ActorContext[Signed[ParticipantMessage]]
         if (message.verify(masterPubKey)) {
           transactions.get(m.t.id) match {
             case Some(s) =>
-              context.log.warn("Transaction known, no action needed")
+              context.log.debug("Transaction already known")
             case None =>
               transactions += (m.t.id -> new State(ACTIVE, m.t, new Array(coordinators.length), mutable.Set().empty, m.from, Array.empty, mutable.Set().empty, null))
           }
