@@ -48,8 +48,8 @@ abstract class Participant(context: ActorContext[Signed[ParticipantMessage]]
     message.m match {
       case m: AppointInitiator =>
         transactions += (m.t.id -> new State(ACTIVE, m.t, new Array(coordinators.length), mutable.Set().empty, m.from, m.participants, mutable.Set().empty, m.initAction))
-        m.participants.foreach(p => p ! PropagateTransaction(m.t, context.self).sign(keys))
-      case m: PropagateTransaction =>
+        m.participants.foreach(p => p ! Propagate(m.t, context.self).sign(keys))
+      case m: Propagate =>
         if (message.verify(masterPubKey)) {
           transactions.get(m.t.id) match {
             case Some(s) =>
@@ -59,7 +59,7 @@ abstract class Participant(context: ActorContext[Signed[ParticipantMessage]]
           }
         }
         coordinators.foreach(c => c ! Register(m.t.id, context.self).sign(keys))
-      case m: ConfirmRegistration =>
+      case m: Registered =>
         if (message.verify(masterPubKey)) {
           transactions.get(m.t) match {
             case Some(s) =>
@@ -67,13 +67,13 @@ abstract class Participant(context: ActorContext[Signed[ParticipantMessage]]
                 s.registrations += m.from
               }
               if (s.registrations.size >= 2 * f + 1) {
-                s.initiator ! PropagationReply(m.t, context.self).sign(keys)
+                s.initiator ! Propagated(m.t, context.self).sign(keys)
               }
             case None =>
               context.log.error("Transaction not known")
           }
         }
-      case m: PropagationReply =>
+      case m: Propagated =>
         if (message.verify(masterPubKey)) {
           transactions.get(m.t) match {
             case Some(s) =>

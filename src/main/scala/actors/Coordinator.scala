@@ -71,7 +71,7 @@ class Coordinator(context: ActorContext[Signed[CoordinatorMessage]]
         if (!ss.participants.contains(m.from)) {
           ss.participants += m.from
           ss.registrationLog(m.from) = m
-          m.from ! ConfirmRegistration(m.t, m.from, context.self).sign(keys)
+          m.from ! Registered(m.t, m.from, context.self).sign(keys)
         }
         else {
           context.log.info("Messages.Register dropped, participant is already registered")

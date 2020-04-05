@@ -83,7 +83,7 @@ object Messages {
 
   final case class Register(t: TransactionID, from: ParticipantRef) extends CoordinatorMessage
 
-  final case class ConfirmRegistration(t: TransactionID, to: ParticipantRef, from: CoordinatorRef) extends ParticipantMessage
+  final case class Registered(t: TransactionID, registeredParticipant: ParticipantRef, from: CoordinatorRef) extends ParticipantMessage
 
   final case class VotePrepared(t: TransactionID, vote: Decision, from: ParticipantRef) extends CoordinatorMessage
 
@@ -91,9 +91,9 @@ object Messages {
 
   final case class AppointInitiator(t: Transaction, initAction: Decision, participants: Array[ParticipantRef], from: ParticipantRef) extends ParticipantMessage
 
-  final case class PropagateTransaction(t: Transaction, from: ParticipantRef) extends ParticipantMessage // from: Initiator
+  final case class Propagate(t: Transaction, from: ParticipantRef) extends ParticipantMessage // from: Initiator
 
-  final case class PropagationReply(t: TransactionID, from: ParticipantRef) extends ParticipantMessage // from: Participant
+  final case class Propagated(t: TransactionID, from: ParticipantRef) extends ParticipantMessage // from: Participant
 
   final case class InitCommit(t: TransactionID, from: ParticipantRef) extends CoordinatorMessage // from: Initiator
 
