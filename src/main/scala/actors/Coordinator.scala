@@ -47,7 +47,7 @@ class Coordinator(context: ActorContext[Signed[CoordinatorMessage]], keys: KeyTu
   var f: Int = (coordinators.length - 1) / 3
   var stableStorage: mutable.Map[TransactionID, StableStorageItem] = mutable.Map()
   var toggledFlag = false
-  var timeOut = 100
+  var timeOut = 250
 
   override def onMessage(message: Signed[CoordinatorMessage]): Behavior[Signed[CoordinatorMessage]] = {
     if (operational) message.m match {
@@ -208,7 +208,7 @@ class Coordinator(context: ActorContext[Signed[CoordinatorMessage]], keys: KeyTu
                   context.log.info("BaPrepared")
                 }
               } else {
-                context.log.debug("TimedOut or verifiaction failed. Init view change.")
+                context.log.debug("TimedOut or verification failed. Init view change.")
                 val P = ViewChangeStateBaPrePrepared(m.v, m.t, m.o, ss.baPrePrepareLog.head.c)
                 coordinators.foreach(coord => coord ! ViewChange(m.v + 1, m.t, P, context.self).sign(keys))
               }
