@@ -16,7 +16,7 @@ object Participant {
   }
 
   type Participant = ActorRef[Signed[ParticipantMessage]]
-  class State(var s: TransactionState, val t: Transaction, val decisionLog: Array[Decision],val registrations: mutable.Set[Coordinator], val initiator: Participant, val readyParticipants: mutable.Set[Participant])
+  class State(var s: TransactionState, val t: Transaction, val decisionLog: Array[Decision],val registrations: mutable.Set[Coordinator], val initiator: Participant, val participants: Array[Participant],val readyParticipants: mutable.Set[Participant], val initAction: Decision)
 
   object TransactionState extends Enumeration {
     type TransactionState = Value
@@ -30,17 +30,21 @@ abstract class Participant(context: ActorContext[Signed[ParticipantMessage]], co
   import Participant._
 
   val f: Int = (coordinators.length - 1) / 3
-  val participants: Array[Participant.Participant] = Array(context.self)
   val transactions: mutable.Map[TransactionID, State] = mutable.Map()
 
   override def onMessage(message: Signed[ParticipantMessage]): Behavior[Signed[ParticipantMessage]] = {
     message.m match {
+      case m: AppointInitiator =>
+        transactions += (m.t.id -> new State(ACTIVE, m.t, new Array(coordinators.length), mutable.Set().empty,m.from,m.participants,mutable.Set().empty, m.initAction))
+        m.participants.foreach(p => p ! PropagateTransaction(m.t, context.self).sign(keys))
       case m: PropagateTransaction =>
-        transactions.get(m.t.id) match {
-          case Some(s) =>
-            context.log.warn("Transaction known, no action needed")
-          case None =>
-            transactions += (m.t.id -> new State(ACTIVE, m.t, new Array(coordinators.length), mutable.Set().empty,m.from,mutable.Set().empty))
+        if(message.verify(masterPubKey)) {
+          transactions.get(m.t.id) match {
+            case Some(s) =>
+              context.log.warn("Transaction known, no action needed")
+            case None =>
+              transactions += (m.t.id -> new State(ACTIVE, m.t, new Array(coordinators.length), mutable.Set().empty,m.from,Array.empty,mutable.Set().empty,null))
+          }
         }
         coordinators.foreach(c => c ! Register(m.t.id, context.self).sign(keys))
       case m: ConfirmRegistration =>
@@ -63,8 +67,8 @@ abstract class Participant(context: ActorContext[Signed[ParticipantMessage]], co
             case Some(s) =>
               if(!s.readyParticipants.contains(m.from)) {
                 s.readyParticipants += m.from
-                if(s.readyParticipants.size == participants.size) {
-                  prepare(m.t) match {
+                if(s.readyParticipants.size == s.participants.size) {
+                  s.initAction match {
                     case Decision.COMMIT =>
                       coordinators.foreach(c => c ! InitCommit(m.t, context.self).sign(keys))
                     case Decision.ABORT =>
@@ -119,10 +123,10 @@ abstract class Participant(context: ActorContext[Signed[ParticipantMessage]], co
             }
           case None =>
         }
-      case m: Rollback => {
+      case m: Rollback =>
         transactions.get(m.t) match {
           case Some(s) => s.s match {
-            case _ => {
+            case _ =>
               if (message.verify(masterPubKey)) {
                 val coordinatorIndex = coordinators.indexOf(m.from)
                 s.decisionLog(coordinatorIndex) = Decision.ABORT
@@ -133,11 +137,9 @@ abstract class Participant(context: ActorContext[Signed[ParticipantMessage]], co
               } else {
                 context.log.error("Incorrect signature")
               }
-            }
           }
           case None =>
         }
-      }
     }
     this
   }

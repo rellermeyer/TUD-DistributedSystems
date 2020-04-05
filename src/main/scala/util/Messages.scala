@@ -49,7 +49,7 @@ object Messages {
     }
 
     def verify(masterKey: PublicKey): Boolean = {
-      val s: java.security.Signature = java.security.Signature.getInstance("SHA512withRSA");
+      val s: java.security.Signature = java.security.Signature.getInstance("SHA512withRSA")
       s.initVerify(publicKey)
       s.update(BigInt(m.hashCode()).toByteArray)
       if (!s.verify(signature)) return false
@@ -88,6 +88,8 @@ object Messages {
 
   final case class Committed(t: TransactionID, commitResult: Decision, from: Participant) extends CoordinatorMessage
 
+  final case class AppointInitiator(t: Transaction, initAction: Decision, participants: Array[Participant], from: Participant) extends ParticipantMessage
+
   final case class PropagateTransaction(t: Transaction, from: Participant) extends ParticipantMessage // from: Initiator
 
   final case class PropagationReply(t: TransactionID, from: Participant) extends ParticipantMessage // from: Participant
@@ -106,7 +108,7 @@ object Messages {
 
   object Signed {
     def sign[M](m: M, privateKey: PrivateKey): Array[Byte] = {
-      val s: java.security.Signature = java.security.Signature.getInstance("SHA512withRSA");
+      val s: java.security.Signature = java.security.Signature.getInstance("SHA512withRSA")
       s.initSign(privateKey)
       s.update(BigInt(m.hashCode()).toByteArray) // TODO: this is not secure. Sign the serialized message?
       s.sign()

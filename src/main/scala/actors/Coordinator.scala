@@ -47,7 +47,7 @@ class Coordinator(context: ActorContext[Signed[CoordinatorMessage]], keys: KeyTu
   var f: Int = (coordinators.length - 1) / 3
   var stableStorage: mutable.Map[TransactionID, StableStorageItem] = mutable.Map()
   var toggledFlag = false
-  var timeOut = 250
+  var timeOut = 500
 
   override def onMessage(message: Signed[CoordinatorMessage]): Behavior[Signed[CoordinatorMessage]] = {
     if (operational) message.m match {
@@ -133,7 +133,7 @@ class Coordinator(context: ActorContext[Signed[CoordinatorMessage]], keys: KeyTu
       case m: BaPrePrepare =>
 
         stableStorage.get(m.t) match {
-          case Some(value) => {
+          case Some(value) =>
             //TODO: check if message is from primary
             //TODO: check if we are in the correct view
             if (!value.baPrePrepareLog.contains(m)) { // if no previous ba-pre-prepare message has been received
@@ -172,7 +172,6 @@ class Coordinator(context: ActorContext[Signed[CoordinatorMessage]], keys: KeyTu
                 // TODO: abort?
               }
             }
-          }
           case None =>
         }
       case m: BaPrepare =>
