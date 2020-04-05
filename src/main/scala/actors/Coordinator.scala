@@ -39,7 +39,12 @@ object Coordinator {
 
 }
 
-class Coordinator(context: ActorContext[Signed[CoordinatorMessage]], keys: KeyTuple, masterPubKey: PublicKey, operational: Boolean, byzantine: Boolean, slow: Boolean) extends AbstractBehavior[Signed[CoordinatorMessage]](context) {
+class Coordinator(context: ActorContext[Signed[CoordinatorMessage]]
+                  , keys: KeyTuple
+                  , masterPubKey: PublicKey
+                  , operational: Boolean
+                  , byzantine: Boolean
+                  , slow: Boolean) extends AbstractBehavior[Signed[CoordinatorMessage]](context) {
 
   import Coordinator._
 
@@ -62,7 +67,7 @@ class Coordinator(context: ActorContext[Signed[CoordinatorMessage]], keys: KeyTu
           if (message.verify(masterPubKey)) {
             ss.participants += m.from
             ss.registrationLog(m.from) = m
-            m.from ! ConfirmRegistration(m.t,m.from,context.self).sign(keys)
+            m.from ! ConfirmRegistration(m.t, m.from, context.self).sign(keys)
           }
           else {
             context.log.error("Incorrect signature")
@@ -105,7 +110,7 @@ class Coordinator(context: ActorContext[Signed[CoordinatorMessage]], keys: KeyTu
             context.log.error("Not implemented")
         }
       case m: InitCommit =>
-        if(message.verify(masterPubKey)) {
+        if (message.verify(masterPubKey)) {
           stableStorage.get(m.t) match {
             case Some(ss) =>
               ss.participants.foreach(p => p ! Messages.Prepare(m.t, context.self).sign(keys))
@@ -114,7 +119,7 @@ class Coordinator(context: ActorContext[Signed[CoordinatorMessage]], keys: KeyTu
           }
         }
       case m: InitAbort =>
-        if(message.verify(masterPubKey)) {
+        if (message.verify(masterPubKey)) {
           stableStorage.get(m.t) match {
             case Some(ss) =>
               if (i == ss.v % (3 * f + 1)) { // primary
@@ -273,8 +278,8 @@ class Coordinator(context: ActorContext[Signed[CoordinatorMessage]], keys: KeyTu
 
   def dec(d: Decision): Decision = {
     if (byzantine) {
-        if (d == Decision.COMMIT) Decision.ABORT
-        else Decision.COMMIT
-      } else d
-    }
+      if (d == Decision.COMMIT) Decision.ABORT
+      else Decision.COMMIT
+    } else d
+  }
 }

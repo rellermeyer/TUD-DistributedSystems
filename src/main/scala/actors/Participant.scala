@@ -3,10 +3,11 @@ package actors
 import java.security.PublicKey
 
 import actors.Participant.TransactionState.{ACTIVE, PREPARED, TransactionState}
-import akka.actor.typed.{ActorRef, Behavior}
+import akka.actor.typed.Behavior
 import akka.actor.typed.scaladsl.{AbstractBehavior, ActorContext, Behaviors}
 import util.Messages.Decision.Decision
 import util.Messages._
+
 import scala.collection.mutable
 
 
@@ -33,7 +34,10 @@ object Participant {
 
 }
 
-abstract class Participant(context: ActorContext[Signed[ParticipantMessage]], coordinators: Array[CoordinatorRef], keys: KeyTuple, masterPubKey: PublicKey) extends AbstractBehavior[Signed[ParticipantMessage]](context) {
+abstract class Participant(context: ActorContext[Signed[ParticipantMessage]]
+                           , coordinators: Array[CoordinatorRef]
+                           , keys: KeyTuple
+                           , masterPubKey: PublicKey) extends AbstractBehavior[Signed[ParticipantMessage]](context) {
 
   import Participant._
 
@@ -43,26 +47,26 @@ abstract class Participant(context: ActorContext[Signed[ParticipantMessage]], co
   override def onMessage(message: Signed[ParticipantMessage]): Behavior[Signed[ParticipantMessage]] = {
     message.m match {
       case m: AppointInitiator =>
-        transactions += (m.t.id -> new State(ACTIVE, m.t, new Array(coordinators.length), mutable.Set().empty,m.from,m.participants,mutable.Set().empty, m.initAction))
+        transactions += (m.t.id -> new State(ACTIVE, m.t, new Array(coordinators.length), mutable.Set().empty, m.from, m.participants, mutable.Set().empty, m.initAction))
         m.participants.foreach(p => p ! PropagateTransaction(m.t, context.self).sign(keys))
       case m: PropagateTransaction =>
-        if(message.verify(masterPubKey)) {
+        if (message.verify(masterPubKey)) {
           transactions.get(m.t.id) match {
             case Some(s) =>
               context.log.warn("Transaction known, no action needed")
             case None =>
-              transactions += (m.t.id -> new State(ACTIVE, m.t, new Array(coordinators.length), mutable.Set().empty,m.from,Array.empty,mutable.Set().empty,null))
+              transactions += (m.t.id -> new State(ACTIVE, m.t, new Array(coordinators.length), mutable.Set().empty, m.from, Array.empty, mutable.Set().empty, null))
           }
         }
         coordinators.foreach(c => c ! Register(m.t.id, context.self).sign(keys))
       case m: ConfirmRegistration =>
-        if(message.verify(masterPubKey)) {
+        if (message.verify(masterPubKey)) {
           transactions.get(m.t) match {
             case Some(s) =>
-              if(!s.registrations.contains(m.from)) {
+              if (!s.registrations.contains(m.from)) {
                 s.registrations += m.from
               }
-              if(s.registrations.size >= 2 * f + 1) {
+              if (s.registrations.size >= 2 * f + 1) {
                 s.initiator ! PropagationReply(m.t, context.self).sign(keys)
               }
             case None =>
@@ -70,12 +74,12 @@ abstract class Participant(context: ActorContext[Signed[ParticipantMessage]], co
           }
         }
       case m: PropagationReply =>
-        if(message.verify(masterPubKey)) {
+        if (message.verify(masterPubKey)) {
           transactions.get(m.t) match {
             case Some(s) =>
-              if(!s.readyParticipants.contains(m.from)) {
+              if (!s.readyParticipants.contains(m.from)) {
                 s.readyParticipants += m.from
-                if(s.readyParticipants.size == s.participants.size) {
+                if (s.readyParticipants.size == s.participants.size) {
                   s.initAction match {
                     case Decision.COMMIT =>
                       coordinators.foreach(c => c ! InitCommit(m.t, context.self).sign(keys))
@@ -84,7 +88,7 @@ abstract class Participant(context: ActorContext[Signed[ParticipantMessage]], co
                   }
                 }
               }
-              //TODO: if some timeout has passed, send initAbort instead
+            //TODO: if some timeout has passed, send initAbort instead
             case None =>
               context.log.error("Transaction not known")
           }

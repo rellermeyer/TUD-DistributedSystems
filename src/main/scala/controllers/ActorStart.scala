@@ -6,7 +6,7 @@ import actors.{Coordinator, FixedDecisionParticipant, Participant}
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorSystem, Behavior}
 import util.Messages
-import util.Messages.{AppointInitiator, Decision, PropagateTransaction, SignedPublicKey, Transaction}
+import util.Messages.{AppointInitiator, Decision, SignedPublicKey, Transaction}
 
 
 object ActorStart {
@@ -14,11 +14,11 @@ object ActorStart {
   def apply(): Behavior[ActorStartMessage] = Behaviors.logMessages(Behaviors.setup { context =>
     context.log.info("Creating actors and sending start messages");
 
-    Behaviors.receiveMessage { message =>
+    Behaviors.receiveMessage { _ =>
 
-      var kpg: KeyPairGenerator = KeyPairGenerator.getInstance("RSA")
+      val kpg: KeyPairGenerator = KeyPairGenerator.getInstance("RSA")
       kpg.initialize(2048)
-      var masterKey = kpg.generateKeyPair
+      val masterKey = kpg.generateKeyPair
 
       // Create coordinators
       val coordinators: Array[Messages.CoordinatorRef] = Array(
@@ -44,7 +44,7 @@ object ActorStart {
       val p = participants.head
       for (id <- 0 until numberOfTransactions) {
         transactions(id) = Transaction(id);
-        p ! AppointInitiator(transactions(id),Decision.COMMIT,participants,p).fakesign()
+        p ! AppointInitiator(transactions(id), Decision.COMMIT, participants, p).fakesign()
       }
       Behaviors.same
     }
