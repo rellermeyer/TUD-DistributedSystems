@@ -187,6 +187,19 @@ class CoordinatorSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike {
     }
   }
 
+  "a coordinator" must {
+    "be able to suggest a view change if the timeout is exceeded" in {
+      testNr = testNr + 1
+      val (cs, ps) = spawnAll(0, 1, 0, 0, 0, 0, 1)
+      val t = Transaction(0)
+      LoggingTestKit.info("View change not implemented.").withOccurrences(1).expect {
+        ps.foreach(p => p ! PropagateTransaction(t, ps(0)).fakesign())
+      }
+      cs.foreach(x => testKit.stop(x))
+      ps.foreach(x => testKit.stop(x))
+    }
+  }
+
   "Latency & throughput test" must {
     "2 participants" in {
       testNr = testNr + 1
@@ -228,19 +241,6 @@ class CoordinatorSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike {
     ps.foreach(x => testKit.stop(x))
     println("Average latency (ms): " + (totalLatency/numberOfTransactions))
     println("Throughput (transactions/s): " + numberOfTransactions/(delay.toFloat/1000))
-  }
-
-  "a coordinator" must {
-    "be able to suggest a view change if the timeout is exceeded" in {
-      testNr = testNr + 1
-      val (cs, ps) = spawnAll(0, 1, 0, 0, 0, 0, 1)
-      val t = Transaction(0)
-      LoggingTestKit.info("View change not implemented.").withOccurrences(1).expect {
-        ps.foreach(p => p ! PropagateTransaction(t, ps(0)).fakesign())
-      }
-      cs.foreach(x => testKit.stop(x))
-      ps.foreach(x => testKit.stop(x))
-    }
   }
 
   def spawnAll(nCoordinators: Int, nCommittingParticipants: Int, nAbortingParticipants: Int = 0, nFailedCoordinators: Int = 0, nByzantinePrimaryCoord: Int = 0, nByzantineOtherCoord: Int = 0, nSlowCoord: Int = 0): (Array[Messages.Coordinator], Array[Messages.Participant]) = {

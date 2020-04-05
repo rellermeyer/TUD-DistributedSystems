@@ -63,13 +63,13 @@ abstract class Participant(context: ActorContext[Signed[ParticipantMessage]], co
             case Some(s) =>
               if(!s.readyParticipants.contains(m.from)) {
                 s.readyParticipants += m.from
-              }
-              if(s.readyParticipants.size == participants.size) {
-                prepare(m.t) match {
-                  case Decision.COMMIT =>
-                    coordinators.foreach(c => c ! InitCommit(m.t, context.self).sign(keys))
-                  case Decision.ABORT =>
-                    coordinators.foreach(c => c ! InitAbort(m.t, context.self).sign(keys))
+                if(s.readyParticipants.size == participants.size) {
+                  prepare(m.t) match {
+                    case Decision.COMMIT =>
+                      coordinators.foreach(c => c ! InitCommit(m.t, context.self).sign(keys))
+                    case Decision.ABORT =>
+                      coordinators.foreach(c => c ! InitAbort(m.t, context.self).sign(keys))
+                  }
                 }
               }
               //TODO: if some timeout has passed, send initAbort instead
