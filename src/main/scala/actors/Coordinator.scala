@@ -46,7 +46,6 @@ class Coordinator(context: ActorContext[Signed[CoordinatorMessage]], keys: KeyTu
   var i: Int = 0
   var f: Int = (coordinators.length - 1) / 3
   var stableStorage: mutable.Map[TransactionID, StableStorageItem] = mutable.Map()
-  var toggledFlag = false
   var timeOut = 500
 
   override def onMessage(message: Signed[CoordinatorMessage]): Behavior[Signed[CoordinatorMessage]] = {
@@ -273,11 +272,8 @@ class Coordinator(context: ActorContext[Signed[CoordinatorMessage]], keys: KeyTu
 
   def dec(d: Decision): Decision = {
     if (byzantine) {
-      toggledFlag = !toggledFlag
-      if (toggledFlag) {
         if (d == Decision.COMMIT) Decision.ABORT
         else Decision.COMMIT
       } else d
-    } else d
-  }
+    }
 }
