@@ -203,7 +203,7 @@ class Coordinator(context: ActorContext[Signed[CoordinatorMessage]], keys: KeyTu
                   context.log.info("BaPrepared")
                 }
               } else {
-                context.log.debug("TimedOut or verification failed. Init view change.")
+                context.log.debug("TimedOut or verifiaction failed. Init view change.")
                 val P = ViewChangeStateBaPrePrepared(m.v, m.t, m.o, ss.baPrePrepareLog.head.c)
                 coordinators.foreach(coord => coord ! ViewChange(m.v + 1, m.t, P, context.self).sign(keys))
               }
