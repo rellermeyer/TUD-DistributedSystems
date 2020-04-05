@@ -10,11 +10,11 @@ import scala.math.BigInt
 
 object Messages {
 
-  type Coordinator = ActorRef[Signed[CoordinatorMessage]]
-  type Participant = ActorRef[Signed[ParticipantMessage]]
+  type CoordinatorRef = ActorRef[Signed[CoordinatorMessage]]
+  type ParticipantRef = ActorRef[Signed[ParticipantMessage]]
   type View = Int
   type TransactionID = Int
-  type DecisionCertificate = mutable.Map[Participant, DecisionCertificateEntry]
+  type DecisionCertificate = mutable.Map[ParticipantRef, DecisionCertificateEntry]
   type Digest = Int
   type Signature = Array[Byte]
   type SignatureTuple = (Signature, SignedPublicKey)
@@ -74,39 +74,39 @@ object Messages {
 
   final case class Transaction(id: TransactionID) // TODO: add payload to Transaction
 
-  final case class Setup(coordinators: Array[Coordinator]) extends CoordinatorMessage
+  final case class Setup(coordinators: Array[CoordinatorRef]) extends CoordinatorMessage
 
-  final case class Prepare(t: TransactionID, from: Coordinator) extends ParticipantMessage
+  final case class Prepare(t: TransactionID, from: CoordinatorRef) extends ParticipantMessage
 
-  final case class Commit(t: TransactionID, from: Coordinator) extends ParticipantMessage
+  final case class Commit(t: TransactionID, from: CoordinatorRef) extends ParticipantMessage
 
-  final case class Rollback(t: TransactionID, from: Coordinator) extends ParticipantMessage
+  final case class Rollback(t: TransactionID, from: CoordinatorRef) extends ParticipantMessage
 
-  final case class Register(t: TransactionID, from: Participant) extends CoordinatorMessage
+  final case class Register(t: TransactionID, from: ParticipantRef) extends CoordinatorMessage
 
-  final case class ConfirmRegistration(t: TransactionID, to: Participant, from: Coordinator) extends ParticipantMessage
+  final case class ConfirmRegistration(t: TransactionID, to: ParticipantRef, from: CoordinatorRef) extends ParticipantMessage
 
-  final case class VotePrepared(t: TransactionID, vote: Decision, from: Participant) extends CoordinatorMessage
+  final case class VotePrepared(t: TransactionID, vote: Decision, from: ParticipantRef) extends CoordinatorMessage
 
-  final case class Committed(t: TransactionID, commitResult: Decision, from: Participant) extends CoordinatorMessage
+  final case class Committed(t: TransactionID, commitResult: Decision, from: ParticipantRef) extends CoordinatorMessage
 
-  final case class AppointInitiator(t: Transaction, initAction: Decision, participants: Array[Participant], from: Participant) extends ParticipantMessage
+  final case class AppointInitiator(t: Transaction, initAction: Decision, participants: Array[ParticipantRef], from: ParticipantRef) extends ParticipantMessage
 
-  final case class PropagateTransaction(t: Transaction, from: Participant) extends ParticipantMessage // from: Initiator
+  final case class PropagateTransaction(t: Transaction, from: ParticipantRef) extends ParticipantMessage // from: Initiator
 
-  final case class PropagationReply(t: TransactionID, from: Participant) extends ParticipantMessage // from: Participant
+  final case class PropagationReply(t: TransactionID, from: ParticipantRef) extends ParticipantMessage // from: Participant
 
-  final case class InitCommit(t: TransactionID, from: Participant) extends CoordinatorMessage // from: Initiator
+  final case class InitCommit(t: TransactionID, from: ParticipantRef) extends CoordinatorMessage // from: Initiator
 
-  final case class InitAbort(t: TransactionID, from: Participant) extends CoordinatorMessage // from: Initiator
+  final case class InitAbort(t: TransactionID, from: ParticipantRef) extends CoordinatorMessage // from: Initiator
 
-  final case class ViewChange(new_v: View, t: TransactionID, p: ViewChangeState, from: Coordinator) extends CoordinatorMessage
+  final case class ViewChange(new_v: View, t: TransactionID, p: ViewChangeState, from: CoordinatorRef) extends CoordinatorMessage
 
-  final case class BaPrepare(v: View, t: TransactionID, c: Digest, o: Decision, from: Coordinator) extends CoordinatorMessage
+  final case class BaPrepare(v: View, t: TransactionID, c: Digest, o: Decision, from: CoordinatorRef) extends CoordinatorMessage
 
-  final case class BaCommit(v: View, t: TransactionID, c: Digest, o: Decision, from: Coordinator) extends CoordinatorMessage
+  final case class BaCommit(v: View, t: TransactionID, c: Digest, o: Decision, from: CoordinatorRef) extends CoordinatorMessage
 
-  final case class BaPrePrepare(v: View, t: TransactionID, o: Decision, c: DecisionCertificate, from: Coordinator) extends CoordinatorMessage // from: PrimaryCoordinator
+  final case class BaPrePrepare(v: View, t: TransactionID, o: Decision, c: DecisionCertificate, from: CoordinatorRef) extends CoordinatorMessage // from: PrimaryCoordinator
 
   object Signed {
     def sign[M](m: M, privateKey: PrivateKey): Array[Byte] = {

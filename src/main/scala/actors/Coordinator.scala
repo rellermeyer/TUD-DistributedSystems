@@ -2,7 +2,6 @@ package actors
 
 import java.security.PublicKey
 
-import actors.Coordinator.BaState.BaState
 import akka.actor.typed.Behavior
 import akka.actor.typed.scaladsl.{AbstractBehavior, ActorContext, Behaviors}
 import util.Messages.Decision.Decision
@@ -13,18 +12,20 @@ import scala.collection.mutable
 
 
 object Coordinator {
-  def apply(keyTuple: KeyTuple, masterPubKey: PublicKey, operational: Boolean, byzantine: Boolean, slow: Boolean): Behavior[Signed[CoordinatorMessage]] = {
-    Behaviors.logMessages(Behaviors.setup(context => new Coordinator(context, keyTuple, masterPubKey, operational, byzantine, slow)))
+  def apply(factory: ActorContext[Signed[CoordinatorMessage]] => Behavior[Signed[CoordinatorMessage]]): Behavior[Signed[CoordinatorMessage]] = {
+    Behaviors.logMessages(Behaviors.setup(factory))
   }
 
+  import BaState.BaState
+
   class StableStorageItem() {
-    val decisionLog: mutable.Map[Participant, (Decision, Coordinator, String)] = mutable.Map()
+    val decisionLog: mutable.Map[ParticipantRef, (Decision, Coordinator, String)] = mutable.Map()
     val baPrePrepareLog: mutable.Set[Messages.BaPrePrepare] = mutable.Set()
     val baPrepareLog: mutable.Set[Messages.BaPrepare] = mutable.Set()
     val baCommitLog: mutable.Set[Messages.BaCommit] = mutable.Set()
-    val registrationLog: mutable.Map[Participant, Messages.Register] = mutable.Map()
+    val registrationLog: mutable.Map[ParticipantRef, Messages.Register] = mutable.Map()
     val decisionCertificate: DecisionCertificate = mutable.Map()
-    val participants: mutable.Set[Participant] = mutable.Set() // could be computed from signedRegistrations
+    val participants: mutable.Set[ParticipantRef] = mutable.Set() // could be computed from signedRegistrations
     var v: View = 0
     var baState: BaState = BaState.INITIAL
     var digest: Digest = 0
@@ -42,7 +43,7 @@ class Coordinator(context: ActorContext[Signed[CoordinatorMessage]], keys: KeyTu
 
   import Coordinator._
 
-  var coordinators: Array[Messages.Coordinator] = Array(context.self)
+  var coordinators: Array[Messages.CoordinatorRef] = Array(context.self)
   var i: Int = 0
   var f: Int = (coordinators.length - 1) / 3
   var stableStorage: mutable.Map[TransactionID, StableStorageItem] = mutable.Map()

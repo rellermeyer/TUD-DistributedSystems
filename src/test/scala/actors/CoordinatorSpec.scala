@@ -271,8 +271,8 @@ class CoordinatorSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike {
     println("Throughput (transactions/s): " + numberOfTransactions/(delay.toFloat/1000))
   }
 
-  def spawnAll(nCoordinators: Int, nCommittingParticipants: Int, nAbortingParticipants: Int = 0, nFailedCoordinators: Int = 0, nByzantinePrimaryCoord: Int = 0, nByzantineOtherCoord: Int = 0, nSlowCoord: Int = 0): (Array[Messages.Coordinator], Array[Messages.Participant]) = {
-    val cs = new Array[Messages.Coordinator](nByzantinePrimaryCoord + nCoordinators + nFailedCoordinators + nByzantineOtherCoord + nSlowCoord)
+  def spawnAll(nCoordinators: Int, nCommittingParticipants: Int, nAbortingParticipants: Int = 0, nFailedCoordinators: Int = 0, nByzantinePrimaryCoord: Int = 0, nByzantineOtherCoord: Int = 0, nSlowCoord: Int = 0): (Array[Messages.CoordinatorRef], Array[Messages.ParticipantRef]) = {
+    val cs = new Array[Messages.CoordinatorRef](nByzantinePrimaryCoord + nCoordinators + nFailedCoordinators + nByzantineOtherCoord + nSlowCoord)
     //def spawnAll(nCoordinators: Int, nCommittingParticipants: Int, nAbortingParticipants: Int = 0): (Array[Messages.Coordinator], Array[Messages.Participant]) = {
     //val cs = new Array[Messages.Coordinator](nCoordinators)
 
@@ -281,27 +281,27 @@ class CoordinatorSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike {
     val masterKey = kpg.generateKeyPair
 
     for (x <- 0 until nByzantinePrimaryCoord) {
-      cs(x) = spawn(Coordinator(genSignedKey(kpg, masterKey), masterKey.getPublic(), operational = true, byzantine = true, slow = false), testNr + "Coordinator-" + x)
+      cs(x) = spawn(Coordinator(new Coordinator(_, genSignedKey(kpg, masterKey), masterKey.getPublic(), operational = true, byzantine = true, slow = false)), testNr + "Coordinator-" + x)
     }
     for (x <- nByzantinePrimaryCoord until nByzantinePrimaryCoord + nCoordinators) {
-      cs(x) = spawn(Coordinator(genSignedKey(kpg, masterKey), masterKey.getPublic(), operational = true, byzantine = false, slow = false), testNr + "Coordinator-" + x)
+      cs(x) = spawn(Coordinator(new Coordinator(_, genSignedKey(kpg, masterKey), masterKey.getPublic(), operational = true, byzantine = false, slow = false)), testNr + "Coordinator-" + x)
     }
     for (x <- nByzantinePrimaryCoord + nCoordinators until nByzantinePrimaryCoord + nCoordinators + nFailedCoordinators) {
-      cs(x) = spawn(Coordinator(genSignedKey(kpg, masterKey), masterKey.getPublic(), operational = false, byzantine = false, slow = false), testNr + "Coordinator-" + x)
+      cs(x) = spawn(Coordinator(new Coordinator(_, genSignedKey(kpg, masterKey), masterKey.getPublic(), operational = false, byzantine = false, slow = false)), testNr + "Coordinator-" + x)
     }
     for (x <- nByzantinePrimaryCoord + nCoordinators + nFailedCoordinators until nByzantinePrimaryCoord + nCoordinators + nFailedCoordinators + nByzantineOtherCoord) {
-      cs(x) = spawn(Coordinator(genSignedKey(kpg, masterKey), masterKey.getPublic(), operational = true, byzantine = true, slow = false), testNr + "Coordinator-" + x)
+      cs(x) = spawn(Coordinator(new Coordinator(_, genSignedKey(kpg, masterKey), masterKey.getPublic(), operational = true, byzantine = true, slow = false)), testNr + "Coordinator-" + x)
     }
     for (x <- nByzantinePrimaryCoord + nCoordinators + nFailedCoordinators + nByzantineOtherCoord until nByzantinePrimaryCoord + nCoordinators + nFailedCoordinators + nByzantineOtherCoord + nSlowCoord) {
-      cs(x) = spawn(Coordinator(genSignedKey(kpg, masterKey), masterKey.getPublic(), operational = true, byzantine = false, slow = true), testNr + "Coordinator-" + x)
+      cs(x) = spawn(Coordinator(new Coordinator(_, genSignedKey(kpg, masterKey), masterKey.getPublic(), operational = true, byzantine = false, slow = true)), testNr + "Coordinator-" + x)
     }
     cs.foreach { x => x ! Messages.Setup(cs).fakesign() }
-    val ps = new Array[Messages.Participant](nCommittingParticipants + nAbortingParticipants)
+    val ps = new Array[Messages.ParticipantRef](nCommittingParticipants + nAbortingParticipants)
     for (x <- 0 until nCommittingParticipants) {
-      ps(x) = spawn(Participant(cs, Decision.COMMIT, genSignedKey(kpg, masterKey), masterKey.getPublic()), testNr + "Participant-" + x)
+      ps(x) = spawn(Participant(new FixedDecisionParticipant(_, cs, Decision.COMMIT, genSignedKey(kpg, masterKey), masterKey.getPublic())), testNr + "Participant-" + x)
     }
     for (x <- nCommittingParticipants until nCommittingParticipants + nAbortingParticipants) {
-      ps(x) = spawn(Participant(cs, Decision.ABORT, genSignedKey(kpg, masterKey), masterKey.getPublic()), testNr + "Participant-" + x)
+      ps(x) = spawn(Participant(new FixedDecisionParticipant(_, cs, Decision.ABORT, genSignedKey(kpg, masterKey), masterKey.getPublic())), testNr + "Participant-" + x)
     }
     (cs, ps)
   }

@@ -11,14 +11,20 @@ import scala.collection.mutable
 
 
 object Participant {
-  def apply(coordinators: Array[Coordinator], decision: Decision, keyTuple: KeyTuple, masterPubKey: PublicKey): Behavior[Signed[ParticipantMessage]] = {
-    Behaviors.logMessages(Behaviors.setup(context => new FixedDecisionParticipant(context, coordinators, decision, keyTuple, masterPubKey)))
+  def apply(factory: ActorContext[Signed[ParticipantMessage]] => Behavior[Signed[ParticipantMessage]]): Behavior[Signed[ParticipantMessage]] = {
+    Behaviors.logMessages(Behaviors.setup(factory))
   }
 
-  type Participant = ActorRef[Signed[ParticipantMessage]]
   //TODO: change readyParticpants to a mapping (particpants, ready)
   //TODO: use knowledge of other participants to check whether received message is from a known participant
-  class State(var s: TransactionState, val t: Transaction, val decisionLog: Array[Decision],val registrations: mutable.Set[Coordinator], val initiator: Participant, val participants: Array[Participant],val readyParticipants: mutable.Set[Participant], val initAction: Decision)
+  class State(var s: TransactionState
+              , val t: Transaction
+              , val decisionLog: Array[Decision]
+              , val registrations: mutable.Set[CoordinatorRef]
+              , val initiator: ParticipantRef
+              , val participants: Array[ParticipantRef]
+              , val readyParticipants: mutable.Set[ParticipantRef]
+              , val initAction: Decision)
 
   object TransactionState extends Enumeration {
     type TransactionState = Value
@@ -27,7 +33,7 @@ object Participant {
 
 }
 
-abstract class Participant(context: ActorContext[Signed[ParticipantMessage]], coordinators: Array[Coordinator], keys: KeyTuple, masterPubKey: PublicKey) extends AbstractBehavior[Signed[ParticipantMessage]](context) {
+abstract class Participant(context: ActorContext[Signed[ParticipantMessage]], coordinators: Array[CoordinatorRef], keys: KeyTuple, masterPubKey: PublicKey) extends AbstractBehavior[Signed[ParticipantMessage]](context) {
 
   import Participant._
 
@@ -150,6 +156,6 @@ abstract class Participant(context: ActorContext[Signed[ParticipantMessage]], co
 
 }
 
-class FixedDecisionParticipant(context: ActorContext[Signed[ParticipantMessage]], coordinators: Array[Coordinator], decision: Decision, keyTuple: KeyTuple, masterPubKey: PublicKey) extends Participant(context, coordinators, keyTuple: KeyTuple, masterPubKey: PublicKey) {
+class FixedDecisionParticipant(context: ActorContext[Signed[ParticipantMessage]], coordinators: Array[CoordinatorRef], decision: Decision, keyTuple: KeyTuple, masterPubKey: PublicKey) extends Participant(context, coordinators, keyTuple: KeyTuple, masterPubKey: PublicKey) {
   override def prepare(t: TransactionID): Decision = decision
 }
