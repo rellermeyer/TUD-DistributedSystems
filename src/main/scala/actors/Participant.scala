@@ -16,6 +16,8 @@ object Participant {
   }
 
   type Participant = ActorRef[Signed[ParticipantMessage]]
+  //TODO: change readyParticpants to a mapping (particpants, ready)
+  //TODO: use knowledge of other participants to check whether received message is from a known participant
   class State(var s: TransactionState, val t: Transaction, val decisionLog: Array[Decision],val registrations: mutable.Set[Coordinator], val initiator: Participant, val participants: Array[Participant],val readyParticipants: mutable.Set[Participant], val initAction: Decision)
 
   object TransactionState extends Enumeration {
