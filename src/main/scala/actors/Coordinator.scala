@@ -87,12 +87,14 @@ class Coordinator(context: ActorContext[Signed[CoordinatorMessage]]
                   val isPrimary = i == ss.v % (3 * f + 1)
                   val enoughVotes = ss.decisionCertificate.size == ss.participants.size
                   if (isPrimary && enoughVotes) {
-                    coordinators.foreach(coord => coord ! Messages.BaPrePrepare(ss.v, m.t, dec(Decision.COMMIT), ss.decisionCertificate, context.self).sign(keys))
+                    val decision = changeDecisionIfByzantine(Decision.COMMIT)
+                    coordinators.foreach(coord => coord ! Messages.BaPrePrepare(ss.v, m.t, decision, ss.decisionCertificate, context.self).sign(keys))
                   }
                 case util.Messages.Decision.ABORT =>
                   if (!ss.decisionCertificate.contains(m.from)) {
                     ss.decisionCertificate += (m.from -> DecisionCertificateEntry(ss.registrationLog(m.from), Option(m), None))
-                    coordinators.foreach(coord => coord ! Messages.BaPrePrepare(ss.v, m.t, dec(Decision.ABORT), ss.decisionCertificate, context.self).sign(keys))
+                    val decision = changeDecisionIfByzantine(Decision.ABORT)
+                    coordinators.foreach(coord => coord ! Messages.BaPrePrepare(ss.v, m.t, decision, ss.decisionCertificate, context.self).sign(keys))
                   }
               }
             }
@@ -115,7 +117,8 @@ class Coordinator(context: ActorContext[Signed[CoordinatorMessage]]
             if (i == ss.v % (3 * f + 1)) { // primary
               //TODO: create false decision certificate if byzantine
               ss.decisionCertificate += (m.from -> DecisionCertificateEntry(ss.registrationLog(m.from), None, Option(m)))
-              coordinators.foreach(coord => coord ! Messages.BaPrePrepare(ss.v, m.t, dec(Decision.ABORT), ss.decisionCertificate, context.self).sign(keys))
+              val decision = changeDecisionIfByzantine(Decision.ABORT)
+              coordinators.foreach(coord => coord ! Messages.BaPrePrepare(ss.v, m.t, decision, ss.decisionCertificate, context.self).sign(keys))
             }
           case None =>
             context.log.error("not implemented")
@@ -154,7 +157,8 @@ class Coordinator(context: ActorContext[Signed[CoordinatorMessage]]
                     value.digest = m.c.hashCode()
                     context.log.debug("Digest:" + value.digest)
                     value.baPrePrepareLog += m
-                    coordinators.foreach(coord => coord ! Messages.BaPrepare(m.v, m.t, value.digest, dec(Decision.COMMIT), context.self).sign(keys))
+                    val decision = changeDecisionIfByzantine(Decision.COMMIT)
+                    coordinators.foreach(coord => coord ! Messages.BaPrepare(m.v, m.t, value.digest, decision, context.self).sign(keys))
                   }
                 case util.Messages.Decision.ABORT =>
                   //TODO: implement proper checks
@@ -162,7 +166,8 @@ class Coordinator(context: ActorContext[Signed[CoordinatorMessage]]
                   value.digest = m.c.hashCode()
                   context.log.debug("Digest:" + value.digest)
                   value.baPrePrepareLog += m
-                  coordinators.foreach(coord => coord ! Messages.BaPrepare(m.v, m.t, value.digest, dec(Decision.ABORT), context.self).sign(keys))
+                  val decision = changeDecisionIfByzantine(Decision.ABORT)
+                  coordinators.foreach(coord => coord ! Messages.BaPrepare(m.v, m.t, value.digest, decision, context.self).sign(keys))
               }
               if (changeView) {
                 val P = ViewChangeStateBaNotPrePrepared(m.v, m.t, value.decisionCertificate)
@@ -199,7 +204,8 @@ class Coordinator(context: ActorContext[Signed[CoordinatorMessage]]
             if (!changeView) {
               if (ss.baPrepareLog.count(p => p.o == m.o) >= 2 * f) {
                 //BaPrepared flag prevents duplicate messages
-                coordinators.foreach(coord => coord ! Messages.BaCommit(m.v, m.t, m.c, dec(m.o), context.self).sign(keys))
+                val decision = changeDecisionIfByzantine(m.o)
+                coordinators.foreach(coord => coord ! Messages.BaCommit(m.v, m.t, m.c, decision, context.self).sign(keys))
                 ss.baState = BaState.PREPARED
                 context.log.info("BaPrepared")
               }
@@ -259,10 +265,14 @@ class Coordinator(context: ActorContext[Signed[CoordinatorMessage]]
     this
   }
 
-  def dec(d: Decision): Decision = {
+  def changeDecisionIfByzantine(decision: Decision): Decision = {
     if (byzantine) {
-      if (d == Decision.COMMIT) Decision.ABORT
-      else Decision.COMMIT
-    } else d
+      decision match {
+        case Decision.COMMIT => Decision.ABORT
+        case Decision.ABORT => Decision.COMMIT
+      }
+    } else {
+      decision
+    }
   }
 }
