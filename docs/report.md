@@ -54,13 +54,16 @@ We set objectives from the beginning in order to figure out and organise the wor
   - View change mechanism (this feature was not implemented by the paper authors either).
 
 ## Evaluation
-All tests were performed with 4 coordinators. In each test, 100 transactions were committed. From this, the average latency and throughput were calculated.
+All tests were performed with 4 coordinators. In each test, 100 transactions were committed. From this, the average latency and throughput were calculated.  
 Test 1: 2 participants 
-Average latency (ms): 347
-Throughput (transactions/s): 2.878526
+Average latency (ms): 319  
+Throughput (transactions/s): 3.129107  
 Test 2: 4 participants 
-Average latency (ms): 488
-Throughput (transactions/s): 2.0465384
+Average latency (ms): 407  
+Throughput (transactions/s): 2.4557955  
+Test 3: 8 participants  
+Average latency (ms): 729  
+Throughput (transactions/s): 1.371253  
 
 ## Footnotes
 
