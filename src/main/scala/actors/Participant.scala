@@ -48,7 +48,8 @@ abstract class Participant(context: ActorContext[Signed[ParticipantMessage]]
     message.m match {
       case m: AppointInitiator =>
         transactions += (m.t.id -> new State(ACTIVE, m.t, new Array(coordinators.length), mutable.Set().empty, m.from, m.participants, mutable.Set().empty, m.initAction))
-        m.participants.foreach(p => p ! Propagate(m.t, context.self).sign(keys))
+        val propagate = Propagate(m.t, context.self).sign(keys)
+        m.participants.foreach(p => p ! propagate)
       case m: Propagate =>
         if (message.verify(masterPubKey)) {
           transactions.get(m.t.id) match {
@@ -58,7 +59,8 @@ abstract class Participant(context: ActorContext[Signed[ParticipantMessage]]
               transactions += (m.t.id -> new State(ACTIVE, m.t, new Array(coordinators.length), mutable.Set().empty, m.from, Array.empty, mutable.Set().empty, null))
           }
         }
-        coordinators.foreach(c => c ! Register(m.t.id, context.self).sign(keys))
+        val register = Register(m.t.id, context.self).sign(keys)
+        coordinators.foreach(c => c ! register)
       case m: Registered =>
         if (message.verify(masterPubKey)) {
           transactions.get(m.t) match {
@@ -82,9 +84,11 @@ abstract class Participant(context: ActorContext[Signed[ParticipantMessage]]
                 if (s.readyParticipants.size == s.participants.size) {
                   s.initAction match {
                     case Decision.COMMIT =>
-                      coordinators.foreach(c => c ! InitCommit(m.t, context.self).sign(keys))
+                      val initCommit = InitCommit(m.t, context.self).sign(keys)
+                      coordinators.foreach(c => c ! initCommit)
                     case Decision.ABORT =>
-                      coordinators.foreach(c => c ! InitAbort(m.t, context.self).sign(keys))
+                      val initAbort = InitAbort(m.t, context.self).sign(keys)
+                      coordinators.foreach(c => c ! initAbort)
                   }
                 }
               }
