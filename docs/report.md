@@ -55,15 +55,21 @@ We set objectives from the beginning in order to figure out and organise the wor
 
 ## Evaluation
 All tests were performed with 4 coordinators. In each test, 100 transactions were committed. From this, the average latency and throughput were calculated.  
-Test 1: 2 participants 
-Average latency (ms): 319  
-Throughput (transactions/s): 3.129107  
-Test 2: 4 participants 
-Average latency (ms): 407  
-Throughput (transactions/s): 2.4557955  
-Test 3: 8 participants  
-Average latency (ms): 729  
-Throughput (transactions/s): 1.371253  
+2 participants:  
+Average latency (ms): 382
+Throughput (transactions/s): 2.6156101  
+4 participants:  
+Average latency (ms): 434  
+Throughput (transactions/s): 2.3037758  
+6 participants:  
+Average latency (ms): 569  
+Throughput (transactions/s): 1.754817  
+8 participants:  
+Average latency (ms): 614  
+Throughput (transactions/s): 1.6273392  
+10 participants:  
+Average latency (ms): 822
+Throughput (transactions/s): 1.2165303
 
 ## Footnotes
 
