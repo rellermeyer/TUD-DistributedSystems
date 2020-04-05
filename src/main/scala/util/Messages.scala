@@ -82,7 +82,7 @@ object Messages {
 
   final case class Register(t: TransactionID, from: Participant) extends CoordinatorMessage
 
-  final case class ConfirmRegistration(t: TransactionID, from: Coordinator) extends ParticipantMessage
+  final case class ConfirmRegistration(t: TransactionID, to: Participant, from: Coordinator) extends ParticipantMessage
 
   final case class VotePrepared(t: TransactionID, vote: Decision, from: Participant) extends CoordinatorMessage
 
