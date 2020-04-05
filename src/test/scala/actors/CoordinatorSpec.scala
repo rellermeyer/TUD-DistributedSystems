@@ -45,8 +45,6 @@ class CoordinatorSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike {
       ps.foreach(x => testKit.stop(x))
     }
   }
-  // starting an abort without having started the respective commit did not make any practical sense
-  // it also required extra work to implement for this new version so was removed instead
   "A participant" must {
     "be able to unilaterally abort a transaction" in {
       testNr = testNr + 1
