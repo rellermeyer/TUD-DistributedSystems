@@ -52,7 +52,7 @@ class Coordinator(context: ActorContext[Signed[CoordinatorMessage]]
   var i: Int = 0
   var f: Int = (coordinators.length - 1) / 3
   var stableStorage: mutable.Map[TransactionID, StableStorageItem] = mutable.Map()
-  var timeOut = 500
+  var timeOut = 1000
 
   override def onMessage(message: Signed[CoordinatorMessage]): Behavior[Signed[CoordinatorMessage]] = {
     if (!message.verify(masterPubKey)) {
