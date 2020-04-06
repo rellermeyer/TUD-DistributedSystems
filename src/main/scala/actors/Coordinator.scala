@@ -42,9 +42,9 @@ object Coordinator {
 class Coordinator(context: ActorContext[Signed[CoordinatorMessage]]
                   , keys: KeyTuple
                   , masterPubKey: PublicKey
-                  , operational: Boolean
-                  , byzantine: Boolean
-                  , slow: Boolean) extends AbstractBehavior[Signed[CoordinatorMessage]](context) {
+                  , operational: Boolean = true
+                  , byzantine: Boolean = false
+                  , slow: Boolean = false) extends AbstractBehavior[Signed[CoordinatorMessage]](context) {
 
   import Coordinator._
 
