@@ -217,7 +217,7 @@ class CoordinatorSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike {
       val (cs, ps) = spawnAll(0, 1, 0, 0, 0, 0, 1)
       val t = Transaction(0)
       val p = ps(0)
-      LoggingTestKit.info("View change not implemented.").withOccurrences(1).expect {
+      LoggingTestKit.error("View change requested but not implemented yet.").withOccurrences(1).expect {
         p ! AppointInitiator(t, Decision.COMMIT, ps, p).fakesign()
       }
       cs.foreach(x => testKit.stop(x))
