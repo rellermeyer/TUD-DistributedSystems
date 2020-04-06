@@ -130,7 +130,7 @@ class Coordinator(context: ActorContext[Signed[CoordinatorMessage]]
 
       case m: ViewChange =>
         stableStorage.get(m.t) match {
-          case Some(value) =>
+          case Some(ss) =>
             context.log.error("View change requested but not implemented yet.")
           case None =>
         }
@@ -138,14 +138,14 @@ class Coordinator(context: ActorContext[Signed[CoordinatorMessage]]
       case m: BaPrePrepare =>
 
         stableStorage.get(m.t) match {
-          case Some(value) =>
+          case Some(ss) =>
             //TODO: check if message is from primary
             //TODO: check if we are in the correct view
-            if (!value.baPrePrepareLog.contains(m)) { // if no previous ba-pre-prepare message has been received
+            if (!ss.baPrePrepareLog.contains(m)) { // if no previous ba-pre-prepare message has been received
               var changeView = false
               m.o match {
                 case util.Messages.Decision.COMMIT =>
-                  value.participants.foreach(p => m.c.get(p) match {
+                  ss.participants.foreach(p => m.c.get(p) match {
                     case Some(part) =>
                       if ((part.registration.t != m.t) || (part.vote.get.vote != Decision.COMMIT)) { //check certificate
                         changeView = true
@@ -157,26 +157,25 @@ class Coordinator(context: ActorContext[Signed[CoordinatorMessage]]
                   }
                   )
                   if (!changeView) {
-                    value.timeOut_View = (m.v, System.currentTimeMillis())
-                    value.digest = m.c.hashCode()
-                    context.log.debug("Digest:" + value.digest)
-                    value.baPrePrepareLog += m
+                    ss.timeOut_View = (m.v, System.currentTimeMillis())
+                    ss.digest = m.c.hashCode()
+                    ss.baPrePrepareLog += m
                     val decision = changeDecisionIfByzantine(Decision.COMMIT)
-                    val baPrepare = Messages.BaPrepare(m.v, m.t, value.digest, decision, context.self).sign(keys)
+                    val baPrepare = Messages.BaPrepare(m.v, m.t, ss.digest, decision, context.self).sign(keys)
                     coordinators.foreach(_ ! baPrepare)
                   }
                 case util.Messages.Decision.ABORT =>
                   //TODO: implement proper checks
-                  value.timeOut_View = (m.v, System.currentTimeMillis())
-                  value.digest = m.c.hashCode()
-                  context.log.debug("Digest:" + value.digest)
-                  value.baPrePrepareLog += m
+                  ss.timeOut_View = (m.v, System.currentTimeMillis())
+                  ss.digest = m.c.hashCode()
+                  context.log.debug("Digest:" + ss.digest)
+                  ss.baPrePrepareLog += m
                   val decision = changeDecisionIfByzantine(Decision.ABORT)
-                  val baPrepare = Messages.BaPrepare(m.v, m.t, value.digest, decision, context.self).sign(keys)
+                  val baPrepare = Messages.BaPrepare(m.v, m.t, ss.digest, decision, context.self).sign(keys)
                   coordinators.foreach(_ ! baPrepare)
               }
               if (changeView) {
-                val P = ViewChangeStateBaNotPrePrepared(m.v, m.t, value.decisionCertificate)
+                val P = ViewChangeStateBaNotPrePrepared(m.v, m.t, ss.decisionCertificate)
                 val viewChange = ViewChange(m.v + 1, m.t, P, context.self).sign(keys)
                 coordinators.foreach(_ ! viewChange) // TODO: implement view change
                 // TODO: abort?
