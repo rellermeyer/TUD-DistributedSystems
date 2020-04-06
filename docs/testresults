@@ -1,4 +1,4 @@
-##Latency & thorughput test
+##Latency & throughput test
 All tests were performed with 4 coordinators. From this, the average latency and throughput were calculated.
 
 #Test 1
@@ -66,12 +66,39 @@ commit 7f850321e6f84e65165261cdfc2e64d767b82eb0
 6 participants:  
 Average latency (ms): 279
 Throughput (transactions/s): 3.5821495
-8 participants:
+8 participants: (seems to be an outlier compared to the next 2 tests)
 Average latency (ms): 478
 Throughput (transactions/s): 2.0909042
 10 participants:
 Average latency (ms): 410
 Throughput (transactions/s): 2.43622
+
+#Test 5   
+Computer: Douwe's
+commit 7f850321e6f84e65165261cdfc2e64d767b82eb0
+500 commits
+
+4 participants:
+Average latency (ms): 261
+Throughput (transactions/s): 3.8204687
+8 participants:
+Average latency (ms): 369
+Throughput (transactions/s): 2.7075617
+10 participants: 
+Average latency (ms): 406
+Throughput (transactions/s): 2.4611628
+
+#Test 6
+Computer: Douwe's
+commit 7f850321e6f84e65165261cdfc2e64d767b82eb0
+500 commits
+
+2 participants:
+Average latency (ms): 205
+Throughput (transactions/s): 4.87244
+8 participants:
+Average latency (ms): 385
+Throughput (transactions/s): 2.5909958
 
 ##Throughput test with ActorStart
 The test in CoordinatorSpec is entirely sequential. This causes the throughput to be bottlenecked by the the latency.
