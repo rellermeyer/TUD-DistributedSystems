@@ -59,18 +59,27 @@ Throughput (transactions/s): 2.5063286
 The test in CoordinatorSpec is entirely sequential. This causes the throughput to be bottlenecked by the the latency.
 For this reason, the throughput is tested with ActorStart, where new transactions do not depend on the previous finishing.
 
-All transactions generated without artificial delay (so upfront, with a huge queue depth)
+All transactions generated without artificial delay (so upfront, with a huge queue depth), 1 participant
 100 commits: 19 seconds
 1000 commits: 110 seconds
 
-with 50 ms delay between generating transactions
+with 50 ms delay between generating transactions, 1 participant
 100 commits: 16 seconds
 1000 commits: 91 seconds
 
-with 75 ms delay between generating transactions
+with 75 ms delay between generating transactions, 1 participant
 100 commits: 19 seconds
 1000 commits: 90 seconds
 
-with 100 ms delay between generating transactions
+with 100 ms delay between generating transactions, 1 participant
 100 commits: 20 seconds
 1000 commits: 108 seconds
+
+no delay, 500 commits:
+2 participants: 72 seconds (6.9 transactions/s)
+4 participants: 96 seconds (5.2 transactions/s)
+6 participants: 148 seconds (3.4 transactions/s)
+8 participants: 208 seconds (2.4 transactions/s)
+10 participants: 246 seconds (2.0 transactions/s)
+
+
