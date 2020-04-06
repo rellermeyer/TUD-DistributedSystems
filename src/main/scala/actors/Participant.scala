@@ -12,11 +12,20 @@ import scala.collection.mutable
 
 
 object Participant {
-  def apply(coordinators: Array[Coordinator], decision: Decision, keyTuple: KeyTuple, masterPubKey: PublicKey): Behavior[Signed[ParticipantMessage]] = {
-    Behaviors.logMessages(Behaviors.setup(context => new FixedDecisionParticipant(context, coordinators, decision, keyTuple, masterPubKey)))
+  def apply(factory: ActorContext[Signed[ParticipantMessage]] => Behavior[Signed[ParticipantMessage]]): Behavior[Signed[ParticipantMessage]] = {
+    Behaviors.logMessages(Behaviors.setup(factory))
   }
 
-  class State(var s: TransactionState, val t: Transaction, val decisionLog: Array[Decision])
+  //TODO: change readyParticpants to a mapping (particpants, ready)
+  //TODO: use knowledge of other participants to check whether received message is from a known participant
+  class State(var s: TransactionState
+              , val t: Transaction
+              , val decisionLog: Array[Decision]
+              , val registrations: mutable.Set[CoordinatorRef]
+              , val initiator: ParticipantRef
+              , val participants: Array[ParticipantRef]
+              , val readyParticipants: mutable.Set[ParticipantRef]
+              , val initAction: Decision)
 
   object TransactionState extends Enumeration {
     type TransactionState = Value
@@ -25,7 +34,10 @@ object Participant {
 
 }
 
-abstract class Participant(context: ActorContext[Signed[ParticipantMessage]], coordinators: Array[Coordinator], keys: KeyTuple, masterPubKey: PublicKey) extends AbstractBehavior[Signed[ParticipantMessage]](context) {
+abstract class Participant(context: ActorContext[Signed[ParticipantMessage]]
+                           , coordinators: Array[CoordinatorRef]
+                           , keys: KeyTuple
+                           , masterPubKey: PublicKey) extends AbstractBehavior[Signed[ParticipantMessage]](context) {
 
   import Participant._
 
@@ -34,6 +46,59 @@ abstract class Participant(context: ActorContext[Signed[ParticipantMessage]], co
 
   override def onMessage(message: Signed[ParticipantMessage]): Behavior[Signed[ParticipantMessage]] = {
     message.m match {
+      case m: AppointInitiator =>
+        transactions += (m.t.id -> new State(ACTIVE, m.t, new Array(coordinators.length), mutable.Set().empty, m.from, m.participants, mutable.Set().empty, m.initAction))
+        val propagate = Propagate(m.t, context.self).sign(keys)
+        m.participants.foreach(p => p ! propagate)
+      case m: Propagate =>
+        if (message.verify(masterPubKey)) {
+          transactions.get(m.t.id) match {
+            case Some(s) =>
+              context.log.debug("Transaction already known")
+            case None =>
+              transactions += (m.t.id -> new State(ACTIVE, m.t, new Array(coordinators.length), mutable.Set().empty, m.from, Array.empty, mutable.Set().empty, null))
+          }
+        }
+        val register = Register(m.t.id, context.self).sign(keys)
+        coordinators.foreach(c => c ! register)
+      case m: Registered =>
+        if (message.verify(masterPubKey)) {
+          transactions.get(m.t) match {
+            case Some(s) =>
+              if (!s.registrations.contains(m.from)) {
+                s.registrations += m.from
+              }
+              if (s.registrations.size >= 2 * f + 1) {
+                s.initiator ! Propagated(m.t, context.self).sign(keys)
+              }
+            case None =>
+              context.log.error("Transaction not known")
+          }
+        }
+      case m: Propagated =>
+        if (message.verify(masterPubKey)) {
+          transactions.get(m.t) match {
+            case Some(s) =>
+              if (!s.readyParticipants.contains(m.from)) {
+                s.readyParticipants += m.from
+                if (s.readyParticipants.size == s.participants.size) {
+                  s.initAction match {
+                    case Decision.COMMIT =>
+                      val initCommit = InitCommit(m.t, context.self).sign(keys)
+                      coordinators.foreach(c => c ! initCommit)
+                    case Decision.ABORT =>
+                      val initAbort = InitAbort(m.t, context.self).sign(keys)
+                      coordinators.foreach(c => c ! initAbort)
+                  }
+                }
+              }
+            //TODO: if some timeout has passed, send initAbort instead
+            case None =>
+              context.log.error("Transaction not known")
+          }
+        } else {
+          context.log.error("Incorrect signature")
+        }
       case m: Prepare =>
         if (message.verify(masterPubKey)) {
           transactions.get(m.t) match {
@@ -62,7 +127,8 @@ abstract class Participant(context: ActorContext[Signed[ParticipantMessage]], co
               } else {
                 context.log.error("Incorrect signature")
               }
-
+            case _ =>
+              context.log.error(s"unexpected state, should be PREPARED instead of {s.s}")
           }
             if (s.decisionLog.count(x => x == Decision.COMMIT) >= f + 1) {
               // m.from ! Messages.Committed(null, m.o, context.self)
@@ -74,10 +140,10 @@ abstract class Participant(context: ActorContext[Signed[ParticipantMessage]], co
             }
           case None =>
         }
-      case m: Rollback => {
+      case m: Rollback =>
         transactions.get(m.t) match {
           case Some(s) => s.s match {
-            case _ => {
+            case _ =>
               if (message.verify(masterPubKey)) {
                 val coordinatorIndex = coordinators.indexOf(m.from)
                 s.decisionLog(coordinatorIndex) = Decision.ABORT
@@ -88,21 +154,9 @@ abstract class Participant(context: ActorContext[Signed[ParticipantMessage]], co
               } else {
                 context.log.error("Incorrect signature")
               }
-            }
-            case _ =>
           }
           case None =>
         }
-      }
-
-      case m: PropagateTransaction =>
-        transactions.get(m.t.id) match {
-          case Some(s) =>
-            context.log.warn("Transaction known, no action needed")
-          case None =>
-            transactions += (m.t.id -> new State(ACTIVE, m.t, new Array(coordinators.length)))
-        }
-        coordinators.foreach(c => c ! Register(m.t.id, context.self).sign(keys))
     }
     this
   }
@@ -111,6 +165,6 @@ abstract class Participant(context: ActorContext[Signed[ParticipantMessage]], co
 
 }
 
-class FixedDecisionParticipant(context: ActorContext[Signed[ParticipantMessage]], coordinators: Array[Coordinator], decision: Decision, keyTuple: KeyTuple, masterPubKey: PublicKey) extends Participant(context, coordinators, keyTuple: KeyTuple, masterPubKey: PublicKey) {
+class FixedDecisionParticipant(context: ActorContext[Signed[ParticipantMessage]], coordinators: Array[CoordinatorRef], decision: Decision, keyTuple: KeyTuple, masterPubKey: PublicKey) extends Participant(context, coordinators, keyTuple: KeyTuple, masterPubKey: PublicKey) {
   override def prepare(t: TransactionID): Decision = decision
 }

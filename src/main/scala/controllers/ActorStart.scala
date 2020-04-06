@@ -2,40 +2,39 @@ package controllers
 
 import java.security.{KeyPair, KeyPairGenerator, PrivateKey}
 
-import actors.{Coordinator, Participant}
-import akka.actor.typed.javadsl.Behaviors
+import actors.{Coordinator, FixedDecisionParticipant, Participant}
+import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorSystem, Behavior}
 import util.Messages
-import util.Messages.{Decision, PropagateTransaction, SignedPublicKey, Transaction}
+import util.Messages.{AppointInitiator, Decision, SignedPublicKey, Transaction}
 
 
 object ActorStart {
 
   def apply(): Behavior[ActorStartMessage] = Behaviors.logMessages(Behaviors.setup { context =>
-    context.getLog.info("Creating actors and sending start messages");
+    context.log.info("Creating actors and sending start messages");
 
-    Behaviors.receiveMessage { message =>
+    Behaviors.receiveMessage { _ =>
 
-      var kpg: KeyPairGenerator = KeyPairGenerator.getInstance("RSA")
+      val kpg: KeyPairGenerator = KeyPairGenerator.getInstance("RSA")
       kpg.initialize(2048)
-      var masterKey = kpg.generateKeyPair
+      val masterKey = kpg.generateKeyPair
+      val setupKeyPair = genSignedKey(kpg, masterKey)
 
       // Create coordinators
-      val coordinators: Array[Messages.Coordinator] = Array(
-        context.spawn(Coordinator(genSignedKey(kpg, masterKey), masterKey.getPublic(), operational = true, byzantine = false, slow = false), "Coordinator---1"),
-        context.spawn(Coordinator(genSignedKey(kpg, masterKey), masterKey.getPublic(), operational = true, byzantine = false, slow = false), "Coordinator---2"),
-        context.spawn(Coordinator(genSignedKey(kpg, masterKey), masterKey.getPublic(), operational = true, byzantine = false, slow = false), "Coordinator---3"),
-        context.spawn(Coordinator(genSignedKey(kpg, masterKey), masterKey.getPublic(), operational = true, byzantine = false, slow = false), "Coordinator---4")
+      val coordinators: Array[Messages.CoordinatorRef] = Array(
+        context.spawn(Coordinator(new Coordinator(_, genSignedKey(kpg, masterKey), masterKey.getPublic(), operational = true, byzantine = false, slow = false)), "Coordinator---1"),
+        context.spawn(Coordinator(new Coordinator(_, genSignedKey(kpg, masterKey), masterKey.getPublic(), operational = true, byzantine = false, slow = false)), "Coordinator---2"),
+        context.spawn(Coordinator(new Coordinator(_, genSignedKey(kpg, masterKey), masterKey.getPublic(), operational = true, byzantine = false, slow = false)), "Coordinator---3"),
+        context.spawn(Coordinator(new Coordinator(_, genSignedKey(kpg, masterKey), masterKey.getPublic(), operational = true, byzantine = false, slow = false)), "Coordinator---4")
       )
 
       // Send coordinators set of coordinators
-      coordinators.foreach { x => x ! Messages.Setup(coordinators).fakesign() }
+      coordinators.foreach { x => x ! Messages.Setup(coordinators).sign(setupKeyPair) }
 
       // Create participant(s)
-      val participants: Set[Messages.Participant] = Set(
-        context.spawn(Participant(coordinators, Decision.COMMIT, genSignedKey(kpg, masterKey), masterKey.getPublic()), "PartInitiator-1")
-      )
-
+      val participants = new Array[Messages.ParticipantRef](1)
+      participants(0) = context.spawn(Participant(new FixedDecisionParticipant(_, coordinators, Decision.COMMIT, genSignedKey(kpg, masterKey), masterKey.getPublic())), "PartInitiator-1")
 
       // Let the participant start messaging the coordinator
 
@@ -43,19 +42,11 @@ object ActorStart {
       // - propagate
       val numberOfTransactions = 100
       val transactions = new Array[Transaction](numberOfTransactions)
+      val p = participants.head
       for (id <- 0 until numberOfTransactions) {
         transactions(id) = Transaction(id);
-        for (x <- participants) {
-          x ! PropagateTransaction(transactions(id)).fakesign()
-        }
+        p ! AppointInitiator(transactions(id), Decision.COMMIT, participants, p).fakesign()
       }
-      Thread.sleep(1000)
-      // - start the distributed commit
-      for (id <- 0 until numberOfTransactions) {
-        coordinators.foreach(c => c ! Messages.InitCommit(transactions(id).id, participants.head).fakesign())
-        Thread.sleep(500)
-      }
-
       Behaviors.same
     }
   })
