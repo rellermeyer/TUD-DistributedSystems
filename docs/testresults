@@ -96,6 +96,9 @@ commit 7f850321e6f84e65165261cdfc2e64d767b82eb0
 2 participants:
 Average latency (ms): 205
 Throughput (transactions/s): 4.87244
+6 participants:
+Average latency (ms): 301
+Throughput (transactions/s): 3.3190613
 8 participants:
 Average latency (ms): 385
 Throughput (transactions/s): 2.5909958
