@@ -58,8 +58,6 @@ object Messages {
       // TODO: verify sender(from) in message
       true
     }
-
-    override def toString = s"Signed($m)"
   }
 
   case class DecisionCertificateEntry(registration: Messages.Register, vote: Option[VotePrepared], abort: Option[InitAbort])

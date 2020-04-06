@@ -1,0 +1,36 @@
+##Test results
+All tests were performed with 4 coordinators. In each test, 100 transactions were committed. From this, the average latency and throughput were calculated.
+
+#Test 1
+Computer: Douwe's  
+Commit fb16cdb976c3ac4bae326761d9d45fcd791cd363    
+
+
+2 participants:
+Average latency (ms): 382  
+Throughput (transactions/s): 2.6156101  
+4 participants:  
+Average latency (ms): 434  
+Throughput (transactions/s): 2.3037758  
+6 participants:  
+Average latency (ms): 569  
+Throughput (transactions/s): 1.754817  
+8 participants:  
+Average latency (ms): 614  
+Throughput (transactions/s): 1.6273392  
+10 participants:  
+Average latency (ms): 822  
+Throughput (transactions/s): 1.2165303  
+
+#Test 2
+Computer: Douwe's  
+Commit f4fc8e6f1bab41640c881706176cb9b40d6e87ed  
+2 participants:  
+Average latency (ms): 219  
+Throughput (transactions/s): 4.550212  
+4 participants:  
+Average latency (ms): 292  
+Throughput (transactions/s): 3.4132023  
+6 participants:
+Average latency (ms): 341  
+Throughput (transactions/s): 2.9321215  
