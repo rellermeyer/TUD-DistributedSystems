@@ -3,10 +3,10 @@ package actors
 import akka.actor.testkit.typed.scaladsl.{LoggingTestKit, ScalaTestWithActorTestKit}
 import org.scalatest.wordspec.AnyWordSpecLike
 import util.Messages._
-import util.SpawnerTestImpl
+import util._
 
 class CoordinatorSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike {
-  val spawner = new SpawnerTestImpl(this)
+  val spawner = new SpawnerScalaTestWithActorTestKitImpl(this)
 
   "A transaction" must {
     "succeed with 1 coordinator and 1 participant" in {

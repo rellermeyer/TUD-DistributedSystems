@@ -49,7 +49,7 @@ abstract class Participant(context: ActorContext[Signed[ParticipantMessage]]
       case m: AppointInitiator =>
         transactions += (m.t.id -> new State(ACTIVE, m.t, new Array(coordinators.length), mutable.Set().empty, m.from, m.participants, mutable.Set().empty, m.initAction))
         val propagate = Propagate(m.t, context.self).sign(keys)
-        m.participants.foreach(p => p ! propagate)
+        m.participants.foreach(_ ! propagate)
       case m: Propagate =>
         if (message.verify(masterPubKey)) {
           transactions.get(m.t.id) match {
@@ -60,7 +60,7 @@ abstract class Participant(context: ActorContext[Signed[ParticipantMessage]]
           }
         }
         val register = Register(m.t.id, context.self).sign(keys)
-        coordinators.foreach(c => c ! register)
+        coordinators.foreach(_ ! register)
       case m: Registered =>
         if (message.verify(masterPubKey)) {
           transactions.get(m.t) match {
@@ -85,10 +85,10 @@ abstract class Participant(context: ActorContext[Signed[ParticipantMessage]]
                   s.initAction match {
                     case Decision.COMMIT =>
                       val initCommit = InitCommit(m.t, context.self).sign(keys)
-                      coordinators.foreach(c => c ! initCommit)
+                      coordinators.foreach(_ ! initCommit)
                     case Decision.ABORT =>
                       val initAbort = InitAbort(m.t, context.self).sign(keys)
-                      coordinators.foreach(c => c ! initAbort)
+                      coordinators.foreach(_ ! initAbort)
                   }
                 }
               }

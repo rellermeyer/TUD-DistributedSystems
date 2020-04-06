@@ -89,14 +89,14 @@ class Coordinator(context: ActorContext[Signed[CoordinatorMessage]]
                   if (isPrimary && enoughVotes) {
                     val decision = changeDecisionIfByzantine(Decision.COMMIT)
                     val baPrePrepare = Messages.BaPrePrepare(ss.v, m.t, decision, ss.decisionCertificate.clone, context.self).sign(keys)
-                    coordinators.foreach(coord => coord ! baPrePrepare)
+                    coordinators.foreach(_ ! baPrePrepare)
                   }
                 case util.Messages.Decision.ABORT =>
                   if (!ss.decisionCertificate.contains(m.from)) {
                     ss.decisionCertificate += (m.from -> DecisionCertificateEntry(ss.registrationLog(m.from), Option(m), None))
                     val decision = changeDecisionIfByzantine(Decision.ABORT)
                     val baPrePrepare = Messages.BaPrePrepare(ss.v, m.t, decision, ss.decisionCertificate.clone, context.self).sign(keys)
-                    coordinators.foreach(coord => coord ! baPrePrepare)
+                    coordinators.foreach(_ ! baPrePrepare)
                   }
               }
             }
@@ -110,7 +110,7 @@ class Coordinator(context: ActorContext[Signed[CoordinatorMessage]]
         stableStorage.get(m.t) match {
           case Some(ss) =>
             val prepare = Messages.Prepare(m.t, context.self).sign(keys)
-            ss.participants.foreach(p => p ! prepare)
+            ss.participants.foreach(_ ! prepare)
           case None =>
             context.log.error("not implemented")
         }
@@ -122,7 +122,7 @@ class Coordinator(context: ActorContext[Signed[CoordinatorMessage]]
               ss.decisionCertificate += (m.from -> DecisionCertificateEntry(ss.registrationLog(m.from), None, Option(m)))
               val decision = changeDecisionIfByzantine(Decision.ABORT)
               val baPrePrepare = Messages.BaPrePrepare(ss.v, m.t, decision, ss.decisionCertificate.clone, context.self).sign(keys)
-              coordinators.foreach(coord => coord ! baPrePrepare)
+              coordinators.foreach(_ ! baPrePrepare)
             }
           case None =>
             context.log.error("not implemented")
@@ -163,7 +163,7 @@ class Coordinator(context: ActorContext[Signed[CoordinatorMessage]]
                     value.baPrePrepareLog += m
                     val decision = changeDecisionIfByzantine(Decision.COMMIT)
                     val baPrepare = Messages.BaPrepare(m.v, m.t, value.digest, decision, context.self).sign(keys)
-                    coordinators.foreach(coord => coord ! baPrepare)
+                    coordinators.foreach(_ ! baPrepare)
                   }
                 case util.Messages.Decision.ABORT =>
                   //TODO: implement proper checks
@@ -173,12 +173,12 @@ class Coordinator(context: ActorContext[Signed[CoordinatorMessage]]
                   value.baPrePrepareLog += m
                   val decision = changeDecisionIfByzantine(Decision.ABORT)
                   val baPrepare = Messages.BaPrepare(m.v, m.t, value.digest, decision, context.self).sign(keys)
-                  coordinators.foreach(coord => coord ! baPrepare)
+                  coordinators.foreach(_ ! baPrepare)
               }
               if (changeView) {
                 val P = ViewChangeStateBaNotPrePrepared(m.v, m.t, value.decisionCertificate)
                 val viewChange = ViewChange(m.v + 1, m.t, P, context.self).sign(keys)
-                coordinators.foreach(coord => coord ! viewChange) // TODO: implement view change
+                coordinators.foreach(_ ! viewChange) // TODO: implement view change
                 // TODO: abort?
               }
             }
@@ -213,7 +213,7 @@ class Coordinator(context: ActorContext[Signed[CoordinatorMessage]]
                 //BaPrepared flag prevents duplicate messages
                 val decision = changeDecisionIfByzantine(m.o)
                 val baCommit = Messages.BaCommit(m.v, m.t, m.c, decision, context.self).sign(keys)
-                coordinators.foreach(coord => coord ! baCommit)
+                coordinators.foreach(_ ! baCommit)
                 ss.baState = BaState.PREPARED
                 context.log.info("BaPrepared")
               }
@@ -221,7 +221,7 @@ class Coordinator(context: ActorContext[Signed[CoordinatorMessage]]
               context.log.debug("TimedOut or verification failed. Init view change.")
               val P = ViewChangeStateBaPrePrepared(m.v, m.t, m.o, ss.baPrePrepareLog.head.c)
               val viewChange = ViewChange(m.v + 1, m.t, P, context.self).sign(keys)
-              coordinators.foreach(coord => coord ! viewChange)
+              coordinators.foreach(_ ! viewChange)
             }
           case None =>
         }
@@ -242,18 +242,18 @@ class Coordinator(context: ActorContext[Signed[CoordinatorMessage]]
               if (byzantine) {
                 if (m.o == Decision.ABORT) {
                   val commit = Messages.Commit(m.t, context.self).sign(keys)
-                  ss.participants.foreach(part => part ! commit)
+                  ss.participants.foreach(_ ! commit)
                   context.log.info("Byzantine BaCommitted")
                 } else {
                   val rollback = Messages.Rollback(m.t, context.self).sign(keys)
-                  ss.participants.foreach(part => part ! rollback)
+                  ss.participants.foreach(_ ! rollback)
                   context.log.info("Byzantine BaCommitted abort")
                 }
               } else {
                 if (m.o == Decision.COMMIT) {
                   if (ss.baCommitLog.count(p => p.o == m.o) >= 2 * f) {
                     val commit = Messages.Commit(m.t, context.self).sign(keys)
-                    ss.participants.foreach(part => part ! commit)
+                    ss.participants.foreach(_ ! commit)
                     ss.baState = BaState.COMMITTED // or just drop the transaction?
                     context.log.info("BaCommitted")
                   }
@@ -261,7 +261,7 @@ class Coordinator(context: ActorContext[Signed[CoordinatorMessage]]
                 else {
                   if (ss.baCommitLog.count(p => p.o == m.o) >= 2 * f) {
                     val rollback = Messages.Rollback(m.t, context.self).sign(keys)
-                    ss.participants.foreach(part => part ! rollback)
+                    ss.participants.foreach(_ ! rollback)
                     context.log.info("BaCommitted abort")
                   }
                 }
@@ -270,7 +270,7 @@ class Coordinator(context: ActorContext[Signed[CoordinatorMessage]]
               context.log.debug("TimedOut. Init view change.")
               val P = ViewChangeStateBaPrepared(m.v, m.t, m.o, ss.baPrePrepareLog.head.c, ss.baPrepareLog)
               val viewChange = ViewChange(m.v + 1, m.t, P, context.self).sign(keys)
-              coordinators.foreach(coord => coord ! viewChange)
+              coordinators.foreach(_ ! viewChange)
             }
           case None =>
         }
