@@ -1,4 +1,4 @@
-##Test results
+##Latency & thorughput test
 All tests were performed with 4 coordinators. In each test, 100 transactions were committed. From this, the average latency and throughput were calculated.
 
 #Test 1
@@ -54,3 +54,23 @@ Throughput (transactions/s): 2.516863
 10 participants:  
 Average latency (ms): 398
 Throughput (transactions/s): 2.5063286
+
+##Throughput test with ActorStart
+The test in CoordinatorSpec is entirely sequential. This causes the throughput to be bottlenecked by the the latency.
+For this reason, the throughput is tested with ActorStart, where new transactions do not depend on the previous finishing.
+
+All transactions generated without artificial delay (so upfront, with a huge queue depth)
+100 commits: 19 seconds
+1000 commits: 110 seconds
+
+with 50 ms delay between generating transactions
+100 commits: 16 seconds
+1000 commits: 91 seconds
+
+with 75 ms delay between generating transactions
+100 commits: 19 seconds
+1000 commits: 90 seconds
+
+with 100 ms delay between generating transactions
+100 commits: 20 seconds
+1000 commits: 108 seconds
