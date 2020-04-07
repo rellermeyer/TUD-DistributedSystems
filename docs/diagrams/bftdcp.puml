@@ -45,42 +45,52 @@ CorrectCoordinator4  <-- Participant1 : OK
 'CorrectCoordinator3 -> Participant1 : Commit
 'FaultyCoordinator1  -> Participant1 : <b> Abort
 
-CorrectCoordinator1 -> CorrectCoordinator2 : ba-pre-prepare (propose commit)
-CorrectCoordinator1 -> CorrectCoordinator3 : ba-pre-prepare (propose commit)
-CorrectCoordinator1 -> CorrectCoordinator4  : ba-pre-prepare (propose commit)
-
-CorrectCoordinator1 -> CorrectCoordinator4 : ba-prepare (propose commit)
-CorrectCoordinator1 -> CorrectCoordinator2 : ba-prepare (propose commit)
-CorrectCoordinator1 -> CorrectCoordinator3 : ba-prepare (propose commit)
-
-CorrectCoordinator2 -> CorrectCoordinator1 : ba-prepare (propose commit)
-CorrectCoordinator2 -> CorrectCoordinator3 : ba-prepare (propose commit)
-CorrectCoordinator2 -> CorrectCoordinator4 : ba-prepare (propose commit)
-
-CorrectCoordinator3 -> CorrectCoordinator1 : ba-prepare (propose commit)
-CorrectCoordinator3 -> CorrectCoordinator2 : ba-prepare (propose commit)
-CorrectCoordinator3 -> CorrectCoordinator4 : ba-prepare (propose commit)
-
-CorrectCoordinator4 -> CorrectCoordinator1 : ba-prepare (propose commit)
-CorrectCoordinator4 -> CorrectCoordinator2 : ba-prepare (propose commit)
-CorrectCoordinator4 -> CorrectCoordinator3 : ba-prepare (propose commit)
 
 
-CorrectCoordinator1 -> CorrectCoordinator4 : ba-commit
-CorrectCoordinator1 -> CorrectCoordinator2 : ba-commit
-CorrectCoordinator1 -> CorrectCoordinator3 : ba-commit
+CorrectCoordinator1 -> "All Coordinators" : ba-pre-prepare (propose commit)
+' CorrectCoordinator1 -> CorrectCoordinator2 : ba-pre-prepare (propose commit)
+' CorrectCoordinator1 -> CorrectCoordinator3 : ba-pre-prepare (propose commit)
+' CorrectCoordinator1 -> CorrectCoordinator4  : ba-pre-prepare (propose commit)
 
-CorrectCoordinator2 -> CorrectCoordinator1 : ba-commit
-CorrectCoordinator2 -> CorrectCoordinator3 : ba-commit
-CorrectCoordinator2 -> CorrectCoordinator4 : ba-commit
+CorrectCoordinator1 -> "All Coordinators" : ba-prepare (propose commit)
+' CorrectCoordinator1 -> CorrectCoordinator4 : ba-prepare (propose commit)
+' CorrectCoordinator1 -> CorrectCoordinator2 : ba-prepare (propose commit)
+' CorrectCoordinator1 -> CorrectCoordinator3 : ba-prepare (propose commit)
 
-CorrectCoordinator3 -> CorrectCoordinator1 : ba-commit
-CorrectCoordinator3 -> CorrectCoordinator2 : ba-commit
-CorrectCoordinator3 -> CorrectCoordinator4 : ba-commit
+CorrectCoordinator2 -> "All Coordinators" : ba-prepare (propose commit)
+' CorrectCoordinator2 -> CorrectCoordinator1 : ba-prepare (propose commit)
+' CorrectCoordinator2 -> CorrectCoordinator3 : ba-prepare (propose commit)
+' CorrectCoordinator2 -> CorrectCoordinator4 : ba-prepare (propose commit)
 
-CorrectCoordinator4 -> CorrectCoordinator1 : ba-commit
-CorrectCoordinator4 -> CorrectCoordinator2 : ba-commit
-CorrectCoordinator4 -> CorrectCoordinator3 : ba-commit
+CorrectCoordinator3 -> "All Coordinators" : ba-prepare (propose commit)
+' CorrectCoordinator3 -> CorrectCoordinator1 : ba-prepare (propose commit)
+' CorrectCoordinator3 -> CorrectCoordinator2 : ba-prepare (propose commit)
+' CorrectCoordinator3 -> CorrectCoordinator4 : ba-prepare (propose commit)
+
+CorrectCoordinator4 -> "All Coordinators" : ba-prepare (propose commit)
+' CorrectCoordinator4 -> CorrectCoordinator1 : ba-prepare (propose commit)
+' CorrectCoordinator4 -> CorrectCoordinator2 : ba-prepare (propose commit)
+' CorrectCoordinator4 -> CorrectCoordinator3 : ba-prepare (propose commit)
+
+CorrectCoordinator1 -> "All Coordinators" : ba-commit
+' CorrectCoordinator1 -> CorrectCoordinator4 : ba-commit
+' CorrectCoordinator1 -> CorrectCoordinator2 : ba-commit
+' CorrectCoordinator1 -> CorrectCoordinator3 : ba-commit
+
+CorrectCoordinator2 -> "All Coordinators" : ba-commit
+' CorrectCoordinator2 -> CorrectCoordinator1 : ba-commit
+' CorrectCoordinator2 -> CorrectCoordinator3 : ba-commit
+' CorrectCoordinator2 -> CorrectCoordinator4 : ba-commit
+
+CorrectCoordinator3 -> "All Coordinators" : ba-commit
+' CorrectCoordinator3 -> CorrectCoordinator1 : ba-commit
+' CorrectCoordinator3 -> CorrectCoordinator2 : ba-commit
+' CorrectCoordinator3 -> CorrectCoordinator4 : ba-commit
+
+CorrectCoordinator4 -> "All Coordinators" : ba-commit
+' CorrectCoordinator4 -> CorrectCoordinator1 : ba-commit
+' CorrectCoordinator4 -> CorrectCoordinator2 : ba-commit
+' CorrectCoordinator4 -> CorrectCoordinator3 : ba-commit
 
 CorrectCoordinator1 -> Participant1 : Commit
 CorrectCoordinator2 -> Participant1 : Commit
