@@ -20,7 +20,7 @@ object ActorStart {
       val numberOfTransactions = 100
       val initiator = participants.head
       for (id <- 0 until numberOfTransactions) {
-        initiator ! AppointInitiator(Transaction(id), Decision.COMMIT, participants, initiator).fakesign()
+        initiator ! AppointInitiator(Transaction(id), Decision.COMMIT, participants).fakesign()
       }
       Behaviors.same
     }

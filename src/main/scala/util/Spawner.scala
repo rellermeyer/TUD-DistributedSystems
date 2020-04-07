@@ -8,7 +8,7 @@ import util.Messages.Decision
 import scala.collection.mutable
 
 abstract class Spawner(var uniqueID: Int = 0) {
-  def apply(nCoordinators: Int, nCommittingParticipants: Int, nAbortingParticipants: Int = 0, nFailedCoordinators: Int = 0, nByzantinePrimaryCoord: Int = 0, nByzantineOtherCoord: Int = 0, nSlowCoord: Int = 0): (Array[Messages.CoordinatorRef], Array[Messages.ParticipantRef]) = {
+  def apply(nCoordinators: Int = 0, nCommittingParticipants: Int = 0, nAbortingParticipants: Int = 0, nFailedCoordinators: Int = 0, nByzantinePrimaryCoord: Int = 0, nByzantineOtherCoord: Int = 0, nSlowCoord: Int = 0): (Array[Messages.CoordinatorRef], Array[Messages.ParticipantRef]) = {
 
     val (masterKey, kpg) = KeyPairGenerator()
 

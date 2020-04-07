@@ -89,7 +89,7 @@ object Messages {
 
   final case class Committed(t: TransactionID, commitResult: Decision, from: ParticipantRef) extends CoordinatorMessage
 
-  final case class AppointInitiator(t: Transaction, initAction: Decision, participants: Array[ParticipantRef], from: ParticipantRef) extends ParticipantMessage
+  final case class AppointInitiator(t: Transaction, initAction: Decision, participants: Array[ParticipantRef]) extends ParticipantMessage
 
   final case class Propagate(t: Transaction, from: ParticipantRef) extends ParticipantMessage // from: Initiator
 
