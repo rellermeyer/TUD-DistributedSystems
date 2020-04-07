@@ -47,7 +47,7 @@ abstract class Participant(context: ActorContext[Signed[ParticipantMessage]]
   override def onMessage(message: Signed[ParticipantMessage]): Behavior[Signed[ParticipantMessage]] = {
     message.m match {
       case m: AppointInitiator =>
-        transactions += (m.t.id -> new State(ACTIVE, m.t, new Array(coordinators.length), mutable.Set().empty, m.from, m.participants, mutable.Set().empty, m.initAction))
+        transactions += (m.t.id -> new State(ACTIVE, m.t, new Array(coordinators.length), mutable.Set().empty, context.self, m.participants, mutable.Set().empty, m.initAction))
         val propagate = Propagate(m.t, context.self).sign(keys)
         m.participants.foreach(_ ! propagate)
       case m: Propagate =>
