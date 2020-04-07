@@ -168,7 +168,6 @@ class Coordinator(context: ActorContext[Signed[CoordinatorMessage]]
                   //TODO: implement proper checks
                   ss.timeOut_View = (m.v, System.currentTimeMillis())
                   ss.digest = m.c.hashCode()
-                  context.log.debug("Digest:" + ss.digest)
                   ss.baPrePrepareLog += m
                   val decision = changeDecisionIfByzantine(Decision.ABORT)
                   val baPrepare = Messages.BaPrepare(m.v, m.t, ss.digest, decision, context.self).sign(keys)
