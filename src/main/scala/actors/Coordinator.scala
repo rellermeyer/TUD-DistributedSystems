@@ -188,7 +188,7 @@ class Coordinator(context: ActorContext[Signed[CoordinatorMessage]]
             var changeView = false
 
             if (ss.baState != BaState.INITIAL) {
-              context.log.debug("not expecting BaPrepare")
+              context.log.debug(s"Dropped BaPrepare, currently in state ${ss.baState}")
               return this
             }
             if (m.c == ss.digest) { //check digest // TODO: not sure if this is how it should be done

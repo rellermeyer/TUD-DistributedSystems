@@ -82,6 +82,9 @@ abstract class Participant(context: ActorContext[Signed[ParticipantMessage]]
               if (!s.readyParticipants.contains(m.from)) {
                 s.readyParticipants += m.from
                 if (s.readyParticipants.size == s.participants.size) {
+                  context.log.info("------------    Transaction propagated    ------------")
+                  context.log.info("------------ Participants have registered ------------")
+                  context.log.info("------------     Starting Transaction     ------------")
                   s.initAction match {
                     case Decision.COMMIT =>
                       val initCommit = InitCommit(m.t, context.self).sign(keys)
