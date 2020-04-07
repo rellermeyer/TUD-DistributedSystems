@@ -207,7 +207,7 @@ class CoordinatorSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike {
     }
   }
 
-  def latencyThroughputTest(nParticipants: Int) = {
+  def latencyThroughputTest(nParticipants: Int): Unit = {
     val (coordinators, participants) = spawner(nCoordinators = 4, nCommittingParticipants = nParticipants)
     val numberOfTransactions = 100
     var totalLatency: Long = 0
