@@ -80,7 +80,7 @@ Initially it was not clear whether the initiator should send the commit request 
 
 It seems to be somewhat careless that the paper authors have not implemented view changes. We therefore assume that no full implementation of this protocol exists up to now.
 
-Pseudo-code: The paper never mentions if the funcitons are thought to be executed on coordinator or participant side.
+Pseudo-code: The paper never mentions if the functions are thought to be executed on coordinator or participant side.
 
 The paper mentions WS-AT a few times, but they have made it more clear that it that they assume strong knowledge of WS-AT. Reading WS-AT helped a lot!
 
