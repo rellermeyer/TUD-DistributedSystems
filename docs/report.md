@@ -18,10 +18,18 @@ In the past weeks we have implemented the system described in *"A Byzantine Faul
 ## Introduction
 
 In the paper the author describes a commit protocol for transactions which run over untrusted networks. The protocol consist of duplicating the coordinator and running a Byzantine agreement algorithm among the coordinator replicas. This protocol tolerates byzantine coordinator and faulty participant behaviour.
-The Two Phase Commit (2PC) protocol addresses the issue of implementing a distributed commit protocol for distributed transactions, and different approaches have been conducted in order to make it support byzantine behaviours. This paper's motivation was to improve these 2PC byzantine behaviour approaches.
+The Two Phase Commit (2PC) protocol addresses the issue of implementing a distributed commit protocol for distributed transactions, and different approaches have been conducted in order to make it support byzantine behaviours. This paper's motivation was to improve these 2PC byzantine behaviour approaches. 
 A distributed transaction is a transaction that is performed in multiple machines across a computer network. The transaction is only committed if all operations succeed, and it is aborted if any operation fails.
 
+## Problem
+
+In the basic 2PC protocol there is a single coordinator, and multiple participants. This means that the coordinator is a single point of failure and that the coordinator is trusted by the participants. If the coordinator expresses byzantine behaviour, by for example telling one participant to commit and another to abort the participants will trust the coordinator and therefore do as it says. This would then leed to the participants having different views on what transactions are done, which was the hole point of the protocol. 
+
+
+
 ## Distributed commit protocol
+
+In the distributed commit protocol presented in the paper they address the problem with a byzantine coordinator and solves it by distributing the coordinator into multiple coordinators that does a byzantine agreement on firstly witch participants are part in the voting on a transaction, and secondly on what the participants voted. The resulting system works so long 2/3 +1 of the coordinators are behaving correctly. Therefore working correctly with slightly less than 1/3 of byzantine coordinators. 
 
 According to 2PC protocol a distributed transaction contains one coordinator and some participants, but in the byzantine distributed commit protocol several coordinators are used. We have used the **akka** framework to implement coordinators and participants as actors since it simplifies distributed and concurrent application development. Actors communicate with each other through messages using the akka API. These messages are signed using public key technology so that no unidentified participant can interfere. It is assumed that there will exist *"3f + 1"* available coordinator replicas where "*f*" is the maximum number of byzantine coordinator replicas.
 In the byzantine distributed commit protocol the original coordinator is called primary and coordinator copies receive the name of replicas. Every participant must register with the coordinator before the commit protocol starts. The commit protocol starts when a replica receives a commit request from a participant, which from now on will be called initiator. Now the coordinator replica sends a *"prepare"* request to every registered participant and waits until enough *"prepared"* messages are received from the participants. When *"prepared"* messages are received an instance of a *"Byzantine Agreement Algorithm"* is created. After reaching an agreement, coordinator replicas send  the agreement outcome to participants, which will only commit the transaction once *"f + 1"* similar outcomes are received. This way at least one of the *"f + 1*" outcomes received comes from a non-byzantine replica.
