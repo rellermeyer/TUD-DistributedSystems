@@ -193,25 +193,44 @@ class CoordinatorSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike {
     val numberOfRuns = 10
     for (i <- 0 until numberOfRuns) {
       ("2 participants - run " + i) in {
-        latencyThroughputTest(2)
+        latencyThroughputTest(2,0)
       }
       ("4 participants - run " + i) in {
-        latencyThroughputTest(4)
+        latencyThroughputTest(4,0)
       }
       ("6 participants - run " + i) in {
-        latencyThroughputTest(6)
+        latencyThroughputTest(6,0)
       }
       ("8 participants - run " + i) in {
-        latencyThroughputTest(8)
+        latencyThroughputTest(8,0)
       }
       ("10 participants - run " + i) in {
-        latencyThroughputTest(10)
+        latencyThroughputTest(10,0)
       }
     }
   }
-
-  def latencyThroughputTest(nParticipants: Int): Unit = {
-    val (coordinators, participants) = spawner(nCoordinators = 4, nCommittingParticipants = nParticipants)
+  "Byzantine coordinator latency & throughput test" must {
+    val numberOfRuns = 10
+    for (i <- 0 until numberOfRuns) {
+      ("2 participants - run " + i) in {
+        latencyThroughputTest(2,1)
+      }
+      ("4 participants - run " + i) in {
+        latencyThroughputTest(4,1)
+      }
+      ("6 participants - run " + i) in {
+        latencyThroughputTest(6,1)
+      }
+      ("8 participants - run " + i) in {
+        latencyThroughputTest(8,1)
+      }
+      ("10 participants - run " + i) in {
+        latencyThroughputTest(10,1)
+      }
+    }
+  }
+  def latencyThroughputTest(nParticipants: Int,nByzantineOtherCoord: Int): Unit = {
+    val (coordinators, participants) = spawner(nCoordinators = 4-nByzantineOtherCoord, nCommittingParticipants = nParticipants,0,0,0,nByzantineOtherCoord)
     val numberOfTransactions = 100
     var totalLatency: Long = 0
     val timerStart = System.currentTimeMillis()
