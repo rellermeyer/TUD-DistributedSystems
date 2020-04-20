@@ -20,9 +20,9 @@
 
 ## Questions to be answered
 
-* (some images like state diagram similar to WS-AT)
+* (some images like state diagram similar to WS-AT) (ONE image added so far)
 * image of our system structure (? including what messages are sent and a small number that explains in what order they are sent)
-* What are the big differences to WS-AT
+* What are the big differences to WS-AT (Partialy done)
 * What was our additional plan?
 * What steps did we take to implement it / how often and why have we changed our plan?
 * Why have we implemented it the way it is implemented?
@@ -32,7 +32,7 @@
 * compared to the paper, what have we left out?
 * If we did more than the paper, what?
 * did we decide to do anything different than the paper?
-* discussion of usecases for a (BFT) commit protocol
+* discussion of usecases for a (BFT) commit protocol     (Partial done)
 * listing a few different ways how we could evaluate our system (e.g. performance) and some short discussion
 
 ## Milestone 2
