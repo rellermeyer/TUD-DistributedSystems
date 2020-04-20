@@ -1,0 +1,34 @@
+@startuml
+skinparam monochrome true
+' [*] --> State1
+'State1 --> [*]
+'State1 : this is a string
+'State1 : this is another string
+
+'State1 -> State2
+'State2 --> [*]
+
+
+' None 
+' Active
+' Preparing
+' Prepared
+' PreparedSuccess
+' Commiting
+' Aborting
+
+
+' None -> None : Prepared -> Send rollback
+
+Cooridnator -> Participant1 : 1 Prepare transaction 1
+Cooridnator -> Participant2 : 1 Prepare transaction 1
+
+Participant1 -> Cooridnator : 2 OK
+Participant2 -> Cooridnator : 2 NO
+
+Cooridnator -> Participant1 : 3 Abort
+Cooridnator -> Participant2 : 3 Abort
+
+
+@enduml
+
