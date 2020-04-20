@@ -190,20 +190,23 @@ class CoordinatorSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike {
   }
 
   "Latency & throughput test" must {
-    "2 participants" in {
-      latencyThroughputTest(2)
-    }
-    "4 participants" in {
-      latencyThroughputTest(4)
-    }
-    "6 participants" in {
-      latencyThroughputTest(6)
-    }
-    "8 participants" in {
-      latencyThroughputTest(8)
-    }
-    "10 participants" in {
-      latencyThroughputTest(10)
+    val numberOfRuns = 10
+    for (i <- 0 until numberOfRuns) {
+      ("2 participants - run " + i) in {
+        latencyThroughputTest(2)
+      }
+      ("4 participants - run " + i) in {
+        latencyThroughputTest(4)
+      }
+      ("6 participants - run " + i) in {
+        latencyThroughputTest(6)
+      }
+      ("8 participants - run " + i) in {
+        latencyThroughputTest(8)
+      }
+      ("10 participants - run " + i) in {
+        latencyThroughputTest(10)
+      }
     }
   }
 
