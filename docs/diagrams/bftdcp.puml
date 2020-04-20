@@ -1,0 +1,112 @@
+@startuml
+
+skinparam monochrome true
+
+' Initator -> Coordinator1
+' Initator -> Coordinator2
+' Initator -> Coordinator3
+
+
+' Coordinator1 -> Participant1 : 1 Prepare transaction 2
+' Coordinator2 -> Participant1 : 1 Prepare transaction 2
+' Coordinator3 -> Participant1 : 1 Prepare transaction 2
+' Coordinator1 -> Participant2 : 1 Prepare transaction 2
+' Coordinator2 -> Participant2 : 1 Prepare transaction 2
+' Coordinator3 -> Participant2 : 1 Prepare transaction 2
+
+' Participant1 -> Coordinator1 : 2 OK
+' Participant1 -> Coordinator2 : 2 OK
+' Participant1 -> Coordinator3 : 2 OK
+' Participant2 -> Coordinator1 : 2 OK
+' Participant2 -> Coordinator2 : 2 OK
+' Participant2 -> Coordinator3 : 2 OK
+
+
+' Coordinator -> Participant1 : 3 Commit
+' Coordinator -> Participant2 : 3 Commit
+
+
+
+
+
+Participant1 -[hidden]> CorrectCoordinator1
+Participant1 -[hidden]> CorrectCoordinator2
+Participant1 -[hidden]> CorrectCoordinator3
+Participant1 -[hidden]> CorrectCoordinator4
+
+CorrectCoordinator1 <-- Participant1 : OK 
+CorrectCoordinator2 <-- Participant1 : OK 
+CorrectCoordinator3 <-- Participant1 : OK
+CorrectCoordinator4  <-- Participant1 : OK 
+
+
+'CorrectCoordinator1 -> Participant1 : Commit 
+'CorrectCoordinator2 -> Participant1 : Commit
+'CorrectCoordinator3 -> Participant1 : Commit
+'FaultyCoordinator1  -> Participant1 : <b> Abort
+
+
+
+CorrectCoordinator1 -> "All Coordinators" : ba-pre-prepare (propose commit)
+' CorrectCoordinator1 -> CorrectCoordinator2 : ba-pre-prepare (propose commit)
+' CorrectCoordinator1 -> CorrectCoordinator3 : ba-pre-prepare (propose commit)
+' CorrectCoordinator1 -> CorrectCoordinator4  : ba-pre-prepare (propose commit)
+
+CorrectCoordinator1 -> "All Coordinators" : ba-prepare (propose commit)
+' CorrectCoordinator1 -> CorrectCoordinator4 : ba-prepare (propose commit)
+' CorrectCoordinator1 -> CorrectCoordinator2 : ba-prepare (propose commit)
+' CorrectCoordinator1 -> CorrectCoordinator3 : ba-prepare (propose commit)
+
+CorrectCoordinator2 -> "All Coordinators" : ba-prepare (propose commit)
+' CorrectCoordinator2 -> CorrectCoordinator1 : ba-prepare (propose commit)
+' CorrectCoordinator2 -> CorrectCoordinator3 : ba-prepare (propose commit)
+' CorrectCoordinator2 -> CorrectCoordinator4 : ba-prepare (propose commit)
+
+CorrectCoordinator3 -> "All Coordinators" : ba-prepare (propose commit)
+' CorrectCoordinator3 -> CorrectCoordinator1 : ba-prepare (propose commit)
+' CorrectCoordinator3 -> CorrectCoordinator2 : ba-prepare (propose commit)
+' CorrectCoordinator3 -> CorrectCoordinator4 : ba-prepare (propose commit)
+
+CorrectCoordinator4 -> "All Coordinators" : ba-prepare (propose commit)
+' CorrectCoordinator4 -> CorrectCoordinator1 : ba-prepare (propose commit)
+' CorrectCoordinator4 -> CorrectCoordinator2 : ba-prepare (propose commit)
+' CorrectCoordinator4 -> CorrectCoordinator3 : ba-prepare (propose commit)
+
+CorrectCoordinator1 -> "All Coordinators" : ba-commit
+' CorrectCoordinator1 -> CorrectCoordinator4 : ba-commit
+' CorrectCoordinator1 -> CorrectCoordinator2 : ba-commit
+' CorrectCoordinator1 -> CorrectCoordinator3 : ba-commit
+
+CorrectCoordinator2 -> "All Coordinators" : ba-commit
+' CorrectCoordinator2 -> CorrectCoordinator1 : ba-commit
+' CorrectCoordinator2 -> CorrectCoordinator3 : ba-commit
+' CorrectCoordinator2 -> CorrectCoordinator4 : ba-commit
+
+CorrectCoordinator3 -> "All Coordinators" : ba-commit
+' CorrectCoordinator3 -> CorrectCoordinator1 : ba-commit
+' CorrectCoordinator3 -> CorrectCoordinator2 : ba-commit
+' CorrectCoordinator3 -> CorrectCoordinator4 : ba-commit
+
+CorrectCoordinator4 -> "All Coordinators" : ba-commit
+' CorrectCoordinator4 -> CorrectCoordinator1 : ba-commit
+' CorrectCoordinator4 -> CorrectCoordinator2 : ba-commit
+' CorrectCoordinator4 -> CorrectCoordinator3 : ba-commit
+
+CorrectCoordinator1 -> Participant1 : Commit
+CorrectCoordinator2 -> Participant1 : Commit
+CorrectCoordinator3 -> Participant1 : Commit
+CorrectCoordinator4 -> Participant1 : Commit
+
+
+
+'Participant1 --> CorrectCoordinator1 : Commited
+'Participant1 --> CorrectCoordinator2 : Commited
+'Participant1 --> CorrectCoordinator3 : Commited
+'Participant1 --> FaultyCoordinator1  : Commited
+
+
+
+
+
+
+@enduml
