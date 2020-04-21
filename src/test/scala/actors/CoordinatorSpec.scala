@@ -4,6 +4,7 @@ import akka.actor.testkit.typed.scaladsl.{LoggingTestKit, ScalaTestWithActorTest
 import org.scalatest.wordspec.AnyWordSpecLike
 import util.Messages._
 import util._
+import java.io._
 
 class CoordinatorSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike {
   val spawner = new SpawnerScalaTestWithActorTestKitImpl(this)
@@ -211,11 +212,12 @@ class CoordinatorSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike {
   }
   "Byzantine coordinator latency & throughput test" must {
     val numberOfRuns = 10
+
     for (i <- 0 until numberOfRuns) {
       ("2 participants - run " + i) in {
         latencyThroughputTest(2,1)
       }
-      ("4 participants - run " + i) in {
+       ("4 participants - run " + i) in {
         latencyThroughputTest(4,1)
       }
       ("6 participants - run " + i) in {
@@ -229,6 +231,7 @@ class CoordinatorSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike {
       }
     }
   }
+
   def latencyThroughputTest(nParticipants: Int,nByzantineOtherCoord: Int): Unit = {
     val (coordinators, participants) = spawner(nCoordinators = 4-nByzantineOtherCoord, nCommittingParticipants = nParticipants,0,0,0,nByzantineOtherCoord)
     val numberOfTransactions = 100
@@ -245,8 +248,14 @@ class CoordinatorSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike {
     }
     val delay = System.currentTimeMillis() - timerStart
     (coordinators ++ participants).foreach(testKit.stop(_))
-    println("Average latency (ms): " + (totalLatency / numberOfTransactions))
-    println("Throughput (transactions/s): " + numberOfTransactions / (delay.toFloat / 1000))
+    val latency = totalLatency / numberOfTransactions
+    val throughput = numberOfTransactions / (delay.toFloat / 1000)
+    println("Average latency (ms): " + latency)
+    println("Throughput (transactions/s): " + throughput)
+    val measurements = new File("measurements.csv")
+    val bw = new BufferedWriter(new FileWriter(measurements,true))
+    bw.write(nParticipants + "," + nByzantineOtherCoord + "," + latency + "," + throughput + "\n")
+    bw.close()
   }
 
 }
