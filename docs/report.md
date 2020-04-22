@@ -138,6 +138,16 @@ The latency was measured both with normal behaving nodes and with a single byzan
 ![Latency comparison between normal operation and a byzantine nonprimary coordinator](https://github.com/leicmi/IN4391-Distributed-Systems-7/blob/master/docs/images/latency.png)  
 Figure ...: Latency comparison between normal operation and a byzantine nonprimary coordinator.
 
+|Number of Participants|Average latency (ms)|Throughput (transactions/s)|
+|--|---|---------|
+|2 |382|2.6156101|
+|4 |434|2.3037758|  
+|6 |569|1.754817|
+|8 |614|1.6273392|
+|10|822|1.2165303|
+
+Measured on a pc with the following specs blablabla TODO
+
 ## Wrap-Up
 
 Conclusion/Summary
