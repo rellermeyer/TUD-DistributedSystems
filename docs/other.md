@@ -26,12 +26,12 @@
 * What was our additional plan?
 * What steps did we take to implement it / how often and why have we changed our plan?
 * Why have we implemented it the way it is implemented?
-* What would we do different
-* What is working well in our implementation
-* What is working not so well in our implementation
-* compared to the paper, what have we left out?
-* If we did more than the paper, what?
-* did we decide to do anything different than the paper?
+* What would we do different 
+* What is working well in our implementation  (Everything?)
+* What is working not so well in our implementation (Not implemented parts?)
+* compared to the paper, what have we left out? (Not left anything out. )
+* If we did more than the paper, what? (Maybe view changes??)
+* did we decide to do anything different than the paper? (No?)
 * discussion of usecases for a (BFT) commit protocol     (Partial done)
 * listing a few different ways how we could evaluate our system (e.g. performance) and some short discussion
 
