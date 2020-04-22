@@ -36,15 +36,17 @@ We set objectives from the beginning in order to figure out and organise the wor
 - **Could have/Will not have**:
   - View change mechanism (this feature was not implemented by the paper authors either).
 
-## Problem
+## The Protocol
+
+### Problem
 
 In the basic 2PC protocol there is a single coordinator, and multiple participants. This means that the coordinator is a single point of failure and that the coordinator is trusted by the participants. If the coordinator expresses byzantine behaviour, by for example telling one participant to commit and another to abort the participants will trust the coordinator and therefore do as it says. This would then lead to the participants having different views on what transactions are done, which defeats the purpose of the protocol, to reach an agreement.
 
-## Why a byzantine fault tolerant commit protocol
+### Why a byzantine fault tolerant commit protocol
 
 There are multiple reasons to choose a byzantine fault tolerant distributed commit protocol. By having multiple coordinators one or more servers can fail without any downtime (or a low downtime, since a view change may need to happen, and commiting of transactions restart). The coordinators can be distributed over multiple datacenters or even countries, making sure the system contrinues to work even if some datacenter expecinces problems or even a country (assuming most servers are in other countries). Since the protocol is byzantine fault tolerant the system will even withstands compromiced coorinators (that expresses byzantine behaviour). <!-- The byzantine fault tolerant protocol does also detect participants that sends different chooses wether to commit or abort a transaction to different coordinators, making sure that participants can not lie. -->
 
-## Distributed commit protocol
+### Distributed commit protocol
 
 In the distributed commit protocol presented in the paper they address the problem with a byzantine coordinator and solves it by distributing the coordinator into multiple coordinators that does a byzantine agreement on firstly witch participants are part in the voting on a transaction, and secondly on what the participants voted. The resulting system works so long as it has *"3f + 1"* coordinators and a maximum of *"f"* coordinators misbehave.
 
@@ -52,14 +54,14 @@ In the distributed commit protocol presented in the paper they address the probl
 
 <!-- According to 2PC protocol a distributed transaction contains one coordinator and some participants, but in the byzantine distributed commit protocol several coordinators are used. -->
 
-## Implementation <!-- ?? -->
+### Implementation <!-- ?? -->
 
 We have used the **akka** framework to implement coordinators and participants as actors since it simplifies distributed and concurrent application development. Actors communicate with each other through messages using the akka API. These messages are signed using public key technology so that no unidentified participant can interfere. It is assumed that there will exist *"3f + 1"* available coordinator replicas where "*f*" is the maximum number of byzantine coordinator replicas.
 In the byzantine distributed commit protocol the original coordinator is called primary and coordinator copies receive the name of replicas. Every participant must register with the coordinator before the commit protocol starts. The commit protocol starts when a replica receives a commit request from a participant, which from now on will be called initiator. Now the coordinator replica sends a *"prepare"* request to every registered participant and waits until enough *"prepared"* messages are received from the participants. When *"prepared"* messages are received an instance of a *"Byzantine Agreement Algorithm"* is created. After reaching an agreement, coordinator replicas send  the agreement outcome to participants, which will only commit the transaction once *"f + 1"* similar outcomes are received. This way at least one of the *"f + 1*" outcomes received comes from a non-byzantine replica.
 
 <!-- In the 2PC protocol a single coordinator is used. The distributed commit protocol presented in the paper introduces multiple coordinators in order to remove the single point of failure, and to "accept" byzantine failures in a coordinator, and some byzantine failures in participants.   By making the coordinators do a byzantine agreement on first, who of the participants are involved in a transaction, and later on what the participants voted, the protocol as a whole can now accept coordinators that goes down (increased availability) as well as  byzantine coordinators. In the 2PC commit protocol if the coordinator breaks in such a was as it presents a byzantine behaviour where it sends the decision to commit a transaction to some participants and to abort the transaction to other participants, the participants will believe the coordinator (since there is only one, there is no way to check if it speaks the truth), and therefore do accordingly. That will result in two different views on what is committed. Which was the problem the protocol tried to solve.   -->
 
-## Byzantine Agreement Algorithm
+### Byzantine Agreement Algorithm
 
 Wenbing Zhao's  algorithm is based on the BFT algorithm by Castro  and Liskov. Byzantine Agreement Algorithm differs from BFT because BFT aims to agree on the ordering of the requests received while the Byzantine Agreement algorithm's objective is to agree on the outcome of a transaction.
 Byzantine Agreement Algorithm has three main phases:
@@ -70,9 +72,11 @@ Byzantine Agreement Algorithm has three main phases:
 
 - **Ba-commit phase**: a *"ba-commit"* message contains the view and transaction id, decision certificate's digest, transaction outcome and sender replica id. A replica is said to have ba-committed if it receives 2f+1 matching *"ba-commit"* messages from different replicas and the agreed outcome is sent to every participant in the current transaction. *"Ba-commit"* messages are verified alike *"ba-prepare"* messages. **View changes with timeouts and so missing**
 
-## Implementation choices
+## Design Decisions
 
 We decided to use **Akka** since it proved a actor framework that could be used to avoid implementing the sending of messages. We created two typed of actors, coordinators and participants. From the tests we created we initaialize a couple of coordinators and participants (depending on the test case) and send a initalization message from one of the participants (the initiator) to the coordinators. After that the protocol starts.
+
+## Implementation Details
 
 ## Evaluation
 
