@@ -9,6 +9,7 @@ lang: "en"
 titlepage: "true"
 titlepageTUDelft: "true"
 papersize: "a4"
+xnos-cleveref: True
 ---
 
 ## Introduction
@@ -50,7 +51,7 @@ There are multiple reasons to choose a byzantine fault tolerant distributed comm
 
 In the distributed commit protocol presented in the paper they address the problem with a byzantine coordinator and solves it by distributing the coordinator into multiple coordinators that does a byzantine agreement on firstly witch participants are part in the voting on a transaction, and secondly on what the participants voted. The resulting system works so long as it has *"3f + 1"* coordinators and a maximum of *"f"* coordinators misbehave.
 
-![An example of the voting part of the BFTDCP protocol.](images/bftdcp.png)
+![An example of the voting part of the BFTDCP protocol.](images/bftdcp.png){#fig:examplevoting width=75%}
 
 <!-- According to 2PC protocol a distributed transaction contains one coordinator and some participants, but in the byzantine distributed commit protocol several coordinators are used. -->
 
@@ -134,8 +135,10 @@ Further evaluations planned in the near future:
 
 All tests were performed with 4 coordinators. The tests were carried out on a laptop with an Intel i3-5005U (dual-core operating at a fixed 2.0 GHz) with 8 GB of RAM.  
 
-The latency was measured both with normal behaving nodes and with a single byzantine nonprimary coordinator replica. If a nonprimary coordinator replica is byzantine, a small performance reduction could occur since the algorithm might have to depend on other replicas to reach consensus. However, it was observed that actors would often be running sequentially due to limited parallelism, which limited the benefit of early consensus. In each test batch, 10 runs were performed of 100 sequential commits each. This was then repeated 5 times over multiple days. Figure ... shows the latency measured in these test. The error bars indicate 2 standard deviations. No performance difference could be discerned.  
-![Latency comparison between normal operation and a byzantine nonprimary coordinator](https://github.com/leicmi/IN4391-Distributed-Systems-7/blob/master/docs/images/latency.png)  
+The latency was measured both with normal behaving nodes and with a single byzantine nonprimary coordinator replica. If a nonprimary coordinator replica is byzantine, a small performance reduction could occur since the algorithm might have to depend on other replicas to reach consensus. However, it was observed that actors would often be running sequentially due to limited parallelism, which limited the benefit of early consensus. In each test batch, 10 runs were performed of 100 sequential commits each. This was then repeated 5 times over multiple days. *@fig:evaluationchart1 shows the latency measured in these test. The error bars indicate 2 standard deviations. No performance difference could be discerned.
+
+![Latency comparison between normal operation and a byzantine nonprimary coordinator](./images/latency.png){#fig:evaluationchart1 width=75%}
+
 Figure ...: Latency comparison between normal operation and a byzantine nonprimary coordinator.
 
 |Number of Participants|Average latency (ms)|Throughput (transactions/s)|
