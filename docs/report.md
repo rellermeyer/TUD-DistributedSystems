@@ -9,7 +9,6 @@ lang: "en"
 titlepage: "true"
 titlepageTUDelft: "true"
 papersize: "a4"
-xnos-cleveref: True
 ---
 
 ## Introduction
@@ -149,7 +148,7 @@ Figure ...: Latency comparison between normal operation and a byzantine nonprima
 |8 |614|1.6273392|
 |10|822|1.2165303|
 
-Measured on a pc with the following specs blablabla TODO
+Table: An example table. TODO: remove or update.
 
 ## Wrap-Up
 
