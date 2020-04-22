@@ -16,8 +16,7 @@ papersize: "a4"
 In the past weeks we have implemented the system described in *"A Byzantine Fault Tolerant Distributed Commit Protocol"* by Wenbing Zhao[^1].
 
 In the paper the author describes a commit protocol for transactions which run over untrusted networks. The protocol consist of duplicating the coordinator and running a Byzantine agreement algorithm among the coordinator replicas. This protocol tolerates byzantine coordinator and faulty participant behaviour.
-The Two Phase Commit (2PC) protocol addresses the issue of implementing a distributed commit protocol for distributed transactions, and different approaches have been conducted in order to make it support byzantine behaviours. This paper's motivation was to improve these 2PC byzantine behaviour approaches.
-A distributed transaction is a transaction that is performed in multiple machines across a computer network. The transaction is only committed if all operations succeed, and it is aborted if any operation fails.
+The Two Phase Commit (2PC) protocol addresses the issue of implementing a distributed commit protocol for distributed transactions, and different approaches have been conducted in order to make it support byzantine behaviours. This paper's motivation was to improve these 2PC byzantine behaviour approaches. A distributed transaction is a transaction that is performed in multiple machines across a computer network. The transaction is only committed if all operations succeed, and it is aborted if any operation fails.
 
 [^1]: "A Byzantine Fault Tolerant Distributed Commit Protocol"* by Wenbing Zhao (Department of Electrical and Computer Engineering, Cleveland State University), <https://ieeexplore.ieee.org/document/4351387>
 
