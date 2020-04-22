@@ -40,6 +40,10 @@ We set objectives from the beginning in order to figure out and organise the wor
 
 In the basic 2PC protocol there is a single coordinator, and multiple participants. This means that the coordinator is a single point of failure and that the coordinator is trusted by the participants. If the coordinator expresses byzantine behaviour, by for example telling one participant to commit and another to abort the participants will trust the coordinator and therefore do as it says. This would then lead to the participants having different views on what transactions are done, which defeats the purpose of the protocol, to reach an agreement.
 
+## Why a byzantine fault tolerant commit protocol
+
+There are multiple reasons to choose a byzantine fault tolerant distributed commit protocol. By having multiple coordinators one or more servers can fail without any downtime (or a low downtime, since a view change may need to happen, and commiting of transactions restart). The coordinators can be distributed over multiple datacenters or even countries, making sure the system contrinues to work even if some datacenter expecinces problems or even a country (assuming most servers are in other countries). Since the protocol is byzantine fault tolerant the system will even withstands compromiced coorinators (that expresses byzantine behaviour). <!-- The byzantine fault tolerant protocol does also detect participants that sends different chooses wether to commit or abort a transaction to different coordinators, making sure that participants can not lie. -->
+
 ## Distributed commit protocol
 
 In the distributed commit protocol presented in the paper they address the problem with a byzantine coordinator and solves it by distributing the coordinator into multiple coordinators that does a byzantine agreement on firstly witch participants are part in the voting on a transaction, and secondly on what the participants voted. The resulting system works so long as it has *"3f + 1"* coordinators and a maximum of *"f"* coordinators misbehave.
@@ -69,10 +73,6 @@ Byzantine Agreement Algorithm has three main phases:
 ## Implementation choices
 
 We decided to use **Akka** since it proved a actor framework that could be used to avoid implementing the sending of messages. We created two typed of actors, coordinators and participants. From the tests we created we initaialize a couple of coordinators and participants (depending on the test case) and send a initalization message from one of the participants (the initiator) to the coordinators. After that the protocol starts.
-
-## Why a byzantine fault tolerant commit protocol
-
-There are multiple reasons to choose a byzantine fault tolerant distributed commit protocol. By having multiple coordinators one or more servers can fail without any downtime (or a low downtime, since a view change may need to happen, and commiting of transactions restart). The coordinators can be distributed over multiple datacenters or even countries, making sure the system contrinues to work even if some datacenter expecinces problems or even a country (assuming most servers are in other countries). Since the protocol is byzantine fault tolerant the system will even withstands compromiced coorinators (that expresses byzantine behaviour). <!-- The byzantine fault tolerant protocol does also detect participants that sends different chooses wether to commit or abort a transaction to different coordinators, making sure that participants can not lie. -->
 
 ## Evaluation
 
