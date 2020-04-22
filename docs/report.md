@@ -96,3 +96,9 @@ Throughput (transactions/s): 1.6273392
 10 participants:  
 Average latency (ms): 822
 Throughput (transactions/s): 1.2165303
+
+## Wrap-Up
+
+Conclusion/Summary
+how was the project for us? difficulties (3 exchange students)
+did we fulfill our expectations? why did we fail to run and evaluate our implementation in a distributed manner?
