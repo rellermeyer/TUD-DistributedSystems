@@ -1,5 +1,5 @@
 ---
-title: "WIP: Final Report: Byzantine-CP"
+title: "Final Report: Byzantine-CP"
 author: [Douwe Brinkhorst, Patrik Kron, Michael Leichtfried, Miguel Lucas]
 date: "2020-03-27"
 subject: "Distributed Systems (Group 7)"
