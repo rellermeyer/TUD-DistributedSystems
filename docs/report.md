@@ -11,15 +11,31 @@ titlepageTUDelft: "true"
 papersize: "a4"
 ---
 
-# Implementation [&uarr;](./../README.md)
-
-In the past weeks we have implemented the system described in *"A Byzantine Fault Tolerant Distributed Commit Protocol"* by Wenbing Zhao (Department of Electrical and Computer Engineering, Cleveland State University)[^1].
-
 ## Introduction
+
+In the past weeks we have implemented the system described in *"A Byzantine Fault Tolerant Distributed Commit Protocol"* by Wenbing Zhao[^1].
 
 In the paper the author describes a commit protocol for transactions which run over untrusted networks. The protocol consist of duplicating the coordinator and running a Byzantine agreement algorithm among the coordinator replicas. This protocol tolerates byzantine coordinator and faulty participant behaviour.
 The Two Phase Commit (2PC) protocol addresses the issue of implementing a distributed commit protocol for distributed transactions, and different approaches have been conducted in order to make it support byzantine behaviours. This paper's motivation was to improve these 2PC byzantine behaviour approaches.
 A distributed transaction is a transaction that is performed in multiple machines across a computer network. The transaction is only committed if all operations succeed, and it is aborted if any operation fails.
+
+[^1]: "A Byzantine Fault Tolerant Distributed Commit Protocol"* by Wenbing Zhao (Department of Electrical and Computer Engineering, Cleveland State University), <https://ieeexplore.ieee.org/document/4351387>
+
+## Objectives
+
+We set objectives from the beginning in order to figure out and organise the work that had to be done. The objective list was divided into categories to state the priority of each objective.
+
+- **Must have:** features the project must have in order to fulfill the basic requirements.
+  - Implementation for coordinators.
+  - Implementation for participants/initiators.
+  - System testing infrastructure, including coordinator byzantine behaviours testing.
+
+- **Should have/Could have**: features that might be implemented depending on time constraints.
+  - Distributed deployment: test the system in multiple interconnected machines to simulate a realistic environment.
+  - Message signing and signature checking.
+
+- **Could have/Will not have**:
+  - View change mechanism (this feature was not implemented by the paper authors either).
 
 ## Problem
 
@@ -59,22 +75,6 @@ We decided to use **Akka** since it proved a actor framework that could be used 
 
 There are multiple reasons to choose a byzantine fault tolerant distributed commit protocol. By having multiple coordinators one or more servers can fail without any downtime (or a low downtime, since a view change may need to happen, and commiting of transactions restart). The coordinators can be distributed over multiple datacenters or even countries, making sure the system contrinues to work even if some datacenter expecinces problems or even a country (assuming most servers are in other countries). Since the protocol is byzantine fault tolerant the system will even withstands compromiced coorinators (that expresses byzantine behaviour). <!-- The byzantine fault tolerant protocol does also detect participants that sends different chooses wether to commit or abort a transaction to different coordinators, making sure that participants can not lie. -->
 
-## Objectives
-
-We set objectives from the beginning in order to figure out and organise the work that had to be done. The objective list was divided into categories to state the priority of each objective.
-
-- **Must have:** features the project must have in order to fulfill the basic requirements.
-  - Implementation for coordinators.
-  - Implementation for participants/initiators.
-  - System testing infrastructure, including coordinator byzantine behaviours testing.
-
-- **Should have/Could have**: features that might be implemented depending on time constraints.
-  - Distributed deployment: test the system in multiple interconnected machines to simulate a realistic environment.
-  - Message signing and signature checking.
-
-- **Could have/Will not have**:
-  - View change mechanism (this feature was not implemented by the paper authors either).
-
 ## Evaluation
 
 All tests were performed with 4 coordinators. In each test, 100 transactions were committed. From this, the average latency and throughput were calculated.  
@@ -93,7 +93,3 @@ Throughput (transactions/s): 1.6273392
 10 participants:  
 Average latency (ms): 822
 Throughput (transactions/s): 1.2165303
-
-## Footnotes
-
-[^1]: https://ieeexplore.ieee.org/document/4351387
