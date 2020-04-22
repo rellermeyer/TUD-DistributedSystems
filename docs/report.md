@@ -95,20 +95,34 @@ We have built a total of 15 tests through which Coordinators and Participants ex
 The following tests were implemented using tests in/with Scala/Akka:
 
 TODO: check if this list is still up-to-date
-- **Test 1:** Initiate the protocol and commit with 1 coordinator replica and 1 participant.  
-- **Test 2:** Initiate the protocol and commit with 4 coordinator replicas and 1 participant.  
-- **Test 3:** Initiate the protocol and commit with 1 coordinator replica and 4 participants.  
-- **Test 4:** Initiate the protocol and abort with 1 coordinator replica and 1 participant.  
-- **Test 5:** Initiate the protocol and abort with 4 coordinator replicas and 1 participant.  
-- **Test 6:** Initiate the protocol and abort with 1 coordinator replica and 4 participants.  
-- **Test 7:** Initiate the protocol with 1 coordinator replica and 1 participant and make the participant abort the transaction.  
-- **Test 8:** Initiate the protocol with 1 coordinator replica and 5 participants and make one participant unilaterally abort the transaction.  
-- **Test 9:**  Initiate the protocol with 4 coordinator replicas and 5 participants and make one participant unilaterally abort the transaction.  
-- **Test 10:** Initiate 2 instances of the protocol and succeed committing in both.  
-- **Test 11:** Initiate a commit with 1 coordinator replica and 1 participant which is followed by initiating an abort for this transaction, resulting in the in-flight commit being aborted.  
-- **Test 12:** Initiate the protocol and commit with 4 coordinator replicas and 1 participant, where one of the coordinator replicas is nonresponsive.  
-- **Test 13:** Initiate the protocol and commit with 4 coordinator replicas and 1 participant, where one of the nonprimary coordinator replicas exhibits some byzantine behaviour.  
-- **Test 14:** Initiate the protocol and commit with 4 coordinator replicas and 1 participant, where the primary coordinator replica exhibits some byzantine behaviour.  
+- **Test 1:** Initiate the protocol and commit with 1 coordinator replica and 1 participant.
+
+- **Test 2:** Initiate the protocol and commit with 4 coordinator replicas and 1 participant.
+
+- **Test 3:** Initiate the protocol and commit with 1 coordinator replica and 4 participants.
+
+- **Test 4:** Initiate the protocol and abort with 1 coordinator replica and 1 participant.
+
+- **Test 5:** Initiate the protocol and abort with 4 coordinator replicas and 1 participant.
+
+- **Test 6:** Initiate the protocol and abort with 1 coordinator replica and 4 participants.
+
+- **Test 7:** Initiate the protocol with 1 coordinator replica and 1 participant and make the participant abort the transaction.
+
+- **Test 8:** Initiate the protocol with 1 coordinator replica and 5 participants and make one participant unilaterally abort the transaction.
+
+- **Test 9:**  Initiate the protocol with 4 coordinator replicas and 5 participants and make one participant unilaterally abort the transaction.
+
+- **Test 10:** Initiate 2 instances of the protocol and succeed committing in both.
+
+- **Test 11:** Initiate a commit with 1 coordinator replica and 1 participant which is followed by initiating an abort for this transaction, resulting in the in-flight commit being aborted.
+
+- **Test 12:** Initiate the protocol and commit with 4 coordinator replicas and 1 participant, where one of the coordinator replicas is nonresponsive.
+
+- **Test 13:** Initiate the protocol and commit with 4 coordinator replicas and 1 participant, where one of the nonprimary coordinator replicas exhibits some byzantine behaviour.
+
+- **Test 14:** Initiate the protocol and commit with 4 coordinator replicas and 1 participant, where the primary coordinator replica exhibits some byzantine behaviour.
+
 - **Test 15:** Initiate the protocol and force a view change by creating a participant and a slow coordinator which will exceed the timeout.
 
 Further evaluations planned in the near future:
