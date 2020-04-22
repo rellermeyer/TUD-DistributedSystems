@@ -94,6 +94,7 @@ We have built a total of 15 tests through which Coordinators and Participants ex
 
 The following tests were implemented using tests in/with Scala/Akka:
 
+TODO: check if this list is still up-to-date
 - **Test 1:** Initiate the protocol and commit with 1 coordinator replica and 1 participant.  
 - **Test 2:** Initiate the protocol and commit with 4 coordinator replicas and 1 participant.  
 - **Test 3:** Initiate the protocol and commit with 1 coordinator replica and 4 participants.  
@@ -117,28 +118,11 @@ Further evaluations planned in the near future:
 
 ### Non-Functional Requirements
 
-Further evaluations planned in the near future:
+All tests were performed with 4 coordinators. The tests were carried out on a laptop with an Intel i3-5005U (dual-core operating at a fixed 2.0 GHz) with 8 GB of RAM.  
 
-- measuring throughput and latency in continuous operation
-
-For this, it might be interesting to implement a commit payload, as well as running the system in some distributed fashion (giving each actor its own JVM would help to show some of the distributed difficulties/overhead).
-
-All tests were performed with 4 coordinators. In each test, 100 transactions were committed. From this, the average latency and throughput were calculated.  
-2 participants:  
-Average latency (ms): 382
-Throughput (transactions/s): 2.6156101  
-4 participants:  
-Average latency (ms): 434  
-Throughput (transactions/s): 2.3037758  
-6 participants:  
-Average latency (ms): 569  
-Throughput (transactions/s): 1.754817  
-8 participants:  
-Average latency (ms): 614  
-Throughput (transactions/s): 1.6273392  
-10 participants:  
-Average latency (ms): 822
-Throughput (transactions/s): 1.2165303
+The latency was measured both with normal behaving nodes and with a single byzantine nonprimary coordinator replica. If a nonprimary coordinator replica is byzantine, a small performance reduction could occur since the algorithm might have to depend on other replicas to reach consensus. However, it was observed that actors would often be running sequentially due to limited parallelism, which limited the benefit of early consensus. In each test batch, 10 runs were performed of 100 sequential commits each. This was then repeated 5 times over multiple days. Figure ... shows the latency measured in these test. The error bars indicate 2 standard deviations. No performance difference could be discerned.  
+![Latency comparison between normal operation and a byzantine nonprimary coordinator](https://github.com/leicmi/IN4391-Distributed-Systems-7/blob/master/docs/images/latency.png)  
+Figure ...: Latency comparison between normal operation and a byzantine nonprimary coordinator.
 
 ## Wrap-Up
 
