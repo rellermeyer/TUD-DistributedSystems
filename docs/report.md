@@ -205,7 +205,7 @@ Conclusion/Summary
 how was the project for us? difficulties (3 exchange students)
 did we fulfill our expectations? why did we fail to run and evaluate our implementation in a distributed manner?
 
-One of our team members, Miguel Lucas, was responsible for implementing the system in a distributed fashion, but due to the coronavirus situation he had to return to his country and finish his studies at his home university. For this reason, he could not work on the proyect any more so the system could not be implemented in a distributed fashion.
+One of our team members, Miguel Lucas, was responsible for implementing the system in a distributed fashion, but due to the coronavirus situation he had to return to his country and finish his studies at his home university. For this reason, he could not work on the project any more so the system could not be implemented in a distributed fashion.
 
 ## Conclution
 
