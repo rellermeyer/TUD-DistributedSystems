@@ -118,6 +118,10 @@ Pseudo-code: The paper never mentions if the functions are thought to be execute
 ## Design Decisions
 
 TODO: remove this? I believe this is all described in implementation details and the protocol.  
+
+We have used the **akka** framework to implement coordinators and participants as actors since it simplifies distributed and concurrent application development.
+Actors communicate with each other through messages using the akka API.
+
 We decided to use **Akka** since it proved a actor framework that could be used to avoid implementing the sending of messages.
 We created two typed of actors, coordinators and participants.
 From the tests we created we initaialize a couple of coordinators and participants (depending on the test case) and send a initalization message from one of the participants (the initiator) to the coordinators.
@@ -131,8 +135,7 @@ We decided to exclude the implementation of view changes from the requirements t
 
 ## Implementation Details
 
-We have used the **akka** framework to implement coordinators and participants as actors since it simplifies distributed and concurrent application development.
-Actors communicate with each other through messages using the akka API.
+
 These messages are signed using public key technology so that no unidentified participant can interfere.
 The view change mechanism has not been implemented.
 
