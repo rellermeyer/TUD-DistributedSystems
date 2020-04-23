@@ -116,11 +116,24 @@ After that the protocol starts.
 We have used the **akka** framework to implement coordinators and participants as actors since it simplifies distributed and concurrent application development.
 Actors communicate with each other through messages using the akka API.
 These messages are signed using public key technology so that no unidentified participant can interfere.
-The view change mechanism has not been implemented.  
+The view change mechanism has not been implemented.
+
+- not using a state machine
+- the signing is implemented using a master certificate that signs all the individual certificates (of the coordinators and participants)
+- it is currently not checked whether the message originates (with regards to the from-field) from the same actor as it is signed by (spoofing is still possible)
+
+### running it in a distributed fashion
+
+The idea to get our implementation running in a distributed fashion is:
+
+- Manually start akka actors in different JVMs (could be on the same or on different PCs)
+- Get the actors to communicate with each other using Artery (serialization of messages, actor discovery)
+- Key distribution might be hard, disable the checks in code
 
 ## Evaluation
 
 ### Functional requirements
+
 Functional requirements were evaluated using the Akka Actor Test Kit with Scala Tests (```ScalaTestWithActorTestKit```). We considered:  
 
 Basic Committing  
