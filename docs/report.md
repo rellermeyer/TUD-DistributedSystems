@@ -240,10 +240,6 @@ No performance difference could be discerned. This might be related to the obser
 - Running the system in a distributed manner: actors on different hosts should be able to communicate with each other.  
 
 ## Discussion
-
-how was the project for us? difficulties (3 exchange students)
-did we fulfill our expectations? why did we fail to run and evaluate our implementation in a distributed manner?
-
 The main challenge of the project was to understand who the system was supposed to work. It was not very clear from the original paper that the system as very heavily depending on the WS-AT protocol, and that it therefore was crucial to understand it before understanding the byzantine fault tolerant distributed commit protocol. The coronavirus situation also made it necessary for three of us to return to our home countries urgently, that led us to loose some time in the last few weeks of the project, which we could not fully recover in the extra week we got, since the new courses had started then.
 
 One of our team members, Miguel Lucas, was responsible for testing the system in a distributed fashion, but due to the coronavirus situation he had to return to his country and finish his studies at his home university.
