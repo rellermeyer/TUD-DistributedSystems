@@ -50,14 +50,13 @@ There are multiple reasons to choose a byzantine fault tolerant distributed comm
 In the basic 2PC protocol, a single coordinator is responsible for multiple participants.
 This is trusted by the participants and represents a single point of failure.
 If the coordinator expresses byzantine behaviour, for example by telling one participant to commit and another to abort, the participants will trust the coordinator and therefore do as it says.
-This would then lead to the participants having different views on what transactions are done, which defeats the purpose of the protocol, to reach an agreement. 
+This would then lead to the participants having different views on what transactions are done, which defeats the purpose of the protocol, to reach an agreement.
 
-That is the main problem the byzantine fault tolerant commit protocol solves. It can handle compromised/byzantine coordinators that for example sends different messages to different participants. Another problem the byzantine fault tolerant commit protocol solves is that it's able to continue working even if some coordinators fail or become unavailable. 
-Compare this with the 2PC protocol where the protocol would stop working if the coordinator stop working. 
+That is the main problem the byzantine fault tolerant commit protocol solves. It can handle compromised/byzantine coordinators that for example sends different messages to different participants. Another problem the byzantine fault tolerant commit protocol solves is that it's able to continue working even if some coordinators fail or become unavailable.
+Compare this with the 2PC protocol where the protocol would stop working if the coordinator stop working.
 This improves the availability of the system.
 This can be especially useful if the coordinators are distributed over multiple datacenters or even countries, making sure the system continues to work even if some datacenter, or even a country (assuming most servers are in other countries), experiences problems.
 Since the protocol introduces multiple coordinator, it becomes possible for the participant to send different messages to the coordinators. The authors have thought of this and made sure that the protocol detects this.
-
 
 ### Distributed commit protocol
 
@@ -111,6 +110,12 @@ We created two typed of actors, coordinators and participants.
 From the tests we created we initaialize a couple of coordinators and participants (depending on the test case) and send a initalization message from one of the participants (the initiator) to the coordinators.
 After that the protocol starts.
 
+As we're implementing a commit protocol which is based on messages, it makes sense to use a framework for passing messages. As we are restricted to Scala and akka seems to be one of the most-used frameworks (actor framework) for that purpose, we chose to use that. We decided against directly implementing participants and coordinators as a FSM as our team is more familiar with more imperative programming. Furthermore, in the beginning we were not sure if we understood all parts of the paper.
+
+### View Changes
+
+We decided to exclude the implementation of view changes from the requirements the authord did not them either. It seems to be somewhat careless that the paper authors have not implemented, as this means that no byzantine primary coordinator is supported. We therefore assume that no full implementation of this protocol exists up to now.
+
 ## Implementation Details
 
 We have used the **akka** framework to implement coordinators and participants as actors since it simplifies distributed and concurrent application development.
@@ -121,6 +126,12 @@ The view change mechanism has not been implemented.
 - not using a state machine
 - the signing is implemented using a master certificate that signs all the individual certificates (of the coordinators and participants)
 - it is currently not checked whether the message originates (with regards to the from-field) from the same actor as it is signed by (spoofing is still possible)
+
+Shortcomings:
+
+- running it in a distributed fashion
+
+Initially it was not clear whether the initiator should send the commit request to the primary coordinator only.
 
 ### running it in a distributed fashion
 
@@ -158,7 +169,7 @@ The following tests were implemented using tests in/with Scala/Akka:
 
 - **Test 6:** Initiate the protocol with 4 coordinator replicas and 4 participants and have one participant unilaterally abort the transaction, resulting in an abort.  
 
-- **Test 7:** Initiate the protocol with 1 coordinator replica and 1 participant and have the initiator abort the transaction, resulting in an abort.   
+- **Test 7:** Initiate the protocol with 1 coordinator replica and 1 participant and have the initiator abort the transaction, resulting in an abort.
 
 - **Test 8:** Initiate the protocol with 4 coordinator replicas and 1 participant and have the initiator abort the transaction, resulting in an abort.  
 
@@ -180,7 +191,7 @@ The following tests were implemented using tests in/with Scala/Akka:
 
 - **Test 17:** Initiate the protocol with 1 participant and 1 slow coordinator which will exceed the timeout, resulting in a view change being suggested.  
 
-Tests 1 through 14 succeed as expected. Tests 15 and 16 fail, since the solution to a byzantine primary coordinator replica is to perform a view change, which has not been implemented. Test 17 requires only that the need for a view change is detected, not that it is actually performed. Hence it also succeeds as described. 
+Tests 1 through 14 succeed as expected. Tests 15 and 16 fail, since the solution to a byzantine primary coordinator replica is to perform a view change, which has not been implemented. Test 17 requires only that the need for a view change is detected, not that it is actually performed. Hence it also succeeds as described.
 
 ### Non-Functional Requirements
 
@@ -211,7 +222,7 @@ Conclusion/Summary
 how was the project for us? difficulties (3 exchange students)
 did we fulfill our expectations? why did we fail to run and evaluate our implementation in a distributed manner?
 
-The main challenge of the project was to understand who the system was supposed to work. It was not very clear from the original paper that the system as very heavily depending on the WS-AT protocol, and that it therefore was crucial to understand it before understanding the byzantine fault tolerant distributed commit protocol. The coronavirus situation also made it necessary for three of us to return to our home countries urgently, that led us to loose some time in the last few weeks of the project, which we could not fully recover in the extra week we got, since the new courses had started then. 
+The main challenge of the project was to understand who the system was supposed to work. It was not very clear from the original paper that the system as very heavily depending on the WS-AT protocol, and that it therefore was crucial to understand it before understanding the byzantine fault tolerant distributed commit protocol. The coronavirus situation also made it necessary for three of us to return to our home countries urgently, that led us to loose some time in the last few weeks of the project, which we could not fully recover in the extra week we got, since the new courses had started then.
 
 One of our team members, Miguel Lucas, was responsible for implementing the system in a distributed fashion, but due to the coronavirus situation he had to return to his country and finish his studies at his home university.
 For this reason, he could not work on the project any more so the system could not be implemented in a distributed fashion.
