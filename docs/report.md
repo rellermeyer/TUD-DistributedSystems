@@ -120,7 +120,7 @@ Pseudo-code: The paper never mentions if the functions are thought to be execute
 TODO: remove this? I believe this is all described in implementation details and the protocol.  
 
 We have used the **Akka** framework to implement coordinators and participants as actors since it simplifies distributed and concurrent application development.
-Actors communicate with each other through messages using the akka API.
+Actors communicate with each other through messages using the **Akka** API.
 
 We decided to use **Akka** since it proved a actor framework that could be used to avoid implementing the sending of messages.
 We created two typed of actors, coordinators and participants.
@@ -128,7 +128,7 @@ From the tests we created we initaialize a couple of coordinators and participan
 After that the protocol starts.
 
 As we're implementing a commit protocol which is based on messages, it makes sense to use a framework for passing messages.
-As we are restricted to Scala and akka seems to be one of the most-used frameworks (actor framework) for that purpose, we chose to use that.
+As we are restricted to Scala and **Akka** seems to be one of the most-used frameworks (actor framework) for that purpose, we chose to use that.
 We decided against directly implementing participants and coordinators as a FSM as our team is more familiar with more imperative programming. Furthermore, in the beginning we were not sure if we understood all parts of the paper.
 
 ### View Changes
@@ -154,7 +154,7 @@ Initially it was not clear whether the initiator should send the commit request 
 
 The idea to get our implementation running in a distributed fashion is:
 
-- Manually start akka actors in different JVMs (could be on the same or on different PCs)
+- Manually start Akka Actors in different JVMs (could be on the same or on different PCs)
 - Get the actors to communicate with each other using Artery (serialization of messages, actor discovery)
 - Key distribution might be hard, disable the checks in code
 
