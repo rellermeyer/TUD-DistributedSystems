@@ -44,7 +44,7 @@ In the basic 2PC protocol there is a single coordinator, and multiple participan
 
 ### Why a byzantine fault tolerant commit protocol
 
-There are multiple reasons to choose a byzantine fault tolerant distributed commit protocol. By having multiple coordinators one or more servers can fail without any downtime (or a low downtime, since a view change may need to happen, and commiting of transactions restart). The coordinators can be distributed over multiple datacenters or even countries, making sure the system contrinues to work even if some datacenter expecinces problems or even a country (assuming most servers are in other countries). Since the protocol is byzantine fault tolerant the system will even withstands compromiced coorinators (that expresses byzantine behaviour). <!-- The byzantine fault tolerant protocol does also detect participants that sends different chooses wether to commit or abort a transaction to different coordinators, making sure that participants can not lie. -->
+There are multiple reasons to choose a byzantine fault tolerant distributed commit protocol. By having multiple coordinators one or more servers can fail without any downtime (or a low downtime, since a view change may need to happen, and commiting of transactions restart). The coordinators can be distributed over multiple datacenters or even countries, making sure the system continues to work even if some datacenter expecinces problems or even a country (assuming most servers are in other countries). Since the protocol is byzantine fault tolerant the system will even withstands compromiced coorinators (that expresses byzantine behaviour). <!-- The byzantine fault tolerant protocol does also detect participants that sends different chooses wether to commit or abort a transaction to different coordinators, making sure that participants can not lie. -->
 
 ### Distributed commit protocol
 
@@ -90,7 +90,7 @@ Functional requirements were evaluated using Scala tests (```ScalaTestWithActorT
 - Byzantine behavior tolerance
 
 Along with the development we have built a set of tests which tested every feature we implemented. This way we ensured that every module did its work properly.  
-We have built a total of 15 tests through which Coordinators and Participants exange messages and perform the corresponding message verification and decision making processes. These tests ensure the implementation correctness by creating protocol instances and making coordinator replicas and participants conduct several distributed commit protocols. A different number of transactions, coordinator replicas and participants is used to test  the system's resilience to multiple message passing. Further participant behaviour is tested by sending abort messages in the middle of a commit transaction.
+We have built a total of 15 tests through which Coordinators and Participants exchange messages and perform the corresponding message verification and decision making processes. These tests ensure the implementation correctness by creating protocol instances and making coordinator replicas and participants conduct several distributed commit protocols. A different number of transactions, coordinator replicas and participants is used to test  the system's resilience to multiple message passing. Further participant behaviour is tested by sending abort messages in the middle of a commit transaction.
 
 The following tests were implemented using tests in/with Scala/Akka: TODO: check if this list is still up-to-date
 
@@ -154,3 +154,8 @@ Table: An example table. TODO: remove or update.
 Conclusion/Summary
 how was the project for us? difficulties (3 exchange students)
 did we fulfill our expectations? why did we fail to run and evaluate our implementation in a distributed manner?
+
+
+## Conclution
+
+We managed to implement the protocol to the extent that the paper did it also. We did though not run it in a distributed manner since when it was time to do that we where no longer at the same place and could not run it between out computers, without opening ports to the internet which we did not want to do. 
