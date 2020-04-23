@@ -123,10 +123,12 @@ These messages are signed using public key technology so that no unidentified pa
 
 ### Functional requirements
 Functional requirements were evaluated using the Akka Actor Test Kit with Scala Tests (```ScalaTestWithActorTestKit```). We considered:  
+
 Basic Committing  
 Aborting  
 Unilateral aborting  
 Byzantine behavior tolerance  
+
 Along with the development we have built a set of tests which tested every feature we implemented. This way we ensured that every module did its work properly.  
 We have built a total of 15 tests through which Coordinators and Participants exchange messages and perform the corresponding message verification and decision making processes. These tests ensure the implementation correctness by creating protocol instances and making coordinator replicas and participants conduct several distributed commit protocols. A different number of transactions, coordinator replicas and participants is used to test the system's resilience to multiple message passing. Further participant behaviour is tested by sending abort messages in the middle of a commit transaction.  
 
@@ -173,27 +175,14 @@ All tests were performed with 4 coordinators.
 The tests were carried out on a laptop with an Intel i3-5005U (dual-core operating at a fixed 2.0 GHz) with 8 GB of RAM.  
 
 The latency was measured both with normal behaving nodes and with a single byzantine nonprimary coordinator replica.
-If a nonprimary coordinator replica is byzantine, a small performance reduction could occur since the algorithm might have to depend on other replicas to reach consensus.
-However, it was observed that actors would often be running sequentially due to limited parallelism, which limited the benefit of early consensus.
-In each test batch, 10 runs were performed of 100 sequential commits each.
-This was then repeated 5 times over multiple days.
-*@fig:evaluationchart1 shows the latency measured in these test.
-The error bars indicate 2 standard deviations.
-No performance difference could be discerned.
+If a nonprimary coordinator replica is byzantine, a small performance reduction could occur since the algorithm might have to depend on other replicas to reach consensus.  
+In each test batch, 10 runs were performed of 100 sequential commits each. This was then repeated 5 times over multiple days.  
+*@fig:evaluationchart1 shows the latency measured in these test. The error bars indicate 2 standard deviations.  
+No performance difference could be discerned. This might be related to the observation that actors would often be running sequentially due to limited parallelism, which limited the benefit of early consensus.  
 
 ![Latency comparison between normal operation and a byzantine nonprimary coordinator](./images/latency.png){#fig:evaluationchart1 width=75%}
 
 Figure ...: Latency comparison between normal operation and a byzantine nonprimary coordinator.
-
-|Number of Participants|Average latency (ms)|Throughput (transactions/s)|
-|--|---|---------|
-|2 |382|2.6156101|
-|4 |434|2.3037758|  
-|6 |569|1.754817|
-|8 |614|1.6273392|
-|10|822|1.2165303|
-
-Table: An example table. TODO: remove or update.
 
 ## Future Work
 
