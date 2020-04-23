@@ -59,8 +59,6 @@ The coordinators can be distributed over multiple datacenters or even countries,
 Since the protocol is byzantine fault tolerant the system will even withstands compromised coordinators.
 The byzantine fault tolerant protocol does also detect participants that sends different chooses whether to commit or abort a transaction to different coordinators, making sure that participants can not lie.
 
-
-
 ### Distributed commit protocol
 
 In the distributed commit protocol presented in the paper they address the problem with a byzantine coordinator and solves it by distributing the coordinator into multiple coordinators that does a byzantine agreement on firstly which participants are taking part in the voting on a transaction, and secondly on what the participants voted.
@@ -83,7 +81,6 @@ After reaching an agreement, coordinator replicas send the agreement outcome to 
 <!--  By making the coordinators do a byzantine agreement on first, who of the participants are involved in a transaction, and later on what the participants voted, the protocol as a whole can now accept coordinators that goes down (increased availability) as well as  byzantine coordinators. In the 2PC commit protocol if the coordinator breaks in such a was as it presents a byzantine behaviour where it sends the decision to commit a transaction to some participants and to abort the transaction to other participants, the participants will believe the coordinator (since there is only one, there is no way to check if it speaks the truth), and therefore do accordingly. That will result in two different views on what is committed. Which was the problem the protocol tried to solve.   -->
 
 ![An example of the voting part of the BFTDCP protocol.](images/bftdcp.png){#fig:examplevoting width=75%}
-
 
 ### Byzantine Agreement Algorithm
 
@@ -122,6 +119,7 @@ These messages are signed using public key technology so that no unidentified pa
 ## Evaluation
 
 ### Functional requirements
+
 Functional requirements were evaluated using the Akka Actor Test Kit with Scala Tests (```ScalaTestWithActorTestKit```). We considered:  
 
 Basic Committing  
@@ -146,7 +144,7 @@ The following tests were implemented using tests in/with Scala/Akka:
 
 - **Test 6:** Initiate the protocol with 4 coordinator replicas and 4 participants and have one participant unilaterally abort the transaction, resulting in an abort.  
 
-- **Test 7:** Initiate the protocol with 1 coordinator replica and 1 participant and have the initiator abort the transaction, resulting in an abort.   
+- **Test 7:** Initiate the protocol with 1 coordinator replica and 1 participant and have the initiator abort the transaction, resulting in an abort.
 
 - **Test 8:** Initiate the protocol with 4 coordinator replicas and 1 participant and have the initiator abort the transaction, resulting in an abort.  
 
@@ -168,7 +166,8 @@ The following tests were implemented using tests in/with Scala/Akka:
 
 - **Test 17:** Initiate the protocol with 1 participant and 1 slow coordinator which will exceed the timeout, resulting in a view change being suggested.  
 
-Tests 1 through 14 succeed as expected. Tests 15 and 16 fail, since the solution to a byzantine primary coordinator replica is to perform a view change, which has not been implemented. Test 17 requires only that the need for a view change is detected, not that it is actually performed. Hence it also succeeds as described.  
+Tests 1 through 14 succeed as expected. Tests 15 and 16 fail, since the solution to a byzantine primary coordinator replica is to perform a view change, which has not been implemented. Test 17 requires only that the need for a view change is detected, not that it is actually performed. Hence it also succeeds as described.
+
 ### Non-Functional Requirements
 
 All tests were performed with 4 coordinators.
