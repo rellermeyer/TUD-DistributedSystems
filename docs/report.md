@@ -59,9 +59,8 @@ The coordinators can be distributed over multiple datacenters or even countries,
 Since the protocol is byzantine fault tolerant the system will even withstands compromised coordinators.
 The byzantine fault tolerant protocol does also detect participants that sends different chooses whether to commit or abort a transaction to different coordinators, making sure that participants can not lie.
 
-
-
 ### Distributed commit protocol
+
 TODO: update this so it flows better.  
 In the distributed commit protocol presented in the paper they address the problem with a byzantine coordinator and solves it by distributing the coordinator into multiple coordinators that does a byzantine agreement on firstly which participants are taking part in the voting on a transaction, and secondly on what the participants voted.
 The resulting system works so long as it has *"3f + 1"* coordinator replicas where  at most "*f*" coordinators are byzantine.
@@ -84,7 +83,6 @@ After reaching an agreement, coordinator replicas send the agreement outcome to 
 
 ![An example of the voting part of the BFTDCP protocol.](images/bftdcp.png){#fig:examplevoting width=75%}
 
-
 ### Byzantine Agreement Algorithm
 
 Wenbing Zhao's  algorithm is based on the BFT algorithm by Castro  and Liskov.
@@ -106,6 +104,7 @@ Byzantine Agreement Algorithm has three main phases:
   *"Ba-commit"* messages are verified alike *"ba-prepare"* messages.
 
 ## Design Decisions
+
 TODO: remove this? I believe this is all described in implementation details and the protocol.  
 We decided to use **Akka** since it proved a actor framework that could be used to avoid implementing the sending of messages.
 We created two typed of actors, coordinators and participants.
@@ -118,6 +117,7 @@ We have used the **akka** framework to implement coordinators and participants a
 Actors communicate with each other through messages using the akka API.
 These messages are signed using public key technology so that no unidentified participant can interfere.
 The view change mechanism has not been implemented.  
+
 ## Evaluation
 
 ### Functional requirements
@@ -167,7 +167,8 @@ The following tests were implemented using tests in/with Scala/Akka:
 
 - **Test 17:** Initiate the protocol with 1 participant and 1 slow coordinator which will exceed the timeout, resulting in a view change being suggested.  
 
-Tests 1 through 14 succeed as expected. Tests 15 and 16 fail, since the solution to a byzantine primary coordinator replica is to perform a view change, which has not been implemented. Test 17 requires only that the need for a view change is detected, not that it is actually performed. Hence it also succeeds as described.  
+Tests 1 through 14 succeed as expected. Tests 15 and 16 fail, since the solution to a byzantine primary coordinator replica is to perform a view change, which has not been implemented. Test 17 requires only that the need for a view change is detected, not that it is actually performed. Hence it also succeeds as described. 
+
 ### Non-Functional Requirements
 
 All tests were performed with 4 coordinators.
@@ -193,6 +194,7 @@ Figure ...: Latency comparison between normal operation and a byzantine nonprima
 - Running the system in a distributed manner: actors on different hosts should be able to communicate with each other.  
 
 ## Wrap-Up
+
 TODO: merge with conclusion  
 Conclusion/Summary
 how was the project for us? difficulties (3 exchange students)
@@ -202,5 +204,6 @@ One of our team members, Miguel Lucas, was responsible for implementing the syst
 For this reason, he could not work on the project any more so the system could not be implemented in a distributed fashion.
 
 ## Conclusion
+
 We managed to implement the protocol to the extent that the paper did it also.
 We did though not run it in a distributed manner since when it was time to do that we where no longer at the same place and could not run it between out computers, without opening ports to the internet which we did not want to do.
