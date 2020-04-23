@@ -67,12 +67,12 @@ The resulting system works so long as it has *"3f + 1"* coordinator replicas whe
 
 Every participant must register with the coordinators before the commit protocol starts.
 One of the coordinators is a primary coordinator, the rest is called replicas.
-The primary coordinator can change, for example, if it becomes unavailable. 
+The primary coordinator can change, for example, if it becomes unavailable.
 <!--A participant is called the initiator if it initiates the transaction. 
 First the participants register with the coordinators. 
 The protocol starts when the initator has send the transaction to all participants and then sends a initate commit request message to all coordinators.
 The coordinators then sends a prepare message to all registed participants. 
-The participants answer if they _can_ commit or not.  -->
+The participants answer if they _can_ commit or not.-->
 ??????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????
 The commit protocol starts when a replica receives a commit request from a participant, which from now on will be called initiator.
 Now the coordinator replica sends a *"prepare"* request to every registered participant and waits until enough *"prepared"* messages are received from the participants.
@@ -181,8 +181,6 @@ In each test batch, 10 runs were performed of 100 sequential commits each. This 
 No performance difference could be discerned. This might be related to the observation that actors would often be running sequentially due to limited parallelism, which limited the benefit of early consensus.  
 
 ![Latency comparison between normal operation and a byzantine nonprimary coordinator](./images/latency.png){#fig:evaluationchart1 width=75%}
-
-Figure ...: Latency comparison between normal operation and a byzantine nonprimary coordinator.
 
 ## Future Work
 
