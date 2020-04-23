@@ -63,7 +63,7 @@ The byzantine fault tolerant protocol does also detect participants that sends d
 
 ### Distributed commit protocol
 
-In the distributed commit protocol presented in the paper they address the problem with a byzantine coordinator and solves it by distributing the coordinator into multiple coordinators that does a byzantine agreement on firstly witch participants are part in the voting on a transaction, and secondly on what the participants voted.
+In the distributed commit protocol presented in the paper they address the problem with a byzantine coordinator and solves it by distributing the coordinator into multiple coordinators that does a byzantine agreement on firstly which participants are part in the voting on a transaction, and secondly on what the participants voted.
 The resulting system works so long as it has *"3f + 1"* coordinator replicas where  at most "*f*" coordinators are byzantine.
 
 Every participant must register with the coordinators before the commit protocol starts.
