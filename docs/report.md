@@ -60,7 +60,7 @@ Since the protocol is byzantine fault tolerant the system will even withstands c
 ### Distributed commit protocol
 
 In the distributed commit protocol presented in the paper they address the problem with a byzantine coordinator and solves it by distributing the coordinator into multiple coordinators that does a byzantine agreement on firstly witch participants are part in the voting on a transaction, and secondly on what the participants voted.
-The resulting system works so long as it has *"3f + 1"* coordinators and a maximum of *"f"* coordinators misbehave.
+The resulting system works so long as it has *"3f + 1"* coordinator replicas where  at most "*f*" coordinators are byzantine.
 
 ![An example of the voting part of the BFTDCP protocol.](images/bftdcp.png){#fig:examplevoting width=75%}
 
@@ -68,12 +68,8 @@ The resulting system works so long as it has *"3f + 1"* coordinators and a maxim
 
 ### Implementation <!-- ?? -->
 
-We have used the **akka** framework to implement coordinators and participants as actors since it simplifies distributed and concurrent application development.
-Actors communicate with each other through messages using the akka API.
-These messages are signed using public key technology so that no unidentified participant can interfere.
-It is assumed that there will exist *"3f + 1"* available coordinator replicas where "*f*" is the maximum number of byzantine coordinator replicas.
 In the byzantine distributed commit protocol the original coordinator is called primary and coordinator copies receive the name of replicas.
-Every participant must register with the coordinator before the commit protocol starts. The commit protocol starts when a replica receives a commit request from a participant, which from now on will be called initiator.
+Every participant must register with the coordinators before the commit protocol starts. The commit protocol starts when a replica receives a commit request from a participant, which from now on will be called initiator.
 Now the coordinator replica sends a *"prepare"* request to every registered participant and waits until enough *"prepared"* messages are received from the participants.
 When *"prepared"* messages are received an instance of a *"Byzantine Agreement Algorithm"* is created.
 After reaching an agreement, coordinator replicas send the agreement outcome to participants, which will only commit the transaction once *"f + 1"* similar outcomes are received.
@@ -110,6 +106,10 @@ From the tests we created we initaialize a couple of coordinators and participan
 After that the protocol starts.
 
 ## Implementation Details
+
+We have used the **akka** framework to implement coordinators and participants as actors since it simplifies distributed and concurrent application development.
+Actors communicate with each other through messages using the akka API.
+These messages are signed using public key technology so that no unidentified participant can interfere.
 
 ## Evaluation
 
