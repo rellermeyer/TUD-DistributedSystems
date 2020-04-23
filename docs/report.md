@@ -43,7 +43,7 @@ The objective list was divided into categories to state the priority of each obj
 
 ## The Protocol
 
-### Why a byzantine fault tolerant commit protocol?
+### Byzantine Fault Tolerance - Why
 
 There are multiple reasons to choose a byzantine fault tolerant distributed commit protocol.
 
@@ -178,39 +178,39 @@ Further participant behaviour is tested by sending abort messages in the middle 
 
 The following tests were implemented using tests in/with Scala/Akka:  
 
-- **Test 1:** Initiate the protocol with 1 coordinator replica and 1 participant, resulting in a commit.  
+- **Test 1:** Run with 1 coordinator replica and 1 participant, resulting in a commit.
 
-- **Test 2:** Initiate the protocol with 4 coordinator replicas and 1 participant resulting in a commit.  
+- **Test 2:** Run with 4 coordinator replica(s) and 1 participant, resulting in a commit.
 
-- **Test 3:** Initiate the protocol with 1 coordinator replica and 4 participants resulting in a commit.  
+- **Test 3:** Run with 1 coordinator replica and 4 participant(s), resulting in a commit.
 
-- **Test 4:** Initiate the protocol with 1 coordinator replica and 1 participant and have the participant unilaterally abort the transaction, resulting in an abort.  
+- **Test 4:** Run with 1 coordinator replica and 1 participant and have the participant unilaterally abort the transaction, resulting in an abort.
 
-- **Test 5:** Initiate the protocol with 1 coordinator replica and 4 participants and have one participant unilaterally abort the transaction, resulting in an abort.  
+- **Test 5:** Run with 1 coordinator replica and 4 participants and have one participant unilaterally abort the transaction, resulting in an abort.
 
-- **Test 6:** Initiate the protocol with 4 coordinator replicas and 4 participants and have one participant unilaterally abort the transaction, resulting in an abort.  
+- **Test 6:** Run with 4 coordinator replicas and 4 participants and have one participant unilaterally abort the transaction, resulting in an abort.
 
-- **Test 7:** Initiate the protocol with 1 coordinator replica and 1 participant and have the initiator abort the transaction, resulting in an abort.
+- **Test 7:** Run with 1 coordinator replica and 1 participant and have the initiator abort the transaction, resulting in an abort.
 
-- **Test 8:** Initiate the protocol with 4 coordinator replicas and 1 participant and have the initiator abort the transaction, resulting in an abort.  
+- **Test 8:** Run with 4 coordinator replicas and 1 participant and have the initiator abort the transaction, resulting in an abort.
 
-- **Test 9:** Initiate the protocol with 1 coordinator replica and 4 participants and have the initiator abort the transaction, resulting in an abort.  
+- **Test 9:** Run with 1 coordinator replica and 4 participants and have the initiator abort the transaction, resulting in an abort.
 
-- **Test 10:** Initiate 2 instances of the protocol, both resulting in a commit.  
+- **Test 10:** Run 2 instances of the protocol, both resulting in a commit.
 
-- **Test 11:** Initiate the protocol with 4 coordinator replicas (of which 1 is nonresponsive) and 1 participant, resulting in a commit.  
+- **Test 11:** Run with 4 coordinator replicas (of which 1 is nonresponsive) and 1 participant, resulting in a commit.
 
-- **Test 12:** Initiate the protocol with 4 coordinator replicas (of which 1 is nonresponsive) and 1 participant and have the initiator abort, resulting in an abort.  
+- **Test 12:** Run with 4 coordinator replicas (of which 1 is nonresponsive) and 1 participant and have the initiator abort, resulting in an abort.
 
-- **Test 13:** Initiate the protocol with 4 coordinator replicas (of which 1 non-primary exhibits some byzantine behaviour) and 1 participant, resulting in a commit.  
+- **Test 13:** Run with 4 coordinator replicas (of which 1 non-primary exhibits some byzantine behaviour) and 1 participant, resulting in a commit.
 
-- **Test 14:** Initiate the protocol with 4 coordinator replicas (of which 1 non-primary exhibits some byzantine behaviour) and 1 participant and have the initiator abort, resulting in an abort.  
+- **Test 14:** Run with 4 coordinator replicas (of which 1 non-primary exhibits some byzantine behaviour) and 1 participant and have the initiator abort, resulting in an abort.
 
-- **Test 15:** Initiate the protocol with 4 coordinator replicas (of which the primary exhibits some byzantine behaviour) and 1 participant, resulting in a commit.  
+- **Test 15:** Run with 4 coordinator replicas (of which the primary exhibits some byzantine behaviour) and 1 participant, resulting in a commit.
 
-- **Test 16:** Initiate the protocol with 4 coordinator replicas (of which the primary exhibits some byzantine behaviour) and 1 participant and have the initiator abort, resulting in an abort.  
+- **Test 16:** Run with 4 coordinator replicas (of which the primary exhibits some byzantine behaviour) and 1 participant and have the initiator abort, resulting in an abort.
 
-- **Test 17:** Initiate the protocol with 1 participant and 1 slow coordinator which will exceed the timeout, resulting in a view change being suggested.  
+- **Test 17:** Run with 1 participant and 1 slow coordinator which will exceed the timeout, resulting in a view change being suggested.
 
 Tests 1 through 14 succeed as expected.
 Tests 15 and 16 fail, since the solution to a byzantine primary coordinator replica is to perform a view change, which has not been implemented.
