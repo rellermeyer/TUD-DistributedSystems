@@ -50,32 +50,30 @@ This means that the coordinator is a single point of failure and that the coordi
 If the coordinator expresses byzantine behaviour, by for example telling one participant to commit and another to abort the participants will trust the coordinator and therefore do as it says.
 This would then lead to the participants having different views on what transactions are done, which defeats the purpose of the protocol, to reach an agreement.
 
-### Why a byzantine fault tolerant commit protocol
+### Why a byzantine fault tolerant commit protocol?
 
 There are multiple reasons to choose a byzantine fault tolerant distributed commit protocol. By having multiple coordinators one or more servers can fail without any downtime (or a low downtime, since a view change may need to happen, and commiting of transactions restart).
-The coordinators can be distributed over multiple datacenters or even countries, making sure the system continues to work even if some datacenter expecinces problems or even a country (assuming most servers are in other countries).
-Since the protocol is byzantine fault tolerant the system will even withstands compromiced coorinators (that expresses byzantine behaviour).
+The coordinators can be distributed over multiple datacenters or even countries, making sure the system continues to work even if some datacenter experiences problems or even a country (assuming most servers are in other countries).
+Since the protocol is byzantine fault tolerant the system will even withstands compromised coordinators (that expresses byzantine behaviour).
 <!-- The byzantine fault tolerant protocol does also detect participants that sends different chooses wether to commit or abort a transaction to different coordinators, making sure that participants can not lie. -->
+
+
+<!-- In the 2PC protocol a single coordinator is used. The distributed commit protocol presented in the paper introduces multiple coordinators in order to remove the single point of failure, and to "accept" byzantine failures in a coordinator, and some byzantine failures in participants.   By making the coordinators do a byzantine agreement on first, who of the participants are involved in a transaction, and later on what the participants voted, the protocol as a whole can now accept coordinators that goes down (increased availability) as well as  byzantine coordinators. In the 2PC commit protocol if the coordinator breaks in such a was as it presents a byzantine behaviour where it sends the decision to commit a transaction to some participants and to abort the transaction to other participants, the participants will believe the coordinator (since there is only one, there is no way to check if it speaks the truth), and therefore do accordingly. That will result in two different views on what is committed. Which was the problem the protocol tried to solve.   -->
 
 ### Distributed commit protocol
 
 In the distributed commit protocol presented in the paper they address the problem with a byzantine coordinator and solves it by distributing the coordinator into multiple coordinators that does a byzantine agreement on firstly witch participants are part in the voting on a transaction, and secondly on what the participants voted.
 The resulting system works so long as it has *"3f + 1"* coordinator replicas where  at most "*f*" coordinators are byzantine.
 
+Every participant must register with the coordinators before the commit protocol starts. One of the coordinators is a primary coordinator, the rest is called replicas. The primary coordinator can change for example if it becomes unavailable. 
+The commit protocol starts when a replica receives a commit request from a participant, which from now on will be called initiator.
+Now the coordinator replica sends a *"prepare"* request to every registered participant and waits until enough *"prepared"* messages are received from the participants.
+When *"prepared"* messages are received an instance of a *"Byzantine Agreement Algorithm"* is created.
+After reaching an agreement, coordinator replicas send the agreement outcome to participants, which will only commit the transaction once *"f + 1"* similar outcomes are received, to ensure that they don't accept the answer of byzantine coordinators. Since the protocol works with up to "*f*" byzantine coordinators, when *"f+1"* messages are received the participant knows that it has not received the message from a byzantine coordinator.
+
 ![An example of the voting part of the BFTDCP protocol.](images/bftdcp.png){#fig:examplevoting width=75%}
 
 <!-- According to 2PC protocol a distributed transaction contains one coordinator and some participants, but in the byzantine distributed commit protocol several coordinators are used. -->
-
-### Implementation <!-- ?? -->
-
-In the byzantine distributed commit protocol the original coordinator is called primary and coordinator copies receive the name of replicas.
-Every participant must register with the coordinators before the commit protocol starts. The commit protocol starts when a replica receives a commit request from a participant, which from now on will be called initiator.
-Now the coordinator replica sends a *"prepare"* request to every registered participant and waits until enough *"prepared"* messages are received from the participants.
-When *"prepared"* messages are received an instance of a *"Byzantine Agreement Algorithm"* is created.
-After reaching an agreement, coordinator replicas send the agreement outcome to participants, which will only commit the transaction once *"f + 1"* similar outcomes are received.
-This way at least one of the *"f + 1*" outcomes received comes from a non-byzantine replica.
-
-<!-- In the 2PC protocol a single coordinator is used. The distributed commit protocol presented in the paper introduces multiple coordinators in order to remove the single point of failure, and to "accept" byzantine failures in a coordinator, and some byzantine failures in participants.   By making the coordinators do a byzantine agreement on first, who of the participants are involved in a transaction, and later on what the participants voted, the protocol as a whole can now accept coordinators that goes down (increased availability) as well as  byzantine coordinators. In the 2PC commit protocol if the coordinator breaks in such a was as it presents a byzantine behaviour where it sends the decision to commit a transaction to some participants and to abort the transaction to other participants, the participants will believe the coordinator (since there is only one, there is no way to check if it speaks the truth), and therefore do accordingly. That will result in two different views on what is committed. Which was the problem the protocol tried to solve.   -->
 
 ### Byzantine Agreement Algorithm
 
