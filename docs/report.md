@@ -63,7 +63,7 @@ Since the protocol introduces multiple coordinator, it becomes possible for the 
 In the distributed commit protocol presented in the paper the author address the problem of a byzantine coordinator by replicating the coordinator. One of these replicas is the primary. The resulting system works correctly so long as it has *"3f + 1"* coordinator replicas where at most "*f*" coordinators are byzantine.  
 
 One of the participants initiates the transaction, this is the initiator. The initiator propagates the transaction to the other participants. Then the participants register with the coordinators.
-The protocol starts when the initiator has received confirmation from all participants, that they have registered with a sufficient number of coordinators, and then sends a initiate commit request message to all coordinators.  
+The protocol starts when the initiator has received confirmation from all participants, that they have registered with *"2f + 1"*  coordinators, and then sends a initiate commit request message to all coordinators.  
 The coordinators then sends a prepare message to all registered participants. The participants answer if they can commit or not. If any cannot, an abort will take place, otherwise the protocol proceeds.  
 Now the coordinator replica sends a *"prepare"* request to every registered participant and waits until enough *"prepared"* messages are received from the participants.  
 When *"prepared"* messages are received an instance of a *"Byzantine Agreement Algorithm"* is created, where a byzantine agreement is attempted on firstly which participants are taking part in the voting on a transaction, and secondly on what the participants voted. This is described in more detail in the "Byzantine Agreement Algorithm" section.  
