@@ -224,14 +224,11 @@ The tests were carried out on a laptop with an Intel i3-5005U (dual-core operati
 
 The latency was measured both with normal behaving nodes and with a single byzantine non-primary coordinator replica.
 If a non-primary coordinator replica is byzantine, a small performance reduction could occur since the algorithm might have to depend on other replicas to reach consensus.  
-In each test batch, 10 runs were performed of 100 sequential commits each. This was then repeated 5 times over multiple days.  
-*@fig:evaluationchart1 shows the latency measured in these test. The error bars indicate 2 standard deviations.  
+The test consisted of starting a new transaction once the previous had committed, until 100 commits had been completed. The average latency of such a test constitutes one sample. 50 such samples were collected for each test configuration.     
+*@fig:evaluationchart1 shows the latency measured in these test. The error bars indicate 2 standard deviations, based on the variance between samples of 100 commits, not between the indiviual commits. The variance between indivual commits is expected to be larger.  
 No performance difference could be discerned. This might be related to the observation that actors would often be running sequentially due to limited parallelism, which limited the benefit of early consensus.  
 
 ![Latency comparison between normal operation and a byzantine non-primary coordinator](./images/latency.png){#fig:evaluationchart1 width=75%}
-
-**TODO:** explain that the stddev is not the stddev of the latency measurements, but of the latency measurement averages (over 100 measurements).
-The stddev of the latency is higher.
 
 ## Future Work
 
@@ -253,9 +250,6 @@ One of our team members, Miguel Lucas, was responsible for testing the system in
 For this reason, he could not work on the project any more so the system could not be tested in a distributed fashion.
 
 The paper mentions WS-AT a few times, but they have made it more clear that it that they assume strong knowledge of WS-AT. Reading WS-AT helped a lot!
-
-- remote, corona
-- difficult for 4 persons to work on the same 2 or 3 main files
 
 ## Conclusion
 
