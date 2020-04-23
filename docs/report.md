@@ -100,7 +100,29 @@ Byzantine Agreement Algorithm has three main phases:
   A replica is said to have ba-committed if it receives 2f+1 matching *"ba-commit"* messages from different replicas and the agreed outcome is sent to every participant in the current transaction.
   *"Ba-commit"* messages are verified alike *"ba-prepare"* messages.
 
-<!--  By making the coordinators do a byzantine agreement on first, who of the participants are involved in a transaction, and later on what the participants voted, the protocol as a whole can now accept coordinators that goes down (increased availability) as well as  byzantine coordinators. In the 2PC commit protocol if the coordinator breaks in such a was as it presents a byzantine behaviour where it sends the decision to commit a transaction to some participants and to abort the transaction to other participants, the participants will believe the coordinator (since there is only one, there is no way to check if it speaks the truth), and therefore do accordingly. That will result in two different views on what is committed. Which was the problem the protocol tried to solve.   -->
+<!--  By making the coordinators do a byzantine agreement on first, who of the participants are involved in a transaction, and later on what the participants voted, the protocol as a whole can now accept coordinators that goes down (increased availability) as well as  byzantine coordinators. In the 2PC commit protocol if the coordinator breaks in such a was as it presents a byzantine behaviour where it sends the decision to commit a transaction to some participants and to abort the transaction to other participants, the participants will believe the coordinator (since there is only one, there is no way to check if it speaks the truth), and therefore do accordingly. That will result in two different views on what is committed. Which was the problem the protocol tried to solve.-->
+
+### Thoughts on the paper
+
+Althought the paper is mostly written in a clear and concise manner, some parts seems to be lacking and not fully clear to me.
+
+The decision certificate contains a list of votes and registrations, both signed by the sender. WHile the signature for the registration contains the sender, the signature of the vote does not. We assume that this is a typo in the paper.
+
+p.39 "Furthermore, we assume that a correct participant *registers with f+1 or more correct coordinator replicas* before it sends a reply to the initiator when the transaction is propagated to this participant with a request coming from the initiator."  
+p.42 "Because the participant p is correct and responded to the initiator's request properly, it must have *registered with at lease 2f+1 coordinator replicas* prior to sending its reply to the initiator."  
+-- The number of registrations is the *same* as the first specifically mentions *correct* coordinator replicas. Therefore the participant actually has to register with f more replicas.
+
+Initially it was not clear that the initiator propagates the transaction to all participants, as the Introduction specifically mentions the participants-have-to-know-all-other-participants as a drawback of another protocol.
+
+> A backup suspects the primary and initiates a view change immediately if the ba-pre-prepare message fails the verification
+
+Shouldn't the view-changes be voted on?
+
+> When the primary for view v+1 receives 2f+1 valid view change messages[...], it [...] multicasts a new view message for view v+1.
+
+What if the new primary is byzantine (and does not send out the new view), how is it guaranteed that another replica takes over to view v+2
+
+Pseudo-code: The paper never mentions if the functions are thought to be executed on coordinator or participant side.
 
 ## Design Decisions
 
@@ -226,6 +248,11 @@ The main challenge of the project was to understand who the system was supposed 
 
 One of our team members, Miguel Lucas, was responsible for implementing the system in a distributed fashion, but due to the coronavirus situation he had to return to his country and finish his studies at his home university.
 For this reason, he could not work on the project any more so the system could not be implemented in a distributed fashion.
+
+The paper mentions WS-AT a few times, but they have made it more clear that it that they assume strong knowledge of WS-AT. Reading WS-AT helped a lot!
+
+* remote, corona
+* difficult for 4 persons to work on the same 2 or 3 main files
 
 ## Conclusion
 
