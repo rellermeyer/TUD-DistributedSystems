@@ -232,8 +232,6 @@ The main challenge of the project was to understand who the system was supposed 
 One of our team members, Miguel Lucas, was responsible for testing the system in a distributed fashion, but due to the coronavirus situation he had to return to his country and finish his studies at his home university.
 For this reason, he could not work on the project any more so the system could not be tested in a distributed fashion.
 
-The paper mentions WS-AT a few times, but they have made it more clear that it that they assume strong knowledge of WS-AT. Reading WS-AT helped a lot!
-
 ## Future Work
 
 - Expanding the simulation of byzantine behaviour.
