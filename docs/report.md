@@ -95,7 +95,7 @@ Byzantine Agreement Algorithm has three main phases:
 
 ### Thoughts on the paper
 
-Althought the paper is mostly written in a clear and concise manner, some parts seems to be lacking and not fully clear to me.
+Although the paper is mostly written in a clear and concise manner, some parts seems to be lacking and not fully clear to me.
 
 The decision certificate contains a list of votes and registrations, both signed by the sender. WHile the signature for the registration contains the sender, the signature of the vote does not. We assume that this is a typo in the paper.
 
