@@ -127,14 +127,15 @@ We created two typed of actors, coordinators and participants.
 From the tests we created we initaialize a couple of coordinators and participants (depending on the test case) and send a initalization message from one of the participants (the initiator) to the coordinators.
 After that the protocol starts.
 
-As we're implementing a commit protocol which is based on messages, it makes sense to use a framework for passing messages. As we are restricted to Scala and akka seems to be one of the most-used frameworks (actor framework) for that purpose, we chose to use that. We decided against directly implementing participants and coordinators as a FSM as our team is more familiar with more imperative programming. Furthermore, in the beginning we were not sure if we understood all parts of the paper.
+As we're implementing a commit protocol which is based on messages, it makes sense to use a framework for passing messages.
+As we are restricted to Scala and akka seems to be one of the most-used frameworks (actor framework) for that purpose, we chose to use that.
+We decided against directly implementing participants and coordinators as a FSM as our team is more familiar with more imperative programming. Furthermore, in the beginning we were not sure if we understood all parts of the paper.
 
 ### View Changes
 
 We decided to exclude the implementation of view changes from the requirements the author did not them either. It seems to be somewhat careless that the paper authors have not implemented, as this means that no byzantine primary coordinator is supported. We therefore assume that no full implementation of this protocol exists up to now.
 
 ## Implementation Details
-
 
 These messages are signed using public key technology so that no unidentified participant can interfere.
 The view change mechanism has not been implemented.
@@ -163,13 +164,17 @@ The idea to get our implementation running in a distributed fashion is:
 
 Functional requirements were evaluated using the Akka Actor Test Kit with Scala Tests (```ScalaTestWithActorTestKit```). We considered:  
 
-Basic Committing  
-Aborting  
-Unilateral aborting  
-Byzantine behavior tolerance  
+- Basic Committing  
+- Aborting  
+- Unilateral aborting  
+- Byzantine behavior tolerance  
 
-Along with the development we have built a set of tests which tested every feature we implemented. This way we ensured that every module did its work properly.  
-We have built a total of 15 tests through which Coordinators and Participants exchange messages and perform the corresponding message verification and decision making processes. These tests ensure the implementation correctness by creating protocol instances and making coordinator replicas and participants conduct several distributed commit protocols. A different number of transactions, coordinator replicas and participants is used to test the system's resilience to multiple message passing. Further participant behaviour is tested by sending abort messages in the middle of a commit transaction.  
+Along with the development we have built a set of tests which tested every feature we implemented. This way we ensured that every module did its work properly.
+
+We have built a total of 15 tests through which Coordinators and Participants exchange messages and perform the corresponding message verification and decision making processes.
+These tests ensure the implementation correctness by creating protocol instances and making coordinator replicas and participants conduct several distributed commit protocols.
+A different number of transactions, coordinator replicas and participants is used to test the system's resilience to multiple message passing.
+Further participant behaviour is tested by sending abort messages in the middle of a commit transaction.  
 
 The following tests were implemented using tests in/with Scala/Akka:  
 
@@ -207,7 +212,10 @@ The following tests were implemented using tests in/with Scala/Akka:
 
 - **Test 17:** Initiate the protocol with 1 participant and 1 slow coordinator which will exceed the timeout, resulting in a view change being suggested.  
 
-Tests 1 through 14 succeed as expected. Tests 15 and 16 fail, since the solution to a byzantine primary coordinator replica is to perform a view change, which has not been implemented. Test 17 requires only that the need for a view change is detected, not that it is actually performed. Hence it also succeeds as described.
+Tests 1 through 14 succeed as expected.
+Tests 15 and 16 fail, since the solution to a byzantine primary coordinator replica is to perform a view change, which has not been implemented.
+Test 17 requires only that the need for a view change is detected, not that it is actually performed.
+Hence it also succeeds as described.
 
 ### Non-Functional Requirements
 
