@@ -45,18 +45,19 @@ The objective list was divided into categories to state the priority of each obj
 
 ### Why a byzantine fault tolerant commit protocol?
 
+There are multiple reasons to choose a byzantine fault tolerant distributed commit protocol.
+
 In the basic 2PC protocol there is a single coordinator, and multiple participants.
 This means that the coordinator is a single point of failure and that the coordinator is trusted by the participants.
 If the coordinator expresses byzantine behaviour, by for example telling one participant to commit and another to abort, the participants will trust the coordinator and therefore do as it says.
-This would then lead to the participants having different views on what transactions are done, which defeats the purpose of the protocol, to reach an agreement.
+This would then lead to the participants having different views on what transactions are done, which defeats the purpose of the protocol, to reach an agreement. 
 
-There are multiple reasons to choose a byzantine fault tolerant distributed commit protocol.
-<!--The byzantine fault tolerant distributed commit protocol solves the problem where if a coordinator expresses byzantine behavior (i.e misbehaves) some participants may commit a transaction whilst other abort the same transaction.-->
-The byzantine fault tolerant commit protocol is able to continue working even if some coordinators fail or become unavailable. 
-Compare this with the 2PC protocol where the protocol would stop working if the coordinator stopped working. 
+That is the main problem the byzantine fault tolerant commit protocol solves. It can handle compromised/byzantine coordinators that for example sends different messages to different participants. Another problem the byzantine fault tolerant commit protocol solves is that it's able to continue working even if some coordinators fail or become unavailable. 
+Compare this with the 2PC protocol where the protocol would stop working if the coordinator stop working. 
 This improves the availability of the system.
-This can be especially useful if the coordinators are distributed over multiple datacenters or even countries, making sure the system continues to work even if some datacenter experiences problems or even a country (assuming most servers are in other countries).
-As it says in it's name the protocol is byzantine fault tolerant, and can handle compromised/byzantine coordinators that for example sends different messages to different participants. Since the protocol introduces multiple coordinator, it now becomes possible for the participant to send different messages to the coordinators. The authors have thought of this and made sure that the protocol detects this.
+This can be especially useful if the coordinators are distributed over multiple datacenters or even countries, making sure the system continues to work even if some datacenter, or even a country (assuming most servers are in other countries), experiences problems.
+Since the protocol introduces multiple coordinator, it becomes possible for the participant to send different messages to the coordinators. The authors have thought of this and made sure that the protocol detects this.
+
 
 ### Distributed commit protocol
 
