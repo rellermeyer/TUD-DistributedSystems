@@ -131,7 +131,7 @@ We decided against directly implementing participants and coordinators as a FSM 
 
 ### View Changes
 
-We decided to exclude the implementation of view changes from the requirements the author did not them either. It seems to be somewhat careless that the paper authors have not implemented, as this means that no byzantine primary coordinator is supported. We therefore assume that no full implementation of this protocol exists up to now.
+In the original paper, view changes were not implemented. We considered implementing these, but ultimately set other priorites.
 
 ## Implementation Details
 
