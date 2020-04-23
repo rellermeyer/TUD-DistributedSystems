@@ -122,6 +122,14 @@ The view change mechanism has not been implemented.
 - the signing is implemented using a master certificate that signs all the individual certificates (of the coordinators and participants)
 - it is currently not checked whether the message originates (with regards to the from-field) from the same actor as it is signed by (spoofing is still possible)
 
+### running it in a distributed fashion
+
+The idea to get our implementation running in a distributed fashion is:
+
+- Manually start akka actors in different JVMs (could be on the same or on different PCs)
+- Get the actors to communicate with each other using Artery (serialization of messages, actor discovery)
+- Key distribution might be hard, disable the checks in code
+
 ## Evaluation
 
 ### Functional requirements
