@@ -91,8 +91,6 @@ Byzantine Agreement Algorithm has three main phases:
   A replica is said to have ba-committed if it receives 2f+1 matching *"ba-commit"* messages from different replicas and the agreed outcome is sent to every participant in the current transaction.
   *"Ba-commit"* messages are verified alike *"ba-prepare"* messages.
 
-<!--  By making the coordinators do a byzantine agreement on first, who of the participants are involved in a transaction, and later on what the participants voted, the protocol as a whole can now accept coordinators that goes down (increased availability) as well as  byzantine coordinators. In the 2PC commit protocol if the coordinator breaks in such a was as it presents a byzantine behaviour where it sends the decision to commit a transaction to some participants and to abort the transaction to other participants, the participants will believe the coordinator (since there is only one, there is no way to check if it speaks the truth), and therefore do accordingly. That will result in two different views on what is committed. Which was the problem the protocol tried to solve.-->
-
 ### Thoughts on the paper
 
 Although the paper is mostly written in a clear and concise manner, some parts seems to be lacking and not fully clear to us.
