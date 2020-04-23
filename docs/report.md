@@ -131,7 +131,7 @@ We decided against directly implementing participants and coordinators as a FSM 
 
 ### View Changes
 
-In the original paper, view changes were not implemented. We considered implementing these, but ultimately set other priorites.
+In the original paper, view changes were not implemented. We considered implementing these, but ultimately set other priorities.
 
 ## Implementation Details
 
