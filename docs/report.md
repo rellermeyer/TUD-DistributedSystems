@@ -122,7 +122,7 @@ Actors communicate with each other through messages using the Akka API.
 
 We decided to use **Akka** since it proved a actor framework that could be used to avoid implementing the sending of messages.
 We created two typed of actors, coordinators and participants.
-From the tests we created we initaialize a couple of coordinators and participants (depending on the test case) and send a initalization message from one of the participants (the initiator) to the coordinators.
+From the tests we created we initialize a couple of coordinators and participants (depending on the test case) and send a initialization message from one of the participants (the initiator) to the coordinators.
 After that the protocol starts.
 
 As we're implementing a commit protocol which is based on messages, it makes sense to use a framework for passing messages.
