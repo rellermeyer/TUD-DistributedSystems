@@ -77,11 +77,11 @@ Wenbing Zhao's algorithm is based on the BFT algorithm by Castro and Liskov.
 Byzantine Agreement Algorithm differs from BFT because BFT aims to agree on the ordering of the requests received while the Byzantine Agreement algorithm's objective is to agree on the outcome of a transaction.
 Byzantine Agreement Algorithm has three main phases:
 
-- **Ba-pre-prepare phase**: in this phase the primary sends a "*ba-pre-prepare"* message to all other replicas.
+- **Ba-pre-prepare phase**: in this phase the primary sends a *"ba-pre-prepare"* message to all other replicas.
   The *"ba-pre-prepare"* message contains the following information: view id, transaction id,  transaction outcome and decision certificate.
   The decision certificate is a collection of records of each participant's vote for every transaction.
   A new view is created if the *"ba-pre-prepare"* message fails any verification (signed by the primary, coherent transaction and view and has not accepted a *"ba-pre-prepare"* in this view-transaction).
-  Once a replica is ba-pre-prepared it multicasts a "pre-prepared" message to all other replicas.
+  Once a replica is ba-pre-prepared it multicasts a *"pre-prepared"* message to all other replicas.
 
 - **Ba-prepare phase**: a *"ba-prepare"* message contains the view id, transaction id, digested decision certificate, transaction outcome and replica id (*"i"*).
   The message is accepted if it is correctly signed by replica *"i"*, the receiving replica's view and transaction id match message view and transaction's id, message's transaction outcome matches receiving replica transaction outcome and decision certificate's digest matches the local decision certificate.
