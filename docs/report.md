@@ -170,9 +170,9 @@ The following tests were implemented using tests in/with Scala/Akka:
 
 - **Test 12:** Initiate the protocol with 4 coordinator replicas (of which 1 is nonresponsive) and 1 participant and have the initiator abort, resulting in an abort.  
 
-- **Test 13:** Initiate the protocol with 4 coordinator replicas (of which 1 nonprimary exhibits some byzantine behaviour) and 1 participant, resulting in a commit.  
+- **Test 13:** Initiate the protocol with 4 coordinator replicas (of which 1 non-primary exhibits some byzantine behaviour) and 1 participant, resulting in a commit.  
 
-- **Test 14:** Initiate the protocol with 4 coordinator replicas (of which 1 nonprimary exhibits some byzantine behaviour) and 1 participant and have the initiator abort, resulting in an abort.  
+- **Test 14:** Initiate the protocol with 4 coordinator replicas (of which 1 non-primary exhibits some byzantine behaviour) and 1 participant and have the initiator abort, resulting in an abort.  
 
 - **Test 15:** Initiate the protocol with 4 coordinator replicas (of which the primary exhibits some byzantine behaviour) and 1 participant, resulting in a commit.  
 
@@ -187,13 +187,13 @@ Tests 1 through 14 succeed as expected. Tests 15 and 16 fail, since the solution
 All tests were performed with 4 coordinators.
 The tests were carried out on a laptop with an Intel i3-5005U (dual-core operating at a fixed 2.0 GHz) with 8 GB of RAM.  
 
-The latency was measured both with normal behaving nodes and with a single byzantine nonprimary coordinator replica.
-If a nonprimary coordinator replica is byzantine, a small performance reduction could occur since the algorithm might have to depend on other replicas to reach consensus.  
+The latency was measured both with normal behaving nodes and with a single byzantine non-primary coordinator replica.
+If a non-primary coordinator replica is byzantine, a small performance reduction could occur since the algorithm might have to depend on other replicas to reach consensus.  
 In each test batch, 10 runs were performed of 100 sequential commits each. This was then repeated 5 times over multiple days.  
 *@fig:evaluationchart1 shows the latency measured in these test. The error bars indicate 2 standard deviations.  
 No performance difference could be discerned. This might be related to the observation that actors would often be running sequentially due to limited parallelism, which limited the benefit of early consensus.  
 
-![Latency comparison between normal operation and a byzantine nonprimary coordinator](./images/latency.png){#fig:evaluationchart1 width=75%}
+![Latency comparison between normal operation and a byzantine non-primary coordinator](./images/latency.png){#fig:evaluationchart1 width=75%}
 
 ## Future Work
 
