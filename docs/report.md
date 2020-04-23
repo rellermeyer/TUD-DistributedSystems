@@ -117,8 +117,6 @@ Pseudo-code: The paper never mentions if the functions are thought to be execute
 
 ## Design Decisions
 
-TODO: remove this? I believe this is all described in implementation details and the protocol.  
-
 We have used the **Akka** framework to implement coordinators and participants as actors since it simplifies distributed and concurrent application development.
 Actors communicate with each other through messages using the **Akka** API.
 
