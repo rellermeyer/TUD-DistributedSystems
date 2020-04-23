@@ -181,8 +181,6 @@ No performance difference could be discerned. This might be related to the obser
 
 ![Latency comparison between normal operation and a byzantine nonprimary coordinator](./images/latency.png){#fig:evaluationchart1 width=75%}
 
-Figure ...: Latency comparison between normal operation and a byzantine nonprimary coordinator.
-
 ## Future Work
 
 - Expanding the simulation of byzantine behaviour.
