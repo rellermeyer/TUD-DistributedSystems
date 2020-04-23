@@ -230,6 +230,9 @@ No performance difference could be discerned. This might be related to the obser
 
 ![Latency comparison between normal operation and a byzantine non-primary coordinator](./images/latency.png){#fig:evaluationchart1 width=75%}
 
+**TODO:** explain that the stddev is not the stddev of the latency measurements, but of the latency measurement averages (over 100 measurements).
+The stddev of the latency is higher.
+
 ## Future Work
 
 - Expanding the simulation of byzantine behaviour.
