@@ -112,54 +112,51 @@ These messages are signed using public key technology so that no unidentified pa
 ## Evaluation
 
 ### Functional requirements
-
-Functional requirements were evaluated using Scala tests (```ScalaTestWithActorTestKit```).
-We considered:
-
-- Basic Committing
-- Aborting
-- Unilateral aborting
-- Byzantine behavior tolerance
-
+Functional requirements were evaluated using the Akka Actor Test Kit with Scala Tests (```ScalaTestWithActorTestKit```). We considered:  
+Basic Committing  
+Aborting  
+Unilateral aborting  
+Byzantine behavior tolerance  
 Along with the development we have built a set of tests which tested every feature we implemented. This way we ensured that every module did its work properly.  
-We have built a total of 15 tests through which Coordinators and Participants exchange messages and perform the corresponding message verification and decision making processes.
-These tests ensure the implementation correctness by creating protocol instances and making coordinator replicas and participants conduct several distributed commit protocols.
-A different number of transactions, coordinator replicas and participants is used to test the system's resilience to multiple message passing.
-Further participant behaviour is tested by sending abort messages in the middle of a commit transaction.
+We have built a total of 15 tests through which Coordinators and Participants exchange messages and perform the corresponding message verification and decision making processes. These tests ensure the implementation correctness by creating protocol instances and making coordinator replicas and participants conduct several distributed commit protocols. A different number of transactions, coordinator replicas and participants is used to test the system's resilience to multiple message passing. Further participant behaviour is tested by sending abort messages in the middle of a commit transaction.  
 
-The following tests were implemented using tests in/with Scala/Akka:
-TODO: check if this list is still up-to-date
+The following tests were implemented using tests in/with Scala/Akka:  
 
-- **Test 1:** Initiate the protocol and commit with 1 coordinator replica and 1 participant.
+- **Test 1:** Initiate the protocol with 1 coordinator replica and 1 participant, resulting in a commit.  
 
-- **Test 2:** Initiate the protocol and commit with 4 coordinator replicas and 1 participant.
+- **Test 2:** Initiate the protocol with 4 coordinator replicas and 1 participant resulting in a commit.  
 
-- **Test 3:** Initiate the protocol and commit with 1 coordinator replica and 4 participants.
+- **Test 3:** Initiate the protocol with 1 coordinator replica and 4 participants resulting in a commit.  
 
-- **Test 4:** Initiate the protocol and abort with 1 coordinator replica and 1 participant.
+- **Test 4:** Initiate the protocol with 1 coordinator replica and 1 participant and have the participant unilaterally abort the transaction, resulting in an abort.  
 
-- **Test 5:** Initiate the protocol and abort with 4 coordinator replicas and 1 participant.
+- **Test 5:** Initiate the protocol with 1 coordinator replica and 4 participants and have one participant unilaterally abort the transaction, resulting in an abort.  
 
-- **Test 6:** Initiate the protocol and abort with 1 coordinator replica and 4 participants.
+- **Test 6:** Initiate the protocol with 4 coordinator replicas and 4 participants and have one participant unilaterally abort the transaction, resulting in an abort.  
 
-- **Test 7:** Initiate the protocol with 1 coordinator replica and 1 participant and make the participant abort the transaction.
+- **Test 7:** Initiate the protocol with 1 coordinator replica and 1 participant and have the initiator abort the transaction, resulting in an abort.   
 
-- **Test 8:** Initiate the protocol with 1 coordinator replica and 5 participants and make one participant unilaterally abort the transaction.
+- **Test 8:** Initiate the protocol with 4 coordinator replicas and 1 participant and have the initiator abort the transaction, resulting in an abort.  
 
-- **Test 9:**  Initiate the protocol with 4 coordinator replicas and 5 participants and make one participant unilaterally abort the transaction.
+- **Test 9:** Initiate the protocol with 1 coordinator replica and 4 participants and have the initiator abort the transaction, resulting in an abort.  
 
-- **Test 10:** Initiate 2 instances of the protocol and succeed committing in both.
+- **Test 10:** Initiate 2 instances of the protocol, both resulting in a commit.  
 
-- **Test 11:** Initiate a commit with 1 coordinator replica and 1 participant which is followed by initiating an abort for this transaction, resulting in the in-flight commit being aborted.
+- **Test 11:** Initiate the protocol with 4 coordinator replicas (of which 1 is nonresponsive) and 1 participant, resulting in a commit.  
 
-- **Test 12:** Initiate the protocol and commit with 4 coordinator replicas and 1 participant, where one of the coordinator replicas is nonresponsive.
+- **Test 12:** Initiate the protocol with 4 coordinator replicas (of which 1 is nonresponsive) and 1 participant and have the initiator abort, resulting in an abort.  
 
-- **Test 13:** Initiate the protocol and commit with 4 coordinator replicas and 1 participant, where one of the nonprimary coordinator replicas exhibits some byzantine behaviour.
+- **Test 13:** Initiate the protocol with 4 coordinator replicas (of which 1 nonprimary exhibits some byzantine behaviour) and 1 participant, resulting in a commit.  
 
-- **Test 14:** Initiate the protocol and commit with 4 coordinator replicas and 1 participant, where the primary coordinator replica exhibits some byzantine behaviour.
+- **Test 14:** Initiate the protocol with 4 coordinator replicas (of which 1 nonprimary exhibits some byzantine behaviour) and 1 participant and have the initiator abort, resulting in an abort.  
 
-- **Test 15:** Initiate the protocol and force a view change by creating a participant and a slow coordinator which will exceed the timeout.
+- **Test 15:** Initiate the protocol with 4 coordinator replicas (of which the primary exhibits some byzantine behaviour) and 1 participant, resulting in a commit.  
 
+- **Test 16:** Initiate the protocol with 4 coordinator replicas (of which the primary exhibits some byzantine behaviour) and 1 participant and have the initiator abort, resulting in an abort.  
+
+- **Test 17:** Initiate the protocol with 1 participant and 1 slow coordinator which will exceed the timeout, resulting in a view change being suggested.  
+
+Tests 1 through 14 succeed as expected. Tests 15 and 16 fail, since the solution to a byzantine primary coordinator replica is to perform a view change, which has not been implemented. Test 17 requires only that the need for a view change is detected, not that it is actually performed. Hence it also succeeds as described.  
 ### Non-Functional Requirements
 
 All tests were performed with 4 coordinators.
