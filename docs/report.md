@@ -149,7 +149,7 @@ Shortcomings:
 
 Initially it was not clear whether the initiator should send the commit request to the primary coordinator only.
 
-### running it in a distributed fashion
+### Running it in a distributed fashion
 
 The idea to get our implementation running in a distributed fashion is:
 
