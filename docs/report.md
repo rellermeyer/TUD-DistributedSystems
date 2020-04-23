@@ -131,7 +131,7 @@ As we're implementing a commit protocol which is based on messages, it makes sen
 
 ### View Changes
 
-We decided to exclude the implementation of view changes from the requirements the authord did not them either. It seems to be somewhat careless that the paper authors have not implemented, as this means that no byzantine primary coordinator is supported. We therefore assume that no full implementation of this protocol exists up to now.
+We decided to exclude the implementation of view changes from the requirements the author did not them either. It seems to be somewhat careless that the paper authors have not implemented, as this means that no byzantine primary coordinator is supported. We therefore assume that no full implementation of this protocol exists up to now.
 
 ## Implementation Details
 
