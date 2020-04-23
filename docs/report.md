@@ -84,7 +84,7 @@ After reaching an agreement, coordinator replicas send the agreement outcome to 
 
 ### Byzantine Agreement Algorithm
 
-Wenbing Zhao's  algorithm is based on the BFT algorithm by Castro  and Liskov.
+Wenbing Zhao's  algorithm is based on the BFT algorithm by Castro and Liskov.
 Byzantine Agreement Algorithm differs from BFT because BFT aims to agree on the ordering of the requests received while the Byzantine Agreement algorithm's objective is to agree on the outcome of a transaction.
 Byzantine Agreement Algorithm has three main phases:
 
