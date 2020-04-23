@@ -95,9 +95,9 @@ Byzantine Agreement Algorithm has three main phases:
 
 ### Thoughts on the paper
 
-Although the paper is mostly written in a clear and concise manner, some parts seems to be lacking and not fully clear to me.
+Although the paper is mostly written in a clear and concise manner, some parts seems to be lacking and not fully clear to us.
 
-The decision certificate contains a list of votes and registrations, both signed by the sender. WHile the signature for the registration contains the sender, the signature of the vote does not. We assume that this is a typo in the paper.
+The decision certificate contains a list of votes and registrations, both signed by the sender. While the signature for the registration contains the sender, the signature of the vote does not. We assume that this is a typo in the paper.
 
 p.39 "Furthermore, we assume that a correct participant *registers with f+1 or more correct coordinator replicas* before it sends a reply to the initiator when the transaction is propagated to this participant with a request coming from the initiator."  
 p.42 "Because the participant p is correct and responded to the initiator's request properly, it must have *registered with at lease 2f+1 coordinator replicas* prior to sending its reply to the initiator."  
