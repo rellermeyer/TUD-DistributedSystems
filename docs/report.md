@@ -239,10 +239,8 @@ No performance difference could be discerned. This might be related to the obser
   If we simulate anything less, we can only prove the system is not byzantine fault tolerant, not that it is.
 - Running the system in a distributed manner: actors on different hosts should be able to communicate with each other.  
 
-## Wrap-Up
+## Conclusion
 
-TODO: merge with conclusion  
-Conclusion/Summary
 how was the project for us? difficulties (3 exchange students)
 did we fulfill our expectations? why did we fail to run and evaluate our implementation in a distributed manner?
 
@@ -253,10 +251,8 @@ For this reason, he could not work on the project any more so the system could n
 
 The paper mentions WS-AT a few times, but they have made it more clear that it that they assume strong knowledge of WS-AT. Reading WS-AT helped a lot!
 
-* remote, corona
-* difficult for 4 persons to work on the same 2 or 3 main files
-
-## Conclusion
+- remote, corona
+- difficult for 4 persons to work on the same 2 or 3 main files
 
 We managed to implement the protocol to the extent that the paper did it also.
 We did though not run it in a distributed manner since when it was time to do that we where no longer at the same place and could not run it between out computers, without opening ports to the internet which we did not want to do.
