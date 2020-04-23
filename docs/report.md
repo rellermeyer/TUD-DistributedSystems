@@ -63,12 +63,17 @@ The byzantine fault tolerant protocol does also detect participants that sends d
 
 ### Distributed commit protocol
 
-In the distributed commit protocol presented in the paper they address the problem with a byzantine coordinator and solves it by distributing the coordinator into multiple coordinators that does a byzantine agreement on firstly which participants are part in the voting on a transaction, and secondly on what the participants voted.
+In the distributed commit protocol presented in the paper they address the problem with a byzantine coordinator and solves it by distributing the coordinator into multiple coordinators that does a byzantine agreement on firstly which participants are taking part in the voting on a transaction, and secondly on what the participants voted.
 The resulting system works so long as it has *"3f + 1"* coordinator replicas where  at most "*f*" coordinators are byzantine.
 
 Every participant must register with the coordinators before the commit protocol starts.
 One of the coordinators is a primary coordinator, the rest is called replicas.
 The primary coordinator can change, for example, if it becomes unavailable. 
+<!--A participant is called the initiator if it initiates the transaction. 
+First the participants register with the coordinators. 
+The protocol starts when the initator has send the transaction to all participants and then sends a initate commit request message to all coordinators.
+The coordinators then sends a prepare message to all registed participants. 
+The participants answer if they _can_ commit or not.  -->
 ??????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????
 The commit protocol starts when a replica receives a commit request from a participant, which from now on will be called initiator.
 Now the coordinator replica sends a *"prepare"* request to every registered participant and waits until enough *"prepared"* messages are received from the participants.
@@ -79,7 +84,6 @@ After reaching an agreement, coordinator replicas send the agreement outcome to 
 
 ![An example of the voting part of the BFTDCP protocol.](images/bftdcp.png){#fig:examplevoting width=75%}
 
-<!-- According to 2PC protocol a distributed transaction contains one coordinator and some participants, but in the byzantine distributed commit protocol several coordinators are used. -->
 
 ### Byzantine Agreement Algorithm
 
