@@ -180,9 +180,9 @@ The following tests were implemented using tests in/with Scala/Akka:
 
 - **Test 1:** Run with 1 coordinator replica and 1 participant, resulting in a commit.
 
-- **Test 2:** Run with 4 coordinator replica(s) and 1 participant, resulting in a commit.
+- **Test 2:** Run with 4 coordinator replicas and 1 participant, resulting in a commit.
 
-- **Test 3:** Run with 1 coordinator replica and 4 participant(s), resulting in a commit.
+- **Test 3:** Run with 1 coordinator replica and 4 participants, resulting in a commit.
 
 - **Test 4:** Run with 1 coordinator replica and 1 participant and have the participant unilaterally abort the transaction, resulting in an abort.
 
