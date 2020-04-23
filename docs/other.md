@@ -47,11 +47,6 @@
 >
 >Sobhan
 
-## Difficulties
-
-* remote, corona
-* difficult for 4 persons to work on the same 2 or 3 main files
-
 ## Insights
 
 "The initiator is regarded as a special participant" -> The initiator will also receive the commits/aborts by the coordinators.

@@ -62,7 +62,7 @@ Since the protocol introduces multiple coordinator, it becomes possible for the 
 
 In the distributed commit protocol presented in the paper they address the problem of a byzantine coordinator by replicating the coordinator. One of these replicas is the primary. The resulting system works correctly so long as it has *"3f + 1"* coordinator replicas where  at most "*f*" coordinators are byzantine.  
 
-One of the participants initiates the transaction, this is the initiator. The initiator propagates the transaction to the other participants. Then the participants register with the coordinators. 
+One of the participants initiates the transaction, this is the initiator. The initiator propagates the transaction to the other participants. Then the participants register with the coordinators.
 The protocol starts when the initiator has received confirmation that from all participants that they have registered with a sufficient and then sends a initiate commit request message to all coordinators.  
 The coordinators then sends a prepare message to all registered participants. The participants answer if they _can_ commit or not. If any cannot, an abort will take place, otherwise the protocol proceeds.  
 Now the coordinator replica sends a *"prepare"* request to every registered participant and waits until enough *"prepared"* messages are received from the participants.  
@@ -256,4 +256,4 @@ The paper mentions WS-AT a few times, but they have made it more clear that it t
 
 ## Conclusion
 
-We implemented the protocol to the same extent as the paper, so not including view changes. The ability to tolerate some byzantine behaviour of a non-primary coordinator replica has been demonstrated. It has also been shown that the presence of this byzantine coordinator replica this does not affect the performance when tested in operation on a single machine.
+To sum up, we managed to implement the protocol to the same extent as the paper, so not including view changes. The ability to tolerate some byzantine behaviour of a non-primary coordinator replica has been demonstrated. It has also been shown that the presence of this byzantine coordinator replica this does not affect the performance when tested in operation on a single machine.
