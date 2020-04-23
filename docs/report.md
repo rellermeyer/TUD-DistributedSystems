@@ -47,9 +47,9 @@ The objective list was divided into categories to state the priority of each obj
 
 There are multiple reasons to choose a byzantine fault tolerant distributed commit protocol.
 
-In the basic 2PC protocol there is a single coordinator, and multiple participants.
-This means that the coordinator is a single point of failure and that the coordinator is trusted by the participants.
-If the coordinator expresses byzantine behaviour, by for example telling one participant to commit and another to abort, the participants will trust the coordinator and therefore do as it says.
+In the basic 2PC protocol, a single coordinator is responsible for multiple participants.
+This is trusted by the participants and represents a single point of failure.
+If the coordinator expresses byzantine behaviour, for example by telling one participant to commit and another to abort, the participants will trust the coordinator and therefore do as it says.
 This would then lead to the participants having different views on what transactions are done, which defeats the purpose of the protocol, to reach an agreement. 
 
 That is the main problem the byzantine fault tolerant commit protocol solves. It can handle compromised/byzantine coordinators that for example sends different messages to different participants. Another problem the byzantine fault tolerant commit protocol solves is that it's able to continue working even if some coordinators fail or become unavailable. 
