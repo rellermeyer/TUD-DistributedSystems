@@ -142,7 +142,7 @@ Ultimately, we believe simulating all possible byzantine behaviours is infeasibl
 
 ## Functional Requirements
 
-Functional requirements were evaluated using Scala Tests with the *Akka Actor Test Kit* (```ScalaTestWithActorTestKit```).
+Functional requirements were evaluated using Scala Tests with the *Akka Actor Test Kit*[^testkit].
 We covered:
 
 - Basic Committing
@@ -197,6 +197,8 @@ Tests 1 through 14 succeed as expected.
 Tests 15 and 16 fail, this is expected since a byzantine primary coordinator necessarily leads to a view change, which has not been implemented.
 Test 17 checks that the need for a view change is detected, not that it is actually performed.
 Hence it also succeeds as described.
+
+[^testkit]: ```ScalaTestWithActorTestKit```
 
 ## Non-Functional Requirements
 
