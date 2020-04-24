@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <!-- This is a development logging configuration that logs to standard out, for an example of a production
+        logging config, see the Akka docs: https://doc.akka.io/docs/akka/2.6/typed/logging.html#logback -->
+    <appender name="STDOUT" target="System.out" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>[%date{ISO8601}] [%level] [%logger] [%marker] [%thread] - %msg {%mdc}%n</pattern>
+        </encoder>
+    </appender>
+
+    <appender name="ASYNC" class="ch.qos.logback.classic.AsyncAppender">
+        <queueSize>8192</queueSize>
+        <neverBlock>true</neverBlock>
+        <appender-ref ref="STDOUT" />
+    </appender>
+
+    <logger name="akka.cluster" level="WARN"/>
+    <logger name="akka.event" level="WARN"/>
+    <logger name="akka.remote" level="WARN"/>
+    <logger name="hyperdex" level="DEBUG"/>
+    <logger name="io.gatling.http.ahc" level="DEBUG"/>
+    <logger name="io.gatling.http.response" level="DEBUG"/>
+
+    <root level="INFO">
+        <appender-ref ref="ASYNC"/>
+    </root>
+</configuration>
