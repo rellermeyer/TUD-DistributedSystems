@@ -1,7 +1,7 @@
 # Experiments
 
 ## Instructions
-In order to run the experiments you need to run the `BenchmarkSpec` scala file. To simply run this immediately run:
+In order to run the experiments you need to run the `BenchmarkSpec` scala file. To simply run this go to the parent folder of this (dynamo) and run:
 
 ```sbt "testOnly dynamodb.benchmark.*"```
 
