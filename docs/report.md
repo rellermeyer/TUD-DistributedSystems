@@ -242,4 +242,6 @@ For this reason, he could not work on the project any more so the system could n
 
 ## Conclusion
 
-To sum up, we managed to implement the protocol to the same extent as the paper, so not including view changes. The ability to tolerate some byzantine behaviour of a non-primary coordinator replica has been demonstrated. It has also been shown that the presence of this byzantine coordinator replica this does not affect the performance when tested in operation on a single machine.
+To sum up, we managed to implement the protocol to the same extent as the paper, so not including view changes.
+The ability to tolerate some byzantine behaviour of a non-primary coordinator replica has been demonstrated.
+It has also been shown that the presence of this byzantine coordinator replica this does not affect the performance when tested in operation on a single machine.
