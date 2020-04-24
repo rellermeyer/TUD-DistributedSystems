@@ -118,7 +118,7 @@ Pseudo-code: The paper never mentions if the functions are thought to be execute
 ## Design Decisions
 
 We have used the **Akka** framework, which is based on Scala, to implement coordinators and participants as actors since it simplifies distributed and concurrent application development.
-Actors communicate with each other through messages using the Akka API.
+Actors communicate with each other through messages using the **Akka API**.
 
 We decided to use **Akka** since it proved a actor framework that could be used to avoid implementing the sending of messages.  
 As we're implementing a commit protocol which is based on messages, it makes sense to use a framework for passing messages.  
@@ -141,7 +141,7 @@ In the original paper, view changes were not implemented. We considered implemen
 The system has also not been ran in a distributed fashion.  
 The idea to get our implementation running in a distributed fashion is:  
 
-- Manually start Akka Actors in different JVMs (could be on the same or on different PCs)
+- Manually start **Akka Actors** in different JVMs (could be on the same or on different PCs)
 - Get the actors to communicate with each other using Artery (serialization of messages, actor discovery)
 - Key distribution might be hard, disable the checks in code
 
@@ -149,7 +149,7 @@ The idea to get our implementation running in a distributed fashion is:
 
 ### Functional requirements
 
-Functional requirements were evaluated using the Akka Actor Test Kit with Scala Tests (```ScalaTestWithActorTestKit```). We considered:  
+Functional requirements were evaluated using the **Akka Actor Test Kit** with **Scala Tests** (```ScalaTestWithActorTestKit```). We considered:  
 
 - Basic Committing  
 - Aborting  
@@ -163,7 +163,7 @@ These tests ensure the implementation correctness by creating protocol instances
 A different number of transactions, coordinator replicas and participants is used to test the system's resilience to multiple message passing.  
 The ability to abort a transaction was also tested.  
 
-The following tests were implemented using tests in/with Scala/Akka:  
+The following tests were implemented:  
 
 - **Test 1:** Run with 1 coordinator replica and 1 participant, resulting in a commit.
 
