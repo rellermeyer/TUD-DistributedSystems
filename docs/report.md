@@ -129,11 +129,11 @@ After that the protocol starts.
 
 ## Implementation Details
 
-These messages are signed using public key technology so that no unidentified participant can interfere.
+#### Message signing
 
-- not using a state machine
-- the signing is implemented using a master certificate that signs all the individual certificates (of the coordinators and participants)
-- it is currently not checked whether the message originates (with regards to the from-field) from the same actor as it is signed by (spoofing is still possible)
+These messages are signed using public key technology so that no unidentified participant can interfere.  
+The signing is implemented using a master certificate that signs all the individual certificates (of the coordinators and participants).  
+It is currently not checked whether the message originates (with regards to the from-field) from the same actor as it is signed by (spoofing is still possible).  
 
 #### Shortcomings:
 
