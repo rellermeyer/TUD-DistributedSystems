@@ -117,17 +117,15 @@ Pseudo-code: The paper never mentions if the functions are thought to be execute
 
 ## Design Decisions
 
-We have used the **Akka** framework to implement coordinators and participants as actors since it simplifies distributed and concurrent application development.
+We have used the **Akka** framework, which is based on Scala, to implement coordinators and participants as actors since it simplifies distributed and concurrent application development.
 Actors communicate with each other through messages using the Akka API.
 
-We decided to use **Akka** since it proved a actor framework that could be used to avoid implementing the sending of messages.
+We decided to use **Akka** since it proved a actor framework that could be used to avoid implementing the sending of messages.  
+As we're implementing a commit protocol which is based on messages, it makes sense to use a framework for passing messages.  
+As we are restricted to Scala and **Akka** seems to be one of the most-used frameworks (actor framework) for that purpose, we chose to use that.  
 We created two typed of actors, coordinators and participants.
 From the tests we created we initialize a couple of coordinators and participants (depending on the test case) and send a initialization message from one of the participants (the initiator) to the coordinators.
 After that the protocol starts.
-
-As we're implementing a commit protocol which is based on messages, it makes sense to use a framework for passing messages.
-As we are restricted to Scala and **Akka** seems to be one of the most-used frameworks (actor framework) for that purpose, we chose to use that.
-We decided against directly implementing participants and coordinators as a FSM as our team is more familiar with more imperative programming. Furthermore, in the beginning we were not sure if we understood all parts of the paper.
 
 ### View Changes
 
