@@ -53,7 +53,6 @@ This would then lead to the participants having different views on what transact
 That is the main problem the byzantine fault tolerant commit protocol solves. It can handle compromised/byzantine coordinators that for example sends different messages to different participants. Another problem the byzantine fault tolerant commit protocol solves is that it's able to continue working even if some coordinators fail or become unavailable.
 Compare this with the 2PC protocol where the protocol would stop working if the coordinator stops working.
 Thus it improves the availability of the system compared to 2PC.
-This can be especially useful if the coordinators are distributed over multiple datacenters or even countries, making sure the system continues to work even if some datacenters, or even a country (assuming most servers are in other countries), experiences problems.
 Since the protocol introduces multiple coordinators, it becomes possible for the participant to send different messages to the coordinators.
 The authors have thought of this and made sure that the protocol detects and handles this.
 
