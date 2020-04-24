@@ -103,7 +103,8 @@ Byzantine Agreement Algorithm has three phases:
 
 - **Ba-commit phase**:
   A *ba-commit* message contains the view and transaction id, decision certificate's digest, transaction outcome and sender replica id.
-  A replica is said to have ba-committed if it receives $2f+1$ matching *ba-commit* messages from different replicas and the agreed outcome is sent to every participant in the current transaction.
+  A replica is said to have ba-committed if it receives $2f+1$ matching *ba-commit* messages from different replicas.
+  The agreed outcome is sent to every participant in the current transaction.
   *Ba-commit* messages are verified alike *ba-prepare* messages.
 
 ### Thoughts on the Paper
