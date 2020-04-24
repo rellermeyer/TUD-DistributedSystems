@@ -163,7 +163,7 @@ In the original paper, view changes were not implemented.
 We considered implementing these, but ultimately set other priorities.
 The system has also not been ran in a distributed fashion.
 
-The idea to get our implementation running in a distributed fashion is:  
+The idea to get our implementation running in a distributed fashion is:
 
 - Manually start **Akka Actors** in different JVMs (could be on the same or on different PCs)
 - Get the actors to communicate with each other using Artery (serialization of messages, actor discovery)
@@ -174,12 +174,12 @@ The idea to get our implementation running in a distributed fashion is:
 ### Functional requirements
 
 Functional requirements were evaluated using the **Akka Actor Test Kit** with **Scala Tests** (```ScalaTestWithActorTestKit```).
-We considered:  
+We considered:
 
-- Basic Committing  
-- Aborting  
-- Unilateral aborting  
-- Byzantine behavior tolerance  
+- Basic Committing
+- Aborting
+- Unilateral aborting
+- Byzantine behavior tolerance
 
 Along with the development we have built a set of tests which tested every feature we implemented.
 This way we ensured that every module did its work properly.
@@ -189,7 +189,7 @@ These tests ensure the implementation correctness by creating protocol instances
 A different number of transactions, coordinator replicas and participants is used to test the system's resilience to multiple message passing.
 The ability to abort a transaction was also tested.
 
-The following tests were implemented:  
+The following tests were implemented:
 
 - **Test 1:** Run with 1 coordinator replica and 1 participant, resulting in a commit.
 
