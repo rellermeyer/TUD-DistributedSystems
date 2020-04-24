@@ -1,0 +1,10 @@
+{
+  "simulation": "hyperdex.Experiment1Put",
+  "simulationId": "experiment1put",
+  "start": 1586181493631,
+  "description": "",
+  "scenarios": ["Experiment: Put after x records"],
+  "assertions": [
+
+  ]
+}

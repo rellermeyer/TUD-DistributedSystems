@@ -1,0 +1,10 @@
+{
+  "simulation": "hyperdex.Experiment2",
+  "simulationId": "experiment2",
+  "start": 1586176617709,
+  "description": "",
+  "scenarios": ["SearchSimulation"],
+  "assertions": [
+
+  ]
+}

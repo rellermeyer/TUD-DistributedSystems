@@ -1,0 +1,28 @@
+version: '3'
+services:
+  gateway:
+    tty: true
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: "hyperdex:latest"
+    command: "java -jar hyperdex.jar gateway 25251 ${NUM_DATANODES?Please set NUM_DATANODES}"
+    networks:
+      akka-network:
+        ipv4_address: 172.18.0.22
+    ports:
+      - "8080:8080"
+  datanode:
+    tty: true
+    image: "hyperdex:latest"
+    command: "java -jar hyperdex.jar data 25252"
+    depends_on:
+      - gateway
+    networks:
+      - akka-network
+networks:
+  akka-network:
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.18.0.0/16
