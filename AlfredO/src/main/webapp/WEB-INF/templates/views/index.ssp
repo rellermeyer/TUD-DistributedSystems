@@ -1,0 +1,11 @@
+<%@ val google_maps_api_key: String%>
+
+<script async defer
+src="https://maps.googleapis.com/maps/api/js?key=${google_maps_api_key}"></script>
+
+<div id="map"></div>
+
+<section class="section">
+    <div id="service_list" class="section">
+    </div>
+</section>

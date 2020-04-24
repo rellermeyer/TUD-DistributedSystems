@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<%@ val body: String %>
+
+<html class="is-fullheight is-fullwidth">
+    <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.8.0/css/bulma.min.css">
+        <link rel="stylesheet" href="/styles/styles.css">
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+        <script type="text/javascript" src="/js/script.js"></script>
+        <title>AlfredO</title>
+    </head>
+    <body class="is-fullheight is-fullwidth">
+        <div class="hero is-primary">
+            <div class="hero-body is-bold">
+                <h1 class="title">AlfredO</h1>
+                <h2 class="subtitle">discover your proximity</h2>
+            </div>
+        </div>
+        <section class="section">
+            <div class="level">
+                <div class="level-item">
+                    <button class="button is-warning" id="geolocation-button">GEO-Locate</button>
+                </div>
+            </div>
+        </section>
+        <%= unescape(body) %>
+    </body>
+</html>
