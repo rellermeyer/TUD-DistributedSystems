@@ -60,7 +60,7 @@ Thus it improves the availability of the system compared to 2PC.
 Since the protocol introduces multiple coordinators, it becomes possible for the participant to send different messages to the coordinators.
 The authors have thought of this and made sure that the protocol detects and handles this.
 
-### Distributed commit protocol
+### Distributed Commit Protocol
 
 In the distributed commit protocol presented in the paper the author address the problem of a byzantine coordinator by replicating the coordinator.
 One of these replicas is the primary.
@@ -106,7 +106,7 @@ Byzantine Agreement Algorithm has three phases:
   A replica is said to have ba-committed if it receives $2f+1$ matching *ba-commit* messages from different replicas and the agreed outcome is sent to every participant in the current transaction.
   *Ba-commit* messages are verified alike *ba-prepare* messages.
 
-### Thoughts on the paper
+### Thoughts on the Paper
 
 Although the paper is mostly written in a clear and concise manner, some parts seems to be lacking and not fully clear to us.
 
@@ -152,7 +152,7 @@ After that the protocol starts.
 
 ## Implementation Details
 
-### Message signing
+### Message Signing
 
 These messages are signed using public key technology so that no unidentified participant can interfere.
 
@@ -160,7 +160,7 @@ The signing is implemented using a master certificate that signs all the individ
 
 It is currently not checked whether the message originates (with regards to the from-field) from the same actor as it is signed by (spoofing is still possible).
 
-### Shortcomings
+### Shortcomings of our Implementation
 
 In the original paper, view changes were not implemented.
 We considered implementing these, but ultimately set other priorities.
@@ -174,7 +174,7 @@ The idea to get our implementation running in a distributed fashion is:
 
 ## Evaluation
 
-### Functional requirements
+### Functional Requirements
 
 Functional requirements were evaluated using the **Akka Actor Test Kit** with **Scala Tests** (```ScalaTestWithActorTestKit```).
 We considered:
