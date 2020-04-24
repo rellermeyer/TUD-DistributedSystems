@@ -137,8 +137,8 @@ Furthermore we did not ran the system in a distributed fashion, the reason is ex
 
 ## Functional Requirements
 
-Functional requirements were evaluated using the **Akka Actor Test Kit** with **Scala Tests** (```ScalaTestWithActorTestKit```).
-We considered:
+Functional requirements were evaluated using Scala Tests with the **Akka Actor Test Kit** (```ScalaTestWithActorTestKit```).
+We covered:
 
 - Basic Committing
 - Aborting
@@ -146,12 +146,11 @@ We considered:
 - Byzantine behavior tolerance
 
 Along with the development we have built a set of tests which tested every feature we implemented.
-This way we ensured that every module did its work properly.
+This way we ensured that every module works properly.
 
 We have built a total of 17 tests through which coordinators and participants exchange messages and perform the corresponding message verification and decision making processes.
-These tests ensure the implementation correctness by creating protocol instances and making coordinator replicas and participants conduct several distributed commit protocols.
+These tests ensure the implementation correctness.
 A different number of transactions, coordinator replicas and participants is used to test the system's resilience to multiple message passing.
-The ability to abort a transaction was also tested.
 
 The following tests were implemented:
 
@@ -190,8 +189,8 @@ The following tests were implemented:
 - **Test 17:** Run with 1 participant and 1 slow coordinator which will exceed the timeout, resulting in a view change being suggested.
 
 Tests 1 through 14 succeed as expected.
-Tests 15 and 16 fail, since the solution to a byzantine primary coordinator replica is to perform a view change, which has not been implemented.
-Test 17 requires only that the need for a view change is detected, not that it is actually performed.
+Tests 15 and 16 fail, this is expected since a byzantine primary coordinator necessarily leads to a view change, which has not been implemented.
+Test 17 checks that the need for a view change is detected, not that it is actually performed.
 Hence it also succeeds as described.
 
 ## Non-Functional Requirements
