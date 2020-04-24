@@ -1,0 +1,26 @@
+@startuml
+
+() Client
+
+
+package "Node" {
+Client -right-> [ExternalServer]
+
+[InternalClient] --> [InternalServer] : HTTP
+[InternalClient] -> [ValueRepository]
+[InternalServer] -> [ValueRepository] : use
+[ExternalServer] - [InternalClient]
+[InternalClient] -> [DistributedHashTable] : use
+}
+
+
+
+package "Other Nodes" {
+[InternalServer] as OtherInternal
+[ValueRepository] as OtherRepository
+
+OtherInternal --> OtherRepository
+InternalClient --> OtherInternal : HTTP
+}
+
+@enduml
