@@ -230,7 +230,7 @@ For this reason, he could not work on the project any more so the system could n
   Expanding this could be interesting, but simulating more byzantine behaviours would have a large impact on code complexity.
   Ultimately, we believe simulating all possible byzantine behaviours is impossible.
   If we simulate anything less, we can only prove the system is not byzantine fault tolerant, not that it is.
-- Running the system in a distributed manner: actors on different hosts should be able to communicate with each other.  
+- Running the system in a distributed manner: actors on different hosts should be able to communicate with each other.
 - Implementing view changes.  
 
 ## Conclusion
