@@ -118,23 +118,20 @@ After that the protocol starts.
 
 ## Message Signing
 
-These messages are signed using public key technology so that no unidentified participant can interfere.
-
+In order to avoid interference on the untrusted networ, messares are signed using public key cryptography.
 The signing is implemented using a master certificate that signs all the individual certificates (of the coordinators and participants).
 
-It is currently not checked whether the message originates (with regards to the from-field) from the same actor as it is signed by (spoofing is still possible).
+As of now, the stated message origin is not cross-validated with the certificate yet, which means that a faulty actor may spoof messages.
 
 ## Shortcomings of our Implementation
 
-In the original paper, view changes were not implemented.
-We considered implementing these, but ultimately set other priorities.
-The system has also not been ran in a distributed fashion.
+In the original paper, view changes were not implemented and we therefore declared their implementation out-of-scope.
 
-The idea to get our implementation running in a distributed fashion is:
+Furthermore we did not ran the system in a distributed fashion, the reason is explained in the [Discussion chapter](#discussion). We do have some ideas however:
 
-- Manually start **Akka Actors** in different JVMs (could be on the same or on different PCs)
-- Get the actors to communicate with each other using Artery (serialization of messages, actor discovery)
-- Key distribution might be hard, disable the checks in code
+- Manually starting **Akka Actors** in different JVMs (optional: could be on the same or on different PCs).
+- Getting the actors to communicate with each other using *Artery* (serialization of messages, actor discovery).
+- Reworking key distribution (hard) or disabling signature checks
 
 # Evaluation
 
