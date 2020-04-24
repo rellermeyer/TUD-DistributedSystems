@@ -126,7 +126,7 @@ Initially it was not clear that the initiator propagates the transaction to all 
 
 Shouldn't the view-changes be voted on?
 
-> When the primary for view v+1 receives $2f+1$ valid view change messages [...], it [...] multicasts a new view message for view $v+1$.
+> When the primary for view $v+1$ receives $2f+1$ valid view change messages [...], it [...] multicasts a new view message for view $v+1$.
 
 What if the new primary is byzantine (and does not send out the new view), how is it guaranteed that another replica takes over to view $v+2$?
 
