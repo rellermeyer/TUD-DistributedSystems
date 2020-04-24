@@ -109,7 +109,7 @@ Byzantine Agreement Algorithm has three phases:
 
 # Design Decisions
 
-As we're implementing a commit protocol which is based on messages, it makes sense to use an actor framewor.
+As we're implementing a commit protocol which is based on messages, it makes sense to use an actor framework.
 As we are restricted to Scala and *Akka* seems to be one of the most-common actor frameworks, we decided to use it and created two typed of actors, coordinators and participants.
 In the tests we created we initialize a couple of coordinators and participants (depending on the test case) and send a initialization message from one of the participants (the initiator) to the coordinators.
 After that the protocol starts.
