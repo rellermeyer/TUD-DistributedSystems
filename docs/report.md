@@ -1,7 +1,7 @@
 ---
 title: "Final Report: Byzantine-CP"
 author: [Douwe Brinkhorst, Patrik Kron, Michael Leichtfried, Miguel Lucas]
-date: "2020-04-23"
+date: "2020-04-24"
 subject: "Distributed Systems (Group 7)"
 coursecode: "IN4391"
 keywords: [distributed, commit protocol, atomic commit, byzantine]
