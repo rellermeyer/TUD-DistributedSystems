@@ -107,35 +107,6 @@ Byzantine Agreement Algorithm has three phases:
   The agreed outcome is sent to every participant in the current transaction.
   *Ba-commit* messages are verified alike *ba-prepare* messages.
 
-### Thoughts on the Paper
-
-Although the paper is mostly written in a clear and concise manner, some parts seems to be lacking and not fully clear to us.
-
-The decision certificate contains a list of votes and registrations, both signed by the sender.
-While the signature for the registration contains the sender, the signature of the vote does not.
-We assume that this is a typo in the paper.
-
-> Furthermore, we assume that a correct participant *registers with $f+1$ or more correct coordinator replicas* before it sends a reply to the initiator when the transaction is propagated to this participant with a request coming from the initiator. (p.39)
-
-vs.
-
-> Because the participant p is correct and responded to the initiator's request properly, it must have "registered with at least $2f+1$ coordinator replicas" prior to sending its reply to the initiator. (p.42)
-
-The number of registrations is the *same* as the first specifically mentions *correct* coordinator replicas.
-Therefore the participant actually has to register with f more replicas.
-
-Initially it was not clear that the initiator propagates the transaction to all participants, as the Introduction specifically mentions the participants-have-to-know-all-other-participants as a drawback of another protocol.
-
-> A backup suspects the primary and initiates a view change immediately if the ba-pre-prepare message fails the verification
-
-Shouldn't the view-changes be voted on?
-
-> When the primary for view $v+1$ receives $2f+1$ valid view change messages [...], it [...] multicasts a new view message for view $v+1$.
-
-What if the new primary is byzantine (and does not send out the new view), how is it guaranteed that another replica takes over to view $v+2$?
-
-Pseudo-code: The paper never mentions if the functions are thought to be executed on coordinator or participant side.
-
 ## Design Decisions
 
 We have used the **Akka** framework, which is based on Scala, to implement coordinators and participants as actors since it simplifies distributed and concurrent application development.
