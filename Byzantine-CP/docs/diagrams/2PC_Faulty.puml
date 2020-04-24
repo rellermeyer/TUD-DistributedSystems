@@ -1,0 +1,12 @@
+@startuml
+skinparam monochrome true
+Cooridnator -> Participant1 : 1 Prepare transaction 2
+Cooridnator -> Participant2 : 1 Prepare transaction 2
+
+Participant1 -> Cooridnator : 2 OK
+Participant2 -> Cooridnator : 2 OK
+
+Cooridnator -> Participant1 : 3 Commit
+Cooridnator -> Participant2 : 3 Abort (Incorrect)
+
+@enduml
