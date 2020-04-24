@@ -27,12 +27,14 @@ This protocol tolerates byzantine coordinator and limited faulty participant beh
 We set objectives from the beginning in order to figure out and organise the work that had to be done.
 The objective list was divided into categories to state the priority of each objective.
 
-- **Must have:** features the project must have in order to fulfill the basic requirements.
+- **Must have:**
+  features the project must have in order to fulfill the basic requirements.
   - Implementation for coordinators.
   - Implementation for participants/initiators.
   - System testing infrastructure, including coordinator byzantine behaviours testing.
 
-- **Should have/Could have**: features that might be implemented depending on time constraints.
+- **Should have/Could have**:
+  features that might be implemented depending on time constraints.
   - Distributed deployment: test the system in multiple interconnected machines to simulate a realistic environment.
   - Message signing and signature checking.
 
@@ -87,7 +89,8 @@ Wenbing Zhao's algorithm is based on the BFT algorithm by Castro and Liskov.
 While the aim of the BFT algorithm is designed to make an agreement on the ordering of the requests received, the Byzantine Agreement Algorithm's objective is to agree on the outcome of a transaction.
 Byzantine Agreement Algorithm has three phases:
 
-- **Ba-pre-prepare phase**: In this phase the primary sends a *ba-pre-prepare* message to all other replicas.
+- **Ba-pre-prepare phase**:
+  In this phase the primary sends a *ba-pre-prepare* message to all other replicas.
   The *ba-pre-prepare* message contains the following information: view id, transaction id, transaction outcome and decision certificate.
   The decision certificate is a collection of records of each participant's registration and vote for every transaction.
   A new view is requested and created if the *ba-pre-prepare* message fails any verification (signed by the primary, coherent transaction and view and has not accepted a *ba-pre-prepare* in this view-transaction).
