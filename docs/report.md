@@ -62,12 +62,14 @@ The authors have thought of this and made sure that the protocol detects and han
 
 In the distributed commit protocol presented in the paper the author address the problem of a byzantine coordinator by replicating the coordinator. One of these replicas is the primary. The resulting system works correctly so long as it has *"3f + 1"* coordinator replicas where at most "*f*" coordinators are byzantine.  
 
-One of the participants initiates the transaction, this is the initiator. The initiator propagates the transaction to the other participants. Then the participants register with the coordinators.
-The protocol starts when the initiator has received confirmation from all participants, that they have registered with *"2f + 1"*  coordinators, and then sends a initiate commit request message to all coordinators.  
-The coordinators then sends a prepare message to all registered participants. The participants answer if they can commit or not. If any cannot, an abort will take place, otherwise the protocol proceeds.  
-Now the coordinator replica sends a *"prepare"* request to every registered participant and waits until enough *"prepared"* messages are received from the participants.  
-When *"prepared"* messages are received an instance of a *"Byzantine Agreement Algorithm"* is created, where a byzantine agreement is attempted on firstly which participants are taking part in the voting on a transaction, and secondly on what the participants voted. This is described in more detail in the "Byzantine Agreement Algorithm" section.  
-After reaching an agreement, coordinator replicas send the agreement outcome to participants, which will only commit the transaction once *"f + 1"* similar outcomes are received, to ensure that they reject the answer of byzantine coordinators. Since the protocol works with up to "*f*" byzantine coordinators, when *"f+1"* messages are received the participant knows that it has not received the message from a byzantine coordinator.  
+One of the participants, which we call initiator, initiates a transaction. This initiator is responsible for propagating the transaction to the other participants that are part of the transaction. Then the participants register with the coordinators.
+The protocol starts when the initiator has received confirmation from all participants, that they have registered with *"2f + 1"*  coordinators, and then sends a initiate commit request message to all coordinators.
+
+The coordinators then sends a prepare message to all registered participants. The participants answer whether they can commit. If any of them could not prepare successfully, an abort will take place, otherwise the protocol proceeds.
+
+The coordinators continue by creating an instance of the *"Byzantine Agreement Algorithm"*, where an agreement is attempted on both which participants are taking part in the transaction as well as the votes of the participants. This is described in more detail in the "Byzantine Agreement Algorithm" section.
+
+After reaching an agreement, coordinator replicas send the agreement outcome to participants, which will only commit the transaction once *"f + 1"* similar outcomes are received, to ensure that they reject the answer of byzantine coordinators. Since the protocol allows up to "*f*" byzantine coordinators, when *"f+1"* messages are received by the participants (including the initiator, which is a participant), they can be sure that at least one message is from a non-byzantine coordinator.
 
 ![An example of the voting part of the BFTDCP protocol.](images/bftdcp.png){#fig:examplevoting width=75%}
 
