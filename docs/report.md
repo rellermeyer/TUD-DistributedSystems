@@ -94,7 +94,7 @@ Byzantine Agreement Algorithm has three phases:
 
 - **Ba-prepare phase**:
   Once a replica has ba-pre-prepared it multicasts a *ba-prepare* message to all other replicas.
-  A *ba-prepare* message contains the view id, transaction id, digested decision certificate, transaction outcome and replica id $i$.
+  The *ba-prepare* message contains the view id, transaction id, digested decision certificate, transaction outcome and replica id $i$.
   The message is accepted if it is correctly signed by replica $i$, the receiving replica's view and transaction id match message view and transaction's id, message's transaction outcome matches receiving replica transaction outcome and decision certificate's digest matches the local decision certificate.
   When a replica collects $2f$ matching *ba-prepare* messages from different replicas it can make a decision for the current transaction and sends a *ba-commit* message to all other replicas.
 
