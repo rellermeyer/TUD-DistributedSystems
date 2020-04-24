@@ -20,7 +20,7 @@ The Two Phase Commit (2PC) protocol addresses the issue of implementing a distri
 The main idea of the byzantine-commit-protocol is the replication of the coordinator and running a Byzantine agreement algorithm among the replicas.
 This protocol tolerates byzantine coordinator and limited faulty participant behaviour.
 
-[^1]: "A Byzantine Fault Tolerant Distributed Commit Protocol"* by Wenbing Zhao (Department of Electrical and Computer Engineering, Cleveland State University), <https://ieeexplore.ieee.org/document/4351387>
+[^1]: "A Byzantine Fault Tolerant Distributed Commit Protocol" by Wenbing Zhao (Department of Electrical and Computer Engineering, Cleveland State University), <https://ieeexplore.ieee.org/document/4351387>
 
 ## Objectives
 
@@ -60,16 +60,16 @@ The authors have thought of this and made sure that the protocol detects and han
 
 ### Distributed commit protocol
 
-In the distributed commit protocol presented in the paper the author address the problem of a byzantine coordinator by replicating the coordinator. One of these replicas is the primary. The resulting system works correctly so long as it has *3f+1* coordinator replicas where at most *f* coordinators are byzantine.  
+In the distributed commit protocol presented in the paper the author address the problem of a byzantine coordinator by replicating the coordinator. One of these replicas is the primary. The resulting system works correctly so long as it has $3f+1$ coordinator replicas where at most *f* coordinators are byzantine.  
 
 One of the participants, which we call initiator, initiates a transaction. This initiator is responsible for propagating the transaction to the other participants that are part of the transaction. Then the participants register with the coordinators.
-The protocol starts when the initiator has received confirmation from all participants, that they have registered with *2f+1*  coordinators, and then sends a initiate commit request message to all coordinators.
+The protocol starts when the initiator has received confirmation from all participants, that they have registered with $2f+1$  coordinators, and then sends a initiate commit request message to all coordinators.
 
 The coordinators then sends a prepare message to all registered participants. The participants answer whether they can commit. If any of them could not prepare successfully, an abort will take place, otherwise the protocol proceeds.
 
-The coordinators continue by creating an instance of the *Byzantine Agreement Algorithm*, where an agreement is attempted on both which participants are taking part in the transaction as well as the votes of the participants. This is described in more detail in the "Byzantine Agreement Algorithm" section.
+The coordinators continue by creating an instance of the *Byzantine Agreement Algorithm*, where an agreement is attempted on both which participants are taking part in the transaction as well as the votes of the participants. This is described in more detail in the ["Byzantine Agreement Algorithm" section](#byzantine-agreement-algorithm).
 
-After reaching an agreement, coordinator replicas send the agreement outcome to participants, which will only commit the transaction once *f+1* similar outcomes are received, to ensure that they reject the answer of byzantine coordinators. Since the protocol allows up to *f* byzantine coordinators, when *f+1* messages are received by the participants (including the initiator, which is a participant), they can be sure that at least one message is from a non-byzantine coordinator.
+After reaching an agreement, coordinator replicas send the agreement outcome to participants, which will only commit the transaction once $f+1$ similar outcomes are received, to ensure that they reject the answer of byzantine coordinators. Since the protocol allows up to $f$ byzantine coordinators, when $f+1$ messages are received by the participants (including the initiator, which is a participant), they can be sure that at least one message is from a non-byzantine coordinator.
 
 ![An example of the voting part of the BFTDCP protocol.](images/bftdcp.png){#fig:examplevoting width=75%}
 
@@ -82,14 +82,16 @@ Byzantine Agreement Algorithm has three phases:
   The *ba-pre-prepare* message contains the following information: view id, transaction id,  transaction outcome and decision certificate.
   The decision certificate is a collection of records of each participant's registration and vote for every transaction.
   A new view is requested and created if the *ba-pre-prepare* message fails any verification (signed by the primary, coherent transaction and view and has not accepted a *ba-pre-prepare* in this view-transaction).
-  Once a replica has ba-pre-prepared it multicasts a *pre-prepared* message to all other replicas.
 
-- **Ba-prepare phase**: A *ba-prepare* message contains the view id, transaction id, digested decision certificate, transaction outcome and replica id (*i*).
-  The message is accepted if it is correctly signed by replica *i*, the receiving replica's view and transaction id match message view and transaction's id, message's transaction outcome matches receiving replica transaction outcome and decision certificate's digest matches the local decision certificate.
-  When a replica collects *2f* matching *ba-prepare* messages from different replicas it can make a decision for the current transaction and sends a *ba-commit* message to all other replicas.
+- **Ba-prepare phase**:
+  Once a replica has ba-pre-prepared it multicasts a *ba-prepare* message to all other replicas.
+  A *ba-prepare* message contains the view id, transaction id, digested decision certificate, transaction outcome and replica id $i$.
+  The message is accepted if it is correctly signed by replica $i$, the receiving replica's view and transaction id match message view and transaction's id, message's transaction outcome matches receiving replica transaction outcome and decision certificate's digest matches the local decision certificate.
+  When a replica collects $2f$ matching *ba-prepare* messages from different replicas it can make a decision for the current transaction and sends a *ba-commit* message to all other replicas.
 
-- **Ba-commit phase**: A *ba-commit* message contains the view and transaction id, decision certificate's digest, transaction outcome and sender replica id.
-  A replica is said to have ba-committed if it receives *2f+1* matching *ba-commit* messages from different replicas and the agreed outcome is sent to every participant in the current transaction.
+- **Ba-commit phase**:
+  A *ba-commit* message contains the view and transaction id, decision certificate's digest, transaction outcome and sender replica id.
+  A replica is said to have ba-committed if it receives $2f+1$ matching *ba-commit* messages from different replicas and the agreed outcome is sent to every participant in the current transaction.
   *Ba-commit* messages are verified alike *ba-prepare* messages.
 
 ### Thoughts on the paper
@@ -99,8 +101,12 @@ Although the paper is mostly written in a clear and concise manner, some parts s
 The decision certificate contains a list of votes and registrations, both signed by the sender.
 While the signature for the registration contains the sender, the signature of the vote does not. We assume that this is a typo in the paper.
 
-p.39 "Furthermore, we assume that a correct participant *registers with *f+1* or more correct coordinator replicas* before it sends a reply to the initiator when the transaction is propagated to this participant with a request coming from the initiator."  
-p.42 "Because the participant p is correct and responded to the initiator's request properly, it must have "registered with at least *2f+1* coordinator replicas" prior to sending its reply to the initiator."  
+> Furthermore, we assume that a correct participant *registers with $f+1$ or more correct coordinator replicas* before it sends a reply to the initiator when the transaction is propagated to this participant with a request coming from the initiator. (p.39)
+
+vs.
+
+> Because the participant p is correct and responded to the initiator's request properly, it must have "registered with at least $2f+1$ coordinator replicas" prior to sending its reply to the initiator. (p.42)
+
 -- The number of registrations is the *same* as the first specifically mentions *correct* coordinator replicas. Therefore the participant actually has to register with f more replicas.
 
 Initially it was not clear that the initiator propagates the transaction to all participants, as the Introduction specifically mentions the participants-have-to-know-all-other-participants as a drawback of another protocol.
@@ -109,9 +115,9 @@ Initially it was not clear that the initiator propagates the transaction to all 
 
 Shouldn't the view-changes be voted on?
 
-> When the primary for view v+1 receives 2f+1 valid view change messages [...], it [...] multicasts a new view message for view v+1.
+> When the primary for view v+1 receives $2f+1$ valid view change messages [...], it [...] multicasts a new view message for view $v+1$.
 
-What if the new primary is byzantine (and does not send out the new view), how is it guaranteed that another replica takes over to view v+2
+What if the new primary is byzantine (and does not send out the new view), how is it guaranteed that another replica takes over to view $v+2$?
 
 Pseudo-code: The paper never mentions if the functions are thought to be executed on coordinator or participant side.
 
@@ -218,6 +224,7 @@ No performance difference could be discerned. This might be related to the obser
 ![Latency comparison between normal operation and a byzantine non-primary coordinator](./images/latency.png){#fig:evaluationchart1 width=75%}
 
 ## Discussion
+
 The main challenge of the project was to understand who the system was supposed to work. It was not very clear from the original paper that the system was very heavily depending on the WS-AT protocol, and that it therefore was crucial to understand it before understanding the byzantine fault tolerant distributed commit protocol. The coronavirus situation also made it necessary for three of us to return to our home countries urgently, that led us to loose some time in the last few weeks of the project, which we could not fully recover in the extra week we got, since the new courses had started then.
 
 One of our team members, Miguel Lucas, was responsible for testing the system in a distributed fashion, but due to the coronavirus situation he had to return to his country and finish his studies at his home university.
