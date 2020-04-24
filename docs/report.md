@@ -129,7 +129,7 @@ In the original paper, view changes were not implemented and we therefore declar
 
 Furthermore we did not ran the system in a distributed fashion, the reason is explained in the [Discussion chapter](#discussion). We do have some ideas however:
 
-- Manually starting **Akka Actors** in different JVMs (optional: could be on the same or on different PCs).
+- Manually starting *Akka Actors* in different JVMs (optional: could be on the same or on different PCs).
 - Getting the actors to communicate with each other using *Artery* (serialization of messages, actor discovery).
 - Reworking key distribution (hard) or disabling signature checks
 
@@ -137,7 +137,7 @@ Furthermore we did not ran the system in a distributed fashion, the reason is ex
 
 ## Functional Requirements
 
-Functional requirements were evaluated using Scala Tests with the **Akka Actor Test Kit** (```ScalaTestWithActorTestKit```).
+Functional requirements were evaluated using Scala Tests with the *Akka Actor Test Kit* (```ScalaTestWithActorTestKit```).
 We covered:
 
 - Basic Committing
