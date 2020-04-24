@@ -1,6 +1,6 @@
 # Byzantine-CP: Implementing a Byzantine Fault Tolerant Distributed Commit Protocol
 
-This repository contains an implementation for the protocol described in the paper *"A Byzantine Fault Tolerant Distributed Commit Protocol"* by Wenbing Zhao[^1].
+This repository contains an implementation for the protocol described in the paper *"A Byzantine Fault Tolerant Distributed Commit Protocol"* by Wenbing Zhao[^1]. You should be able to import the project in your favourite Scala-IDE.
 
 [^1]: https://ieeexplore.ieee.org/document/4351387
 
@@ -9,6 +9,7 @@ This repository contains an implementation for the protocol described in the pap
 - [Milestone 1 (Initial Design - Email to TA)](docs/milestone1_email.md)
 - [Milestone 2 (Evaluation)](docs/milestone2_report.md)
 - [Milestone 3 (Final Report)](docs/milestone3_report.md)
+- [Presentation](docs/presentation.pdf)
 
 ## About Us
 
