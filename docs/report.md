@@ -11,7 +11,7 @@ titlepageTUDelft: "true"
 papersize: "a4"
 ---
 
-## Introduction
+# Introduction
 
 In the past weeks we have implemented the system described in *"A Byzantine Fault Tolerant Distributed Commit Protocol"* by Wenbing Zhao[^1].
 
@@ -22,7 +22,7 @@ This protocol tolerates byzantine coordinator and limited faulty participant beh
 
 [^1]: "A Byzantine Fault Tolerant Distributed Commit Protocol" by Wenbing Zhao (Department of Electrical and Computer Engineering, Cleveland State University), <https://ieeexplore.ieee.org/document/4351387>
 
-## Objectives
+# Objectives
 
 We set objectives from the beginning in order to figure out and organise the work that had to be done.
 The objective list was divided into categories to state the priority of each objective.
@@ -41,9 +41,9 @@ The objective list was divided into categories to state the priority of each obj
 - **Could have/Will not have**:
   - View change mechanism (this feature was not implemented by the paper authors either).
 
-## The Protocol
+# The Protocol
 
-### Byzantine Fault Tolerance - Why
+## Byzantine Fault Tolerance - Why
 
 There are multiple reasons to choose a byzantine fault tolerant distributed commit protocol.
 
@@ -60,7 +60,7 @@ Thus it improves the availability of the system compared to 2PC.
 Since the protocol introduces multiple coordinators, it becomes possible for the participant to send different messages to the coordinators.
 The authors have thought of this and made sure that the protocol detects and handles this.
 
-### Distributed Commit Protocol
+## Distributed Commit Protocol
 
 In the distributed commit protocol presented in the paper the author address the problem of a byzantine coordinator by replicating the coordinator.
 One of these replicas is the primary.
@@ -83,7 +83,7 @@ Since the protocol allows up to $f$ byzantine coordinators, when $f+1$ messages 
 
 ![An example of the voting part of the BFTDCP protocol.](images/bftdcp.png){#fig:examplevoting width=75%}
 
-### Byzantine Agreement Algorithm
+## Byzantine Agreement Algorithm
 
 Wenbing Zhao's algorithm is based on the BFT algorithm by Castro and Liskov.
 While the aim of the BFT algorithm is designed to make an agreement on the ordering of the requests received, the Byzantine Agreement Algorithm's objective is to agree on the outcome of a transaction.
@@ -107,7 +107,7 @@ Byzantine Agreement Algorithm has three phases:
   The agreed outcome is sent to every participant in the current transaction.
   *Ba-commit* messages are verified alike *ba-prepare* messages.
 
-## Design Decisions
+# Design Decisions
 
 We have used the **Akka** framework, which is based on Scala, to implement coordinators and participants as actors since it simplifies distributed and concurrent application development.
 Actors communicate with each other through messages using the **Akka API**.
@@ -122,9 +122,9 @@ We created two typed of actors, coordinators and participants.
 From the tests we created we initialize a couple of coordinators and participants (depending on the test case) and send a initialization message from one of the participants (the initiator) to the coordinators.
 After that the protocol starts.
 
-## Implementation Details
+# Implementation Details
 
-### Message Signing
+## Message Signing
 
 These messages are signed using public key technology so that no unidentified participant can interfere.
 
@@ -132,7 +132,7 @@ The signing is implemented using a master certificate that signs all the individ
 
 It is currently not checked whether the message originates (with regards to the from-field) from the same actor as it is signed by (spoofing is still possible).
 
-### Shortcomings of our Implementation
+## Shortcomings of our Implementation
 
 In the original paper, view changes were not implemented.
 We considered implementing these, but ultimately set other priorities.
@@ -144,9 +144,9 @@ The idea to get our implementation running in a distributed fashion is:
 - Get the actors to communicate with each other using Artery (serialization of messages, actor discovery)
 - Key distribution might be hard, disable the checks in code
 
-## Evaluation
+# Evaluation
 
-### Functional Requirements
+## Functional Requirements
 
 Functional requirements were evaluated using the **Akka Actor Test Kit** with **Scala Tests** (```ScalaTestWithActorTestKit```).
 We considered:
@@ -205,7 +205,7 @@ Tests 15 and 16 fail, since the solution to a byzantine primary coordinator repl
 Test 17 requires only that the need for a view change is detected, not that it is actually performed.
 Hence it also succeeds as described.
 
-### Non-Functional Requirements
+## Non-Functional Requirements
 
 All tests were performed with 4 coordinators.
 The tests were carried out on a laptop with an Intel i3-5005U (dual-core operating at a fixed 2.0 GHz) with 8 GB of RAM.
@@ -226,7 +226,7 @@ This might be related to the observation that actors would often be running sequ
 
 ![Latency comparison between normal operation and a byzantine non-primary coordinator](./images/latency.png){#fig:evaluationchart1 width=75%}
 
-## Discussion
+# Discussion
 
 The main challenge of the project was to understand who the system was supposed to work.
 It was not very clear from the original paper that the system was very heavily depending on the WS-AT protocol, and that it therefore was crucial to understand it before understanding the byzantine fault tolerant distributed commit protocol.
@@ -235,7 +235,7 @@ The coronavirus situation also made it necessary for three of us to return to ou
 One of our team members, Miguel Lucas, was responsible for testing the system in a distributed fashion, but due to the coronavirus situation he had to return to his country and finish his studies at his home university.
 For this reason, he could not work on the project any more so the system could not be tested in a distributed fashion.
 
-## Future Work
+# Future Work
 
 - Expanding the simulation of byzantine behaviour.
   The current implementation of byzantine behaviour only covers a fraction of the byzantine faulty space.
@@ -245,7 +245,7 @@ For this reason, he could not work on the project any more so the system could n
 - Running the system in a distributed manner: actors on different hosts should be able to communicate with each other.
 - Implementing view changes.
 
-## Conclusion
+# Conclusion
 
 To sum up, we managed to implement the protocol to the same extent as the paper, so not including view changes.
 The ability to tolerate some byzantine behaviour of a non-primary coordinator replica has been demonstrated.
