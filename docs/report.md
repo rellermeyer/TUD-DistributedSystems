@@ -133,6 +133,11 @@ Furthermore we did not ran the system in a distributed fashion, the reason is ex
 - Getting the actors to communicate with each other using *Artery* (serialization of messages, actor discovery).
 - Reworking key distribution (hard) or disabling signature checks
 
+In addition to the tests explained below, the simulation of byzantine behaviour could be extended.
+The current implementation of byzantine behaviour only covers a fraction of the byzantine faulty space.
+Expanding this could be interesting, but simulating more byzantine behaviours would have a large impact on code complexity.
+Ultimately, we believe simulating all possible byzantine behaviours is infeasible and that we have to trust the author's proof.
+
 # Evaluation
 
 ## Functional Requirements
@@ -225,15 +230,6 @@ The coronavirus situation also made it necessary for three of us (exchange stude
 
 One of our team members, Miguel Lucas, was responsible for testing the system in a distributed fashion, but due to the coronavirus situation he had to return to his country and finish his studies at his home university.
 For this reason, he could not work on the project anymore so the system could not be tested in a distributed fashion.
-
-# Possible Future Work
-
-- Expanding the simulation of byzantine behaviour.
-  The current implementation of byzantine behaviour only covers a fraction of the byzantine faulty space.
-  Expanding this could be interesting, but simulating more byzantine behaviours would have a large impact on code complexity.
-  Ultimately, we believe simulating all possible byzantine behaviours is infeasible and that we have to trust the author's proof.
-- Running the system in a distributed manner: actors on different hosts should be able to communicate with each other.
-- Implementing view changes.
 
 # Conclusion
 
