@@ -219,25 +219,24 @@ Latencies grow linearly with the number of participants as well.
 
 # Discussion
 
-The main challenge of the project was to understand who the system was supposed to work.
+The main challenge of the project was to fully understand the details of the paper.
 It was not very clear from the original paper that the system was very heavily depending on the WS-AT protocol, and that it therefore was crucial to understand it before understanding the byzantine fault tolerant distributed commit protocol.
-The coronavirus situation also made it necessary for three of us to return to our home countries urgently, that led us to loose some time in the last few weeks of the project, which we could not fully recover in the extra week we got, since the new courses had started then.
+The coronavirus situation also made it necessary for three of us (exchange students) to return to our home countries urgently, that led us to loose some time in the last few weeks of the project, which we could not fully recover in the extra week we got, since the new courses had started then.
 
 One of our team members, Miguel Lucas, was responsible for testing the system in a distributed fashion, but due to the coronavirus situation he had to return to his country and finish his studies at his home university.
 For this reason, he could not work on the project anymore so the system could not be tested in a distributed fashion.
 
-# Future Work
+# Possible Future Work
 
 - Expanding the simulation of byzantine behaviour.
   The current implementation of byzantine behaviour only covers a fraction of the byzantine faulty space.
   Expanding this could be interesting, but simulating more byzantine behaviours would have a large impact on code complexity.
-  Ultimately, we believe simulating all possible byzantine behaviours is impossible.
-  If we simulate anything less, we can only prove the system is not byzantine fault tolerant, not that it is.
+  Ultimately, we believe simulating all possible byzantine behaviours is infeasible and that we have to trust the author's proof.
 - Running the system in a distributed manner: actors on different hosts should be able to communicate with each other.
 - Implementing view changes.
 
 # Conclusion
 
-To sum up, we managed to implement the protocol to the same extent as the paper, so not including view changes.
+To sum up, we managed to implement the protocol to a similar extent as the paper.
 The ability to tolerate some byzantine behaviour of a non-primary coordinator replica has been demonstrated.
-It has also been shown that the presence of this byzantine coordinator replica this does not affect the performance when tested in operation on a single machine.
+It has also been shown that the presence of this byzantine coordinator replica does not noticably affect the performance when tested in operation on a single machine.
