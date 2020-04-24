@@ -48,13 +48,13 @@ There are multiple reasons to choose a byzantine fault tolerant distributed comm
 In the basic 2PC protocol, a single coordinator is responsible for multiple participants.
 The coordinator is trusted by the participants and represents a single point of failure.
 If the coordinator expresses byzantine behaviour, for example by telling one participant to commit and another to abort, the participants will trust the coordinator and therefore do as it says.
-This would then lead to the participants having different views on what transactions are done, which defeats the purpose of the protocol, to reach an agreement.
+This would then lead to the participants having different views on what transactions are done, which defeats the purpose of the protocol to reach an agreement.
 
 That is the main problem the byzantine fault tolerant commit protocol solves. It can handle compromised/byzantine coordinators that for example sends different messages to different participants. Another problem the byzantine fault tolerant commit protocol solves is that it's able to continue working even if some coordinators fail or become unavailable.
-Compare this with the 2PC protocol where the protocol would stop working if the coordinator stop working.
+Compare this with the 2PC protocol where the protocol would stop working if the coordinator stops working.
 Thus it improves the availability of the system compared to 2PC.
 This can be especially useful if the coordinators are distributed over multiple datacenters or even countries, making sure the system continues to work even if some datacenters, or even a country (assuming most servers are in other countries), experiences problems.
-Since the protocol introduces multiple coordinator, it becomes possible for the participant to send different messages to the coordinators. The authors have thought of this and made sure that the protocol detects and handle this.
+Since the protocol introduces multiple coordinators, it becomes possible for the participant to send different messages to the coordinators. The authors have thought of this and made sure that the protocol detects and handles this.
 
 ### Distributed commit protocol
 
