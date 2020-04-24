@@ -195,15 +195,15 @@ Hence it also succeeds as described.
 
 ## Non-Functional Requirements
 
-All tests were performed with 4 coordinators.
-The tests were carried out on a laptop with an Intel i3-5005U (dual-core operating at a fixed 2.0 GHz) with 8 GB of RAM.
-
-The latency was measured both with normal behaving nodes and with a single byzantine non-primary coordinator replica.
+The latency was measured both with normal behaving nodes and with a single byzantine non-primary coordinator replica (a byzantine primary coordinator would require the out-of-scope view-changes to be implemented).
 If a non-primary coordinator replica is byzantine, a small performance reduction could occur since the algorithm might have to depend on other replicas to reach consensus.
 
 The test consisted of starting a new transaction once the previous had committed, until 100 commits had been completed.
 The average latency of such a test constitutes one sample.
 50 such samples were collected for each test configuration.
+
+All tests were performed with 4 coordinators.
+The tests were carried out on a laptop with an Intel i3-5005U (dual-core operating at a fixed 2.0 GHz) with 8 GB of RAM.
 
 *@fig:evaluationchart1 shows the latency measured in these test.
 The error bars indicate 2 standard deviations, based on the variance between samples of 100 commits, not between the individual commits.
@@ -211,6 +211,9 @@ The variance between individual commits is expected to be larger.
 
 No performance difference could be discerned.
 This might be related to the observation that actors would often be running sequentially due to limited parallelism, which limited the benefit of early consensus.
+
+The results show latencies in the same order of magnitude as stated by the author of the paper.
+Latencies grow linearly with the number of participants as well.
 
 ![Latency comparison between normal operation and a byzantine non-primary coordinator](./images/latency.png){#fig:evaluationchart1 width=75%}
 
@@ -221,7 +224,7 @@ It was not very clear from the original paper that the system was very heavily d
 The coronavirus situation also made it necessary for three of us to return to our home countries urgently, that led us to loose some time in the last few weeks of the project, which we could not fully recover in the extra week we got, since the new courses had started then.
 
 One of our team members, Miguel Lucas, was responsible for testing the system in a distributed fashion, but due to the coronavirus situation he had to return to his country and finish his studies at his home university.
-For this reason, he could not work on the project any more so the system could not be tested in a distributed fashion.
+For this reason, he could not work on the project anymore so the system could not be tested in a distributed fashion.
 
 # Future Work
 
