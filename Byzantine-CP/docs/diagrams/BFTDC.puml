@@ -1,0 +1,38 @@
+@startuml
+
+' [*] --> State1
+'State1 --> [*]
+'State1 : this is a string
+'State1 : this is another string
+
+'State1 -> State2
+'State2 --> [*]
+
+
+'None 
+'Active
+'Preparing
+'Prepared
+'PreparedSuccess
+'Commiting
+'Aborting
+
+
+'None -> None : Prepared -> Send rollback
+
+"Ba-pre-prepare" -> "Ba-prepare"
+"Ba-pre-prepare" -> "View-change"
+
+"Ba-prepare" -> "Ba-commit"
+
+"Ba-commit" -> "Ba-commited"
+"Ba-commit" -> "View-change"
+
+
+
+
+
+
+
+@enduml
+
