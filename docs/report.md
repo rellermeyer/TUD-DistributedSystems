@@ -127,28 +127,19 @@ We created two typed of actors, coordinators and participants.
 From the tests we created we initialize a couple of coordinators and participants (depending on the test case) and send a initialization message from one of the participants (the initiator) to the coordinators.
 After that the protocol starts.
 
-### View Changes
-
-In the original paper, view changes were not implemented. We considered implementing these, but ultimately set other priorities.
-
 ## Implementation Details
 
 These messages are signed using public key technology so that no unidentified participant can interfere.
-The view change mechanism has not been implemented.
 
 - not using a state machine
 - the signing is implemented using a master certificate that signs all the individual certificates (of the coordinators and participants)
 - it is currently not checked whether the message originates (with regards to the from-field) from the same actor as it is signed by (spoofing is still possible)
 
-Shortcomings:
+#### Shortcomings:
 
-- running it in a distributed fashion
-
-Initially it was not clear whether the initiator should send the commit request to the primary coordinator only.
-
-### Running it in a distributed fashion
-
-The idea to get our implementation running in a distributed fashion is:
+In the original paper, view changes were not implemented. We considered implementing these, but ultimately set other priorities.
+The system has also not been ran in a distributed fashion.  
+The idea to get our implementation running in a distributed fashion is:  
 
 - Manually start Akka Actors in different JVMs (could be on the same or on different PCs)
 - Get the actors to communicate with each other using Artery (serialization of messages, actor discovery)
