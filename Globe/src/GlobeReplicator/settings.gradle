@@ -1,0 +1,3 @@
+include 'LookupService'
+include 'DistributedObject'
+rootProject.name = 'GlobeReplicator'
