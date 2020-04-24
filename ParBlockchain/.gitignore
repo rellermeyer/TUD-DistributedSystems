@@ -1,0 +1,14 @@
+*.class
+*.log
+
+.cache-main
+/bin/
+/.metadata/
+/project/target/
+/target/
+
+project/project/target/config-classes/
+
+*.cache
+
+.idea/
