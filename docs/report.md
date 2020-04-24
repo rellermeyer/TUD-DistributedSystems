@@ -60,26 +60,35 @@ The authors have thought of this and made sure that the protocol detects and han
 
 ### Distributed commit protocol
 
-In the distributed commit protocol presented in the paper the author address the problem of a byzantine coordinator by replicating the coordinator. One of these replicas is the primary. The resulting system works correctly so long as it has $3f+1$ coordinator replicas where at most *f* coordinators are byzantine.  
+In the distributed commit protocol presented in the paper the author address the problem of a byzantine coordinator by replicating the coordinator.
+One of these replicas is the primary.
+The resulting system works correctly so long as it has $3f+1$ coordinator replicas where at most *f* coordinators are byzantine.
 
-One of the participants, which we call initiator, initiates a transaction. This initiator is responsible for propagating the transaction to the other participants that are part of the transaction. Then the participants register with the coordinators.
-The protocol starts when the initiator has received confirmation from all participants, that they have registered with $2f+1$  coordinators, and then sends a initiate commit request message to all coordinators.
+One of the participants, which we call initiator, initiates a transaction.
+This initiator is responsible for propagating the transaction to the other participants that are part of the transaction.
+Then the participants register with the coordinators.
+The protocol starts when the initiator has received confirmation from all participants, that they have registered with $2f+1$ coordinators, and then sends a initiate commit request message to all coordinators.
 
-The coordinators then sends a prepare message to all registered participants. The participants answer whether they can commit. If any of them could not prepare successfully, an abort will take place, otherwise the protocol proceeds.
+The coordinators then sends a prepare message to all registered participants.
+The participants answer whether they can commit.
+If any of them could not prepare successfully, an abort will take place, otherwise the protocol proceeds.
 
-The coordinators continue by creating an instance of the *Byzantine Agreement Algorithm*, where an agreement is attempted on both which participants are taking part in the transaction as well as the votes of the participants. This is described in more detail in the ["Byzantine Agreement Algorithm" section](#byzantine-agreement-algorithm).
+The coordinators continue by creating an instance of the *Byzantine Agreement Algorithm*, where an agreement is attempted on both which participants are taking part in the transaction as well as the votes of the participants.
+This is described in more detail in the ["Byzantine Agreement Algorithm" section](#byzantine-agreement-algorithm).
 
-After reaching an agreement, coordinator replicas send the agreement outcome to participants, which will only commit the transaction once $f+1$ similar outcomes are received, to ensure that they reject the answer of byzantine coordinators. Since the protocol allows up to $f$ byzantine coordinators, when $f+1$ messages are received by the participants (including the initiator, which is a participant), they can be sure that at least one message is from a non-byzantine coordinator.
+After reaching an agreement, coordinator replicas send the agreement outcome to participants, which will only commit the transaction once $f+1$ similar outcomes are received, to ensure that they reject the answer of byzantine coordinators.
+Since the protocol allows up to $f$ byzantine coordinators, when $f+1$ messages are received by the participants (including the initiator, which is a participant), they can be sure that at least one message is from a non-byzantine coordinator.
 
 ![An example of the voting part of the BFTDCP protocol.](images/bftdcp.png){#fig:examplevoting width=75%}
 
 ### Byzantine Agreement Algorithm
 
-Wenbing Zhao's algorithm is based on the BFT algorithm by Castro and Liskov. While the aim of the BFT algorithm is designed to make an agreement on the ordering of the requests received, the Byzantine Agreement Algorithm's objective is to agree on the outcome of a transaction.
+Wenbing Zhao's algorithm is based on the BFT algorithm by Castro and Liskov.
+While the aim of the BFT algorithm is designed to make an agreement on the ordering of the requests received, the Byzantine Agreement Algorithm's objective is to agree on the outcome of a transaction.
 Byzantine Agreement Algorithm has three phases:
 
 - **Ba-pre-prepare phase**: In this phase the primary sends a *ba-pre-prepare* message to all other replicas.
-  The *ba-pre-prepare* message contains the following information: view id, transaction id,  transaction outcome and decision certificate.
+  The *ba-pre-prepare* message contains the following information: view id, transaction id, transaction outcome and decision certificate.
   The decision certificate is a collection of records of each participant's registration and vote for every transaction.
   A new view is requested and created if the *ba-pre-prepare* message fails any verification (signed by the primary, coherent transaction and view and has not accepted a *ba-pre-prepare* in this view-transaction).
 
@@ -99,7 +108,8 @@ Byzantine Agreement Algorithm has three phases:
 Although the paper is mostly written in a clear and concise manner, some parts seems to be lacking and not fully clear to us.
 
 The decision certificate contains a list of votes and registrations, both signed by the sender.
-While the signature for the registration contains the sender, the signature of the vote does not. We assume that this is a typo in the paper.
+While the signature for the registration contains the sender, the signature of the vote does not.
+We assume that this is a typo in the paper.
 
 > Furthermore, we assume that a correct participant *registers with $f+1$ or more correct coordinator replicas* before it sends a reply to the initiator when the transaction is propagated to this participant with a request coming from the initiator. (p.39)
 
@@ -107,7 +117,8 @@ vs.
 
 > Because the participant p is correct and responded to the initiator's request properly, it must have "registered with at least $2f+1$ coordinator replicas" prior to sending its reply to the initiator. (p.42)
 
--- The number of registrations is the *same* as the first specifically mentions *correct* coordinator replicas. Therefore the participant actually has to register with f more replicas.
+The number of registrations is the *same* as the first specifically mentions *correct* coordinator replicas.
+Therefore the participant actually has to register with f more replicas.
 
 Initially it was not clear that the initiator propagates the transaction to all participants, as the Introduction specifically mentions the participants-have-to-know-all-other-participants as a drawback of another protocol.
 
@@ -126,25 +137,32 @@ Pseudo-code: The paper never mentions if the functions are thought to be execute
 We have used the **Akka** framework, which is based on Scala, to implement coordinators and participants as actors since it simplifies distributed and concurrent application development.
 Actors communicate with each other through messages using the **Akka API**.
 
-We decided to use **Akka** since it proved a actor framework that could be used to avoid implementing the sending of messages.  
-As we're implementing a commit protocol which is based on messages, it makes sense to use a framework for passing messages.  
-As we are restricted to Scala and **Akka** seems to be one of the most-used frameworks (actor framework) for that purpose, we chose to use that.  
+We decided to use **Akka** since it proved a actor framework that could be used to avoid implementing the sending of messages.
+
+As we're implementing a commit protocol which is based on messages, it makes sense to use a framework for passing messages.
+
+As we are restricted to Scala and **Akka** seems to be one of the most-used frameworks (actor framework) for that purpose, we chose to use that.
+
 We created two typed of actors, coordinators and participants.
 From the tests we created we initialize a couple of coordinators and participants (depending on the test case) and send a initialization message from one of the participants (the initiator) to the coordinators.
 After that the protocol starts.
 
 ## Implementation Details
 
-#### Message signing
+### Message signing
 
-These messages are signed using public key technology so that no unidentified participant can interfere.  
-The signing is implemented using a master certificate that signs all the individual certificates (of the coordinators and participants).  
-It is currently not checked whether the message originates (with regards to the from-field) from the same actor as it is signed by (spoofing is still possible).  
+These messages are signed using public key technology so that no unidentified participant can interfere.
 
-#### Shortcomings:
+The signing is implemented using a master certificate that signs all the individual certificates (of the coordinators and participants).
 
-In the original paper, view changes were not implemented. We considered implementing these, but ultimately set other priorities.
-The system has also not been ran in a distributed fashion.  
+It is currently not checked whether the message originates (with regards to the from-field) from the same actor as it is signed by (spoofing is still possible).
+
+### Shortcomings
+
+In the original paper, view changes were not implemented.
+We considered implementing these, but ultimately set other priorities.
+The system has also not been ran in a distributed fashion.
+
 The idea to get our implementation running in a distributed fashion is:  
 
 - Manually start **Akka Actors** in different JVMs (could be on the same or on different PCs)
@@ -155,19 +173,21 @@ The idea to get our implementation running in a distributed fashion is:
 
 ### Functional requirements
 
-Functional requirements were evaluated using the **Akka Actor Test Kit** with **Scala Tests** (```ScalaTestWithActorTestKit```). We considered:  
+Functional requirements were evaluated using the **Akka Actor Test Kit** with **Scala Tests** (```ScalaTestWithActorTestKit```).
+We considered:  
 
 - Basic Committing  
 - Aborting  
 - Unilateral aborting  
 - Byzantine behavior tolerance  
 
-Along with the development we have built a set of tests which tested every feature we implemented. This way we ensured that every module did its work properly.
+Along with the development we have built a set of tests which tested every feature we implemented.
+This way we ensured that every module did its work properly.
 
 We have built a total of 17 tests through which coordinators and participants exchange messages and perform the corresponding message verification and decision making processes.
 These tests ensure the implementation correctness by creating protocol instances and making coordinator replicas and participants conduct several distributed commit protocols.
-A different number of transactions, coordinator replicas and participants is used to test the system's resilience to multiple message passing.  
-The ability to abort a transaction was also tested.  
+A different number of transactions, coordinator replicas and participants is used to test the system's resilience to multiple message passing.
+The ability to abort a transaction was also tested.
 
 The following tests were implemented:  
 
@@ -213,19 +233,29 @@ Hence it also succeeds as described.
 ### Non-Functional Requirements
 
 All tests were performed with 4 coordinators.
-The tests were carried out on a laptop with an Intel i3-5005U (dual-core operating at a fixed 2.0 GHz) with 8 GB of RAM.  
+The tests were carried out on a laptop with an Intel i3-5005U (dual-core operating at a fixed 2.0 GHz) with 8 GB of RAM.
 
 The latency was measured both with normal behaving nodes and with a single byzantine non-primary coordinator replica.
-If a non-primary coordinator replica is byzantine, a small performance reduction could occur since the algorithm might have to depend on other replicas to reach consensus.  
-The test consisted of starting a new transaction once the previous had committed, until 100 commits had been completed. The average latency of such a test constitutes one sample. 50 such samples were collected for each test configuration.     
-*@fig:evaluationchart1 shows the latency measured in these test. The error bars indicate 2 standard deviations, based on the variance between samples of 100 commits, not between the individual commits. The variance between individual commits is expected to be larger.  
-No performance difference could be discerned. This might be related to the observation that actors would often be running sequentially due to limited parallelism, which limited the benefit of early consensus.  
+If a non-primary coordinator replica is byzantine, a small performance reduction could occur since the algorithm might have to depend on other replicas to reach consensus.
+
+The test consisted of starting a new transaction once the previous had committed, until 100 commits had been completed.
+The average latency of such a test constitutes one sample.
+50 such samples were collected for each test configuration.
+
+*@fig:evaluationchart1 shows the latency measured in these test.
+The error bars indicate 2 standard deviations, based on the variance between samples of 100 commits, not between the individual commits.
+The variance between individual commits is expected to be larger.
+
+No performance difference could be discerned.
+This might be related to the observation that actors would often be running sequentially due to limited parallelism, which limited the benefit of early consensus.
 
 ![Latency comparison between normal operation and a byzantine non-primary coordinator](./images/latency.png){#fig:evaluationchart1 width=75%}
 
 ## Discussion
 
-The main challenge of the project was to understand who the system was supposed to work. It was not very clear from the original paper that the system was very heavily depending on the WS-AT protocol, and that it therefore was crucial to understand it before understanding the byzantine fault tolerant distributed commit protocol. The coronavirus situation also made it necessary for three of us to return to our home countries urgently, that led us to loose some time in the last few weeks of the project, which we could not fully recover in the extra week we got, since the new courses had started then.
+The main challenge of the project was to understand who the system was supposed to work.
+It was not very clear from the original paper that the system was very heavily depending on the WS-AT protocol, and that it therefore was crucial to understand it before understanding the byzantine fault tolerant distributed commit protocol.
+The coronavirus situation also made it necessary for three of us to return to our home countries urgently, that led us to loose some time in the last few weeks of the project, which we could not fully recover in the extra week we got, since the new courses had started then.
 
 One of our team members, Miguel Lucas, was responsible for testing the system in a distributed fashion, but due to the coronavirus situation he had to return to his country and finish his studies at his home university.
 For this reason, he could not work on the project any more so the system could not be tested in a distributed fashion.
@@ -238,7 +268,7 @@ For this reason, he could not work on the project any more so the system could n
   Ultimately, we believe simulating all possible byzantine behaviours is impossible.
   If we simulate anything less, we can only prove the system is not byzantine fault tolerant, not that it is.
 - Running the system in a distributed manner: actors on different hosts should be able to communicate with each other.
-- Implementing view changes.  
+- Implementing view changes.
 
 ## Conclusion
 
