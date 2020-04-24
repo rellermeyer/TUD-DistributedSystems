@@ -50,7 +50,9 @@ The coordinator is trusted by the participants and represents a single point of 
 If the coordinator expresses byzantine behaviour, for example by telling one participant to commit and another to abort, the participants will trust the coordinator and therefore do as it says.
 This would then lead to the participants having different views on what transactions are done, which defeats the purpose of the protocol to reach an agreement.
 
-That is the main problem the byzantine fault tolerant commit protocol solves. It can handle compromised/byzantine coordinators that for example sends different messages to different participants. Another problem the byzantine fault tolerant commit protocol solves is that it's able to continue working even if some coordinators fail or become unavailable.
+That is the main problem the byzantine fault tolerant commit protocol solves.
+It can handle compromised/byzantine coordinators that for example sends different messages to different participants.
+Another problem the byzantine fault tolerant commit protocol solves is that it's able to continue working even if some coordinators fail or become unavailable.
 Compare this with the 2PC protocol where the protocol would stop working if the coordinator stops working.
 Thus it improves the availability of the system compared to 2PC.
 Since the protocol introduces multiple coordinators, it becomes possible for the participant to send different messages to the coordinators.
