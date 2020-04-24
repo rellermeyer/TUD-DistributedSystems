@@ -1,0 +1,40 @@
+//#service-request-reply
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "chubby.grpc";
+option java_outer_classname = "ChubbyProto";
+
+// The greeting service definition.
+service ChubbyService {
+    rpc RequestLock (LockRequest) returns (LockRequestResponse) {}
+    rpc RequestLeader (LeaderRequest) returns (LeaderResponse) {}
+}
+
+// Requesting a lock
+message LockRequest {
+    string clientIdentifier = 1;
+    string lockIdentifier = 2;
+    bool write = 3;
+}
+
+// The response message of a lock request
+message LockRequestResponse {
+    string clientIdentifier = 1;
+    string lockIdentifier = 2;
+    bool locked = 3;
+    fixed64 timeLocked = 4;
+    fixed64 timeGranted = 5;
+    bool write = 6;
+}
+
+message LeaderRequest {
+    string clientIdentifier = 1;
+}
+
+message LeaderResponse {
+    bool isLeaderElected = 1;
+    bool isLeader = 2;
+    string leaderAddress = 3;
+}
+//#service-request-reply
