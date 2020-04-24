@@ -158,7 +158,7 @@ Functional requirements were evaluated using the Akka Actor Test Kit with Scala 
 
 Along with the development we have built a set of tests which tested every feature we implemented. This way we ensured that every module did its work properly.
 
-We have built a total of 17 tests through which Coordinators and Participants exchange messages and perform the corresponding message verification and decision making processes.
+We have built a total of 17 tests through which coordinators and participants exchange messages and perform the corresponding message verification and decision making processes.
 These tests ensure the implementation correctness by creating protocol instances and making coordinator replicas and participants conduct several distributed commit protocols.
 A different number of transactions, coordinator replicas and participants is used to test the system's resilience to multiple message passing.  
 The ability to abort a transaction was also tested.  
