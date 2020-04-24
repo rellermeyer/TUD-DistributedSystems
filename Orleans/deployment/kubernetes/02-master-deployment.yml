@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: orleans-master
+  namespace: orleans
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: orleans
+      component: master
+  template:
+    metadata:
+      labels:
+        app: orleans
+        component: master
+    spec:
+      containers:
+        - name: master
+          image: wzorgdrager/orleans:5.1
+          args:
+            - "0"
+            - "master"
+            - "1400"
+            - "1500"
+            - "1501"
+            - "1510"
+          ports:
+            - containerPort: 1400
+            - containerPort: 1500
+            - containerPort: 1501
+            - containerPort: 1502
+            - containerPort: 1503
+            - containerPort: 1504
+            - containerPort: 1505
+            - containerPort: 1506
+            - containerPort: 1507
+            - containerPort: 1508
+            - containerPort: 1509
+            - containerPort: 1510
+    env:
+      - name: HOSTNAME
+        valueFrom:
+          fieldRef:
+            fieldPath: metadata.name

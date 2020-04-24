@@ -1,0 +1,24 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: orleans-client-scenario-8-15-slaves
+  namespace: orleans
+spec:
+  completions: 5
+  template:
+    spec:
+      containers:
+        - name: client
+          image: wzorgdrager/orleans:5.4
+          args:
+            - "1"
+            - "client"
+            - "8"
+            - "master.orleans"
+            - "1400"
+      restartPolicy: Never
+    env:
+      - name: HOSTNAME
+        valueFrom:
+          fieldRef:
+            fieldPath: metadata.name

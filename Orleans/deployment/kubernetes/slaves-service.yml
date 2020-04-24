@@ -1,0 +1,80 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: slave-headless
+  namespace: orleans
+  labels:
+    app: orleans
+    component: slave
+spec:
+  ports:
+  - port: 1400
+    name: tcp
+  - port: 1500
+    name: udp
+  - port: 1501
+    name: grain1
+  - port: 1502
+    name: grain2
+  - port: 1503
+    name: grain3
+  - port: 1504
+    name: grain4
+  - port: 1505
+    name: grain5
+  - port: 1506
+    name: grain6
+  - port: 1507
+    name: grain7
+  - port: 1508
+    name: grain8
+  - port: 1509
+    name: grain9
+  - port: 1510
+    name: grain10
+  clusterIP: None
+  selector:
+    app: orleans
+    component: slave
+  sessionAffinity: None
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: slave
+  namespace: orleans
+  labels:
+    app: orleans
+    component: slave
+spec:
+  ports:
+  - port: 1400
+    name: tcp
+  - port: 1500
+    name: udp
+  - port: 1501
+    name: grain1
+  - port: 1502
+    name: grain2
+  - port: 1503
+    name: grain3
+  - port: 1504
+    name: grain4
+  - port: 1505
+    name: grain5
+  - port: 1506
+    name: grain6
+  - port: 1507
+    name: grain7
+  - port: 1508
+    name: grain8
+  - port: 1509
+    name: grain9
+  - port: 1510
+    name: grain10
+  selector:
+    app: orleans
+    component: slave
+  sessionAffinity: None
+  type: ClusterIP

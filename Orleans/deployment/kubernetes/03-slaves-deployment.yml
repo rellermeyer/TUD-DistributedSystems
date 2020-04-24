@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: slave
+  namespace: orleans
+spec:
+  replicas: 1
+  serviceName: slave-headless
+  selector:
+    matchLabels:
+      app: orleans
+      component: slave
+  template:
+    metadata:
+      labels:
+        app: orleans
+        component: slave
+    spec:
+      containers:
+        - name: slave
+          image: wzorgdrager/orleans:5.1
+          args:
+            - "0"
+            - "slave"
+            - "1400"
+            - "1500"
+            - "1501"
+            - "1510"
+            - "master.orleans"
+            - "1400"
+            - "1500"
+          ports:
+            - containerPort: 1400
+            - containerPort: 1500
+            - containerPort: 1501
+            - containerPort: 1502
+            - containerPort: 1503
+            - containerPort: 1504
+            - containerPort: 1505
+            - containerPort: 1506
+            - containerPort: 1507
+            - containerPort: 1508
+            - containerPort: 1509
+            - containerPort: 1510
+    env:
+      - name: HOSTNAME
+        valueFrom:
+          fieldRef:
+            apiVersion: v1
+            fieldPath: status.podIP

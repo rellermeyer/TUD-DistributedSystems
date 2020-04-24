@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: master
+  namespace: orleans
+  labels:
+    app: orleans
+    component: master
+spec:
+  ports:
+  - name: tcp
+    port: 1400
+    protocol: TCP
+  - name: udp
+    port: 1500
+    protocol: UDP
+  selector:
+    app: orleans
+    component: master
