@@ -82,7 +82,7 @@ class Coordinator(context: ActorContext[Signed[CoordinatorMessage]]
             if (ss.participants.contains(m.from)) {
               m.vote match {
                 case util.Messages.Decision.COMMIT =>
-                  //TODO: create false decision certificate if byzantine
+                  //TODO: Create false decision certificate for simulating byzantine behavior (optional)
                   ss.decisionCertificate += (m.from -> DecisionCertificateEntry(ss.registrationLog(m.from), Option(m), None))
                   val isPrimary = i == ss.v % (3 * f + 1)
                   val enoughVotes = ss.decisionCertificate.size == ss.participants.size
@@ -118,7 +118,7 @@ class Coordinator(context: ActorContext[Signed[CoordinatorMessage]]
         stableStorage.get(m.t) match {
           case Some(ss) =>
             if (i == ss.v % (3 * f + 1)) { // primary
-              //TODO: create false decision certificate if byzantine
+              //TODO: Create false decision certificate for simulating byzantine behavior (optional)
               ss.decisionCertificate += (m.from -> DecisionCertificateEntry(ss.registrationLog(m.from), None, Option(m)))
               val decision = changeDecisionIfByzantine(Decision.ABORT)
               val baPrePrepare = Messages.BaPrePrepare(ss.v, m.t, decision, ss.decisionCertificate.clone, context.self).sign(keys)
@@ -139,8 +139,9 @@ class Coordinator(context: ActorContext[Signed[CoordinatorMessage]]
 
         stableStorage.get(m.t) match {
           case Some(ss) =>
-            //TODO: check if message is from primary
-            //TODO: check if we are in the correct view
+            //TODO: Althought most checks are already implemented, some might still be missing, including:
+            // - Check if message is from primary coordinator.
+            // - Check if coordinator is in the correct view.
             if (!ss.baPrePrepareLog.contains(m)) { // if no previous ba-pre-prepare message has been received
               var changeView = false
               m.o match {
@@ -165,7 +166,8 @@ class Coordinator(context: ActorContext[Signed[CoordinatorMessage]]
                     coordinators.foreach(_ ! baPrepare)
                   }
                 case util.Messages.Decision.ABORT =>
-                  //TODO: implement proper checks
+                  // TODO: Before using this protocol in production, take a look at the paper to check whether
+                  //  some checks are still missing for this case.
                   ss.timeOut_View = (m.v, System.currentTimeMillis())
                   ss.digest = m.c.hashCode()
                   ss.baPrePrepareLog += m
@@ -176,8 +178,8 @@ class Coordinator(context: ActorContext[Signed[CoordinatorMessage]]
               if (changeView) {
                 val P = ViewChangeStateBaNotPrePrepared(m.v, m.t, ss.decisionCertificate)
                 val viewChange = ViewChange(m.v + 1, m.t, P, context.self).sign(keys)
-                coordinators.foreach(_ ! viewChange) // TODO: implement view change
-                // TODO: abort?
+                coordinators.foreach(_ ! viewChange)
+                // TODO: You might need to add some code here if you implement view changes.
               }
             }
           case None =>
@@ -191,7 +193,8 @@ class Coordinator(context: ActorContext[Signed[CoordinatorMessage]]
               context.log.debug(s"Dropped BaPrepare, currently in state ${ss.baState}")
               return this
             }
-            if (m.c == ss.digest) { //check digest // TODO: not sure if this is how it should be done
+            if (m.c == ss.digest) { //check digest
+              // TODO: Review this part of the code and compare with the description of the paper
               if (ss.baPrePrepareLog.exists(p => (p.o == m.o) && p.t == m.t)) { //check if same decision as in baPrePrepare
                 ss.baPrepareLog += m
               } else {

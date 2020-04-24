@@ -55,7 +55,9 @@ object Messages {
       s.initVerify(masterKey)
       s.update(BigInt(publicKey.hashCode()).toByteArray)
       if (!s.verify(signaturePublicKey)) return false
-      // TODO: verify sender(from) in message
+      // TODO: Verify sender of message.
+      //  As the from-field is not cross-checked with a signature/certificate,
+      //  messages could be spoofed by a byzantine actor.
       true
     }
 
@@ -71,7 +73,7 @@ object Messages {
 
   final case class ViewChangeStateBaPrepared(v: View, t: TransactionID, o: Decision, c: DecisionCertificate, baPrepared: mutable.Set[BaPrepare]) extends ViewChangeState // BaPrepared acc to paper "and 2f matching ba-prepared messages from different replicas"
 
-  final case class Transaction(id: TransactionID) // TODO: add payload to Transaction
+  final case class Transaction(id: TransactionID) // TODO: Define payload of transaction here.
 
   final case class Setup(coordinators: Array[CoordinatorRef]) extends CoordinatorMessage
 
@@ -111,7 +113,11 @@ object Messages {
     def sign[M](m: M, privateKey: PrivateKey): Array[Byte] = {
       val s: java.security.Signature = java.security.Signature.getInstance("SHA512withRSA")
       s.initSign(privateKey)
-      s.update(BigInt(m.hashCode()).toByteArray) // TODO: this is not secure. Sign the serialized message?
+      // TODO: Using the hashCode for a signature is not cryptographically secure.
+      //  Best option: Sign the serialized message.
+      //  This was not done up to now as this would mean that the message is serialized twice when the whole thing
+      //  is running in a distributed fashion.
+      s.update(BigInt(m.hashCode()).toByteArray)
       s.sign()
     }
   }

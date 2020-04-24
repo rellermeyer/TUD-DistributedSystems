@@ -16,8 +16,9 @@ object Participant {
     Behaviors.logMessages(Behaviors.setup(factory))
   }
 
-  //TODO: change readyParticpants to a mapping (particpants, ready)
-  //TODO: use knowledge of other participants to check whether received message is from a known participant
+  //TODO: Some suggestions for refactoring:
+  // Cange readyParticpants to a mapping (particpants, ready).
+  // Use knowledge of other participants to check whether the received message is from a known participant.
   class State(var s: TransactionState
               , val t: Transaction
               , val decisionLog: Array[Decision]
@@ -95,7 +96,8 @@ abstract class Participant(context: ActorContext[Signed[ParticipantMessage]]
                   }
                 }
               }
-            //TODO: if some timeout has passed, send initAbort instead
+            //TODO: Currently nothing happens if there are not enough participants answering with a "propagated".
+            // Send a initAbort if some timeout has passed!
             case None =>
               context.log.error("Transaction not known")
           }
