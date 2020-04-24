@@ -1,10 +1,11 @@
 package actors
 
+import java.io._
+
 import akka.actor.testkit.typed.scaladsl.{LoggingTestKit, ScalaTestWithActorTestKit}
 import org.scalatest.wordspec.AnyWordSpecLike
 import util.Messages._
 import util._
-import java.io._
 
 class CoordinatorSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike {
   val spawner = new SpawnerScalaTestWithActorTestKitImpl(this)
@@ -194,19 +195,19 @@ class CoordinatorSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike {
     val numberOfRuns = 10
     for (i <- 0 until numberOfRuns) {
       ("2 participants - run " + i) in {
-        latencyThroughputTest(2,0)
+        latencyThroughputTest(2, 0)
       }
       ("4 participants - run " + i) in {
-        latencyThroughputTest(4,0)
+        latencyThroughputTest(4, 0)
       }
       ("6 participants - run " + i) in {
-        latencyThroughputTest(6,0)
+        latencyThroughputTest(6, 0)
       }
       ("8 participants - run " + i) in {
-        latencyThroughputTest(8,0)
+        latencyThroughputTest(8, 0)
       }
       ("10 participants - run " + i) in {
-        latencyThroughputTest(10,0)
+        latencyThroughputTest(10, 0)
       }
     }
   }
@@ -215,25 +216,25 @@ class CoordinatorSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike {
 
     for (i <- 0 until numberOfRuns) {
       ("2 participants - run " + i) in {
-        latencyThroughputTest(2,1)
+        latencyThroughputTest(2, 1)
       }
-       ("4 participants - run " + i) in {
-        latencyThroughputTest(4,1)
+      ("4 participants - run " + i) in {
+        latencyThroughputTest(4, 1)
       }
       ("6 participants - run " + i) in {
-        latencyThroughputTest(6,1)
+        latencyThroughputTest(6, 1)
       }
       ("8 participants - run " + i) in {
-        latencyThroughputTest(8,1)
+        latencyThroughputTest(8, 1)
       }
       ("10 participants - run " + i) in {
-        latencyThroughputTest(10,1)
+        latencyThroughputTest(10, 1)
       }
     }
   }
 
-  def latencyThroughputTest(nParticipants: Int,nByzantineOtherCoord: Int): Unit = {
-    val (coordinators, participants) = spawner(nCoordinators = 4-nByzantineOtherCoord, nCommittingParticipants = nParticipants,0,0,0,nByzantineOtherCoord)
+  def latencyThroughputTest(nParticipants: Int, nByzantineOtherCoord: Int): Unit = {
+    val (coordinators, participants) = spawner(nCoordinators = 4 - nByzantineOtherCoord, nCommittingParticipants = nParticipants, 0, 0, 0, nByzantineOtherCoord)
     val numberOfTransactions = 100
     var totalLatency: Long = 0
     val timerStart = System.currentTimeMillis()
@@ -253,7 +254,7 @@ class CoordinatorSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike {
     println("Average latency (ms): " + latency)
     println("Throughput (transactions/s): " + throughput)
     val measurements = new File("measurements.csv")
-    val bw = new BufferedWriter(new FileWriter(measurements,true))
+    val bw = new BufferedWriter(new FileWriter(measurements, true))
     bw.write(nParticipants + "," + nByzantineOtherCoord + "," + latency + "," + throughput + "\n")
     bw.close()
   }
