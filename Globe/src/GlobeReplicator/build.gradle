@@ -1,0 +1,245 @@
+plugins {
+    id "java"
+    id "com.github.johnrengelman.shadow" version "5.2.0"
+    id "jp.classmethod.aws.ec2" version "0.41"
+}
+
+import jp.classmethod.aws.gradle.ec2.AmazonEC2RunInstanceTask;
+import jp.classmethod.aws.gradle.ec2.AmazonEC2TerminateInstanceTask;
+import jp.classmethod.aws.gradle.ec2.AmazonEC2WaitInstanceStatusTask
+import com.github.jengelman.gradle.plugins.shadow.transformers.AppendingTransformer
+
+def instanceIdsFileName = "instanceIds"
+def lookupServiceUrlFileName = "lookupServiceUrl"
+def evaluatorHostFileName = "evaluatorHost"
+def lookupServiceUrlPropertyName = "lookupservice.url"
+def distributedObjectUrlPropertyName = "distributedobject.url"
+def ec2Type = "ec2.type"
+def latestInstanceId
+def awsInstanceURL
+
+subprojects {
+    apply plugin : 'scala'
+    apply plugin : 'application'
+    apply plugin : 'com.github.johnrengelman.shadow'
+
+    repositories {
+        mavenCentral()
+    }
+
+    shadowJar {
+        transform(AppendingTransformer) {
+            resource = 'reference.conf'
+        }
+        with jar
+    }
+
+    run {
+        if (project.hasProperty(lookupServiceUrlPropertyName)){
+            systemProperty lookupServiceUrlPropertyName, project.getProperty(lookupServiceUrlPropertyName)
+        }
+        else if (rootProject.file(lookupServiceUrlFileName).exists()){
+            systemProperty lookupServiceUrlPropertyName, rootProject.file(lookupServiceUrlFileName).getText()
+        }
+        else {
+            systemProperty lookupServiceUrlPropertyName, "http://localhost:8080"
+        }
+        systemProperty distributedObjectUrlPropertyName, project.hasProperty(distributedObjectUrlPropertyName) ? project.getProperty(distributedObjectUrlPropertyName) : "http://localhost:8080"
+    }
+
+    sourceSets {
+        // Note that just declaring this sourceset creates two configurations.
+        systemTest {
+            scala {
+                compileClasspath += main.output + test.output
+                runtimeClasspath += main.output + test.output
+            }
+        }
+    }
+
+    configurations {
+        systemTestImplementation.extendsFrom testImplementation
+        systemTestRuntime.extendsFrom testRuntime
+    }
+
+    task systemTest(type:Test){
+        setTestClassesDirs(project.sourceSets.systemTest.output.classesDirs)
+        classpath = project.sourceSets.systemTest.runtimeClasspath
+
+        if (project.hasProperty(lookupServiceUrlPropertyName)){
+            systemProperty lookupServiceUrlPropertyName, project.getProperty(lookupServiceUrlPropertyName)
+        }
+        else if (rootProject.file(lookupServiceUrlFileName).exists()){
+            systemProperty lookupServiceUrlPropertyName, rootProject.file(lookupServiceUrlFileName).getText()
+        }
+        else {
+            systemProperty lookupServiceUrlPropertyName, "http://localhost:8080"
+        }
+        systemProperty distributedObjectUrlPropertyName, project.hasProperty(distributedObjectUrlPropertyName) ? project.getProperty(distributedObjectUrlPropertyName) : "http://localhost:8080"
+    }
+
+    dependencies {
+        implementation 'org.scala-lang:scala-library:2.12.10'
+        implementation 'com.typesafe.akka:akka-http_2.12:10.1.11'
+        implementation 'com.typesafe.akka:akka-stream_2.12:2.5.26'
+        implementation("com.fasterxml.jackson.module:jackson-module-scala_2.12:2.10.3")
+
+        testImplementation 'junit:junit:4.12'
+        testImplementation 'org.scalatest:scalatest_2.12:3.1.1'
+        testImplementation 'org.scalatestplus:junit-4-12_2.12:3.1.1.0'
+    }
+}
+
+aws {
+    profileName = 'default'
+    region = 'us-east-1'
+}
+
+
+task waitInstanceStatusStable (type: AmazonEC2WaitInstanceStatusTask) {
+    doFirst{
+        instanceId = latestInstanceId
+        // Wait to ensure that the instance can be described after deployment (this may sometimes take some time)
+        sleep(10 * 1000)
+    }
+    doLast{
+        println "Access instance with: ssh ubuntu@" + awsInstance.getPublicDnsName()
+        awsInstanceURL = awsInstance.getPublicDnsName()
+    }
+}
+
+task deployEC2Instance(type: AmazonEC2RunInstanceTask) {
+    ami "ami-017a55663bff3fb20" //Ubuntu Server 19.10 on us-east-1 (N. Virginia)
+    keyName "globeReplicator"
+    if(project.hasProperty(ec2Type)){
+        instanceType project.getProperty(ec2Type)
+    }
+    else{
+        instanceType "t2.micro"
+    }
+    userData "#!/bin/bash\n" + "apt update\n" + "apt install -y openjdk-11-jre\n"
+    finalizedBy waitInstanceStatusStable
+    doLast{
+        String instanceId = runInstancesResult.getReservation().getInstances().get(0).getInstanceId();
+        latestInstanceId = instanceId
+
+        File instanceIds = file(instanceIdsFileName)
+        if(instanceIds.exists()){
+            // subsequent ids are distributed object ids
+            instanceIds.setText(instanceIds.getText() + "\n" + instanceId)
+        }
+        else{
+            // first id is lookup service instance id
+            instanceIds.setText(instanceId)
+        }
+    }
+}
+
+task terminateEC2Instances(type: AmazonEC2TerminateInstanceTask) {
+    doFirst{
+        File instances = file(instanceIdsFileName)
+        if(instances.exists()) {
+            instances.eachLine { line -> instanceIds += line }
+            instances.delete()
+        }
+        if(rootProject.file(lookupServiceUrlFileName).exists()){
+			rootProject.file(lookupServiceUrlFileName).delete()
+        }
+    }
+}
+
+task deployLookupService(){
+    dependsOn subprojects.build
+    dependsOn deployEC2Instance
+    doLast{
+        // wait for java to be installed
+        sleep(60 * 1000)
+        exec {
+            println "Copying LookupService to the EC2 instance"
+            commandLine "scp",
+                    "-o", "stricthostkeychecking=no",
+                    "LookupService/build/libs/LookupService-all.jar",
+                    "ubuntu@${awsInstanceURL}:~"
+        }
+        exec {
+            println "Starting Lookup Service on the EC2 instance"
+            commandLine "ssh",
+                    "-o", "stricthostkeychecking=no",
+                    "ubuntu@${awsInstanceURL}",
+                    "nohup java -jar ~/LookupService-all.jar > ~/LookupService.log 2>&1 &"
+        }
+        rootProject.file(lookupServiceUrlFileName).setText("http://${awsInstanceURL}:8080")
+    }
+}
+
+task deployDistributedObject(){
+    dependsOn subprojects.build
+    dependsOn deployEC2Instance
+    doLast{
+        def lookupServiceUrl = rootProject.file(lookupServiceUrlFileName).getText()
+        // wait for java to be installed
+        sleep(60 * 1000)
+        exec {
+            println "Copying Distributed Object to the EC2 instance"
+            commandLine "scp",
+                    "-o", "stricthostkeychecking=no",
+                    "DistributedObject/build/libs/DistributedObject-all.jar",
+                    "ubuntu@${awsInstanceURL}:~"
+        }
+        exec {
+            println "Starting Distributed Object on the EC2 instance"
+            commandLine "ssh",
+                    "-o", "stricthostkeychecking=no",
+                    "ubuntu@${awsInstanceURL}",
+                    "nohup java -Dlookupservice.url=${lookupServiceUrl} -Ddistributedobject.url=http://${awsInstanceURL}:8080 -jar ~/DistributedObject-all.jar > ~/DistributedObject.log 2>&1 &"
+        }
+    }
+}
+
+task deployEvaluator(){
+    dependsOn subprojects.build
+    dependsOn deployEC2Instance
+    doLast{
+		rootProject.file(evaluatorHostFileName).setText("${awsInstanceURL}")
+        // wait for java to be installed
+        sleep(60 * 1000)
+        exec {
+            println "Create required directories on the EC2 instance"
+            commandLine "ssh",
+                    "-o", "stricthostkeychecking=no",
+                    "ubuntu@${awsInstanceURL}",
+                    "mkdir -p GlobeReplicator/DistributedObject GlobeReplicator/LookupService"
+        }
+        exec {
+            println "Copying main project to EC2 instance"
+            commandLine "scp",
+					"-r",
+                    "-o", "stricthostkeychecking=no",
+                    "build.gradle",
+                    ".gradle",
+                    "gradle",
+                    "gradlew",
+                    "gradlew.bat",
+                    "settings.gradle",
+                    "ubuntu@${awsInstanceURL}:~/GlobeReplicator"
+        }
+        exec {
+            println "Copying DistributedObject project to EC2 instance"
+            commandLine "scp",
+					"-r",
+                    "-o", "stricthostkeychecking=no",
+                    "DistributedObject/build.gradle",
+                    "DistributedObject/src",
+                    "ubuntu@${awsInstanceURL}:~/GlobeReplicator/DistributedObject/"
+        }
+        exec {
+            println "Copying LookupService project to EC2 instance"
+            commandLine "scp",
+                    "-r",
+                    "-o", "stricthostkeychecking=no",
+                    "LookupService/build.gradle",
+                    "LookupService/src",
+                    "ubuntu@${awsInstanceURL}:~/GlobeReplicator/LookupService/"
+        }
+	}
+}

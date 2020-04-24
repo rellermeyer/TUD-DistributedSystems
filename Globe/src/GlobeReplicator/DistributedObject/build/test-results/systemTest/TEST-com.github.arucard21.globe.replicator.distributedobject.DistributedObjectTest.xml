@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.github.arucard21.globe.replicator.distributedobject.DistributedObjectTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2020-04-06T08:37:56" hostname="arucard" time="1.037">
+  <properties/>
+  <testcase name="getNumber should correctly retrieve the number of the distributed object" classname="com.github.arucard21.globe.replicator.distributedobject.DistributedObjectTest" time="0.191"/>
+  <testcase name="setNumber should correctly replicate to all other objects (scalability evaluation test)" classname="com.github.arucard21.globe.replicator.distributedobject.DistributedObjectTest" time="0.134"/>
+  <testcase name="setNumber on 2 local objects in the same distributed object concurrently should fail (concurrency evaluation test)" classname="com.github.arucard21.globe.replicator.distributedobject.DistributedObjectTest" time="0.128"/>
+  <testcase name="setNumber 2 times on the same local object in a distributed object synchronously, one after the other, should correctly replicate changes to all other objects for both requests" classname="com.github.arucard21.globe.replicator.distributedobject.DistributedObjectTest" time="0.255"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
