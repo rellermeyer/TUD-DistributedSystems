@@ -1,0 +1,24 @@
+image: mozilla/sbt
+
+stages:
+  - test
+
+before_script:
+  - sbt sbtVersion
+  - sbt compile
+
+test:
+  stage: test
+  script:
+    - sbt clean coverage test coverageReport
+  only:
+    - merge_requests
+    - master
+
+scalafmt:
+  stage: test
+  script:
+    - sbt scalafmtSbtCheck
+  only:
+    - merge_requests
+    - master
