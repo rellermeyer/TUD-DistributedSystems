@@ -1,0 +1,108 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "nl.tudelft.htable.protocol.internal";
+
+import "scalapb/scalapb.proto";
+import "Base.proto";
+
+package nl.tudelft.htable.protocol.internal;
+
+// Request message for [InternalService.Ping].
+message PingRequest {
+    option (scalapb.message).extends = "nl.tudelft.htable.protocol.internal.InternalRequest";
+}
+
+// Response message for [InternalService.Ping]
+message PingResponse {
+    option (scalapb.message).extends = "nl.tudelft.htable.protocol.internal.InternalResponse";
+}
+
+// Request message for [InternalService.Report]
+message ReportRequest {
+    option (scalapb.message).extends = "nl.tudelft.htable.protocol.internal.InternalRequest";
+}
+
+// Response message for [InternalService.Report].
+message ReportResponse {
+    option (scalapb.message).extends = "nl.tudelft.htable.protocol.internal.InternalResponse";
+
+    // The tablets that the node is serving.
+    repeated Tablet tablets = 1;
+}
+
+// Request message for [InternalService.Assign]
+message AssignRequest {
+    option (scalapb.message).extends = "nl.tudelft.htable.protocol.internal.InternalRequest";
+
+    enum ActionType {
+        ADD = 0;
+        REMOVE = 1;
+        CREATE = 2;
+        DELETE = 3;
+        CLEAR = 4;
+    }
+
+    // An action to perform for this assignment.
+    message Action {
+        option (scalapb.message).type = "nl.tudelft.htable.core.AssignAction";
+
+        // The type of action to perform.
+        ActionType actionType = 1;
+
+        // The tablet to perform the action on.
+        Tablet tablet = 2;
+    }
+
+    // The actions to perform for this assignment.
+    repeated Action actions = 1;
+}
+
+// Response message for [InternalService.Assign].
+message AssignResponse {
+    option (scalapb.message).extends = "nl.tudelft.htable.protocol.internal.InternalResponse";
+}
+
+// Request message for [InternalService.AddTablets]
+message AddTabletsRequest {
+    option (scalapb.message).extends = "nl.tudelft.htable.protocol.internal.InternalRequest";
+
+    // The tablets that the node is assigned.
+    repeated Tablet tablets = 1;
+}
+
+// Response message for [InternalService.AddTablets].
+message AddTabletsResponse {
+    option (scalapb.message).extends = "nl.tudelft.htable.protocol.internal.InternalResponse";
+}
+
+
+// Request message for [InternalService.Split]
+message SplitRequest {
+    option (scalapb.message).extends = "nl.tudelft.htable.protocol.internal.InternalRequest";
+
+    // The table to split.
+    string table_name = 1;
+
+    // The key at which to split the tablet.
+    bytes split_key = 2;
+}
+
+// Response message for [InternalService.Split].
+message SplitResponse {
+    option (scalapb.message).extends = "nl.tudelft.htable.protocol.internal.InternalResponse";
+}
+
+service InternalService {
+    // Ping a node in the cluster.
+    rpc Ping (PingRequest) returns (PingResponse) {}
+
+    // Query a node for the tablets it's serving.
+    rpc Report (ReportRequest) returns (ReportResponse) {}
+
+    // Assign the specified tablets to the node.
+    rpc Assign (AssignRequest) returns (AssignResponse) {}
+
+    // Split the specified tablet that is residing on the node.
+    rpc Split (SplitRequest) returns (SplitResponse) {}
+}
