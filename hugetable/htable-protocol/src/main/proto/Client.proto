@@ -1,0 +1,123 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "nl.tudelft.htable.protocol.client";
+
+import "scalapb/scalapb.proto";
+import "Base.proto";
+
+package nl.tudelft.htable.protocol.client;
+
+// A query of the data in a table.
+message Query {
+    option (scalapb.message).type = "nl.tudelft.htable.core.Query";
+
+    // The unique name of the table from which to read.
+    string table_name = 1;
+
+    // The (range of) row keys to read from.
+    oneof rows {
+        // Single row included in the set.
+        bytes row_key = 2;
+
+        // Contiguous row range included in the set.
+        RowRange row_range = 3;
+    }
+
+    // A flag to indicate the scan should be reversed.
+    bool reversed = 4;
+}
+
+// A particular change to be made to the contents of a row.
+message Mutation {
+    // A Mutation which sets the value of the specified cell.
+    message SetCell {
+        // The qualifier of the column into which new data should be written.
+        // Can be any byte string, including the empty string.
+        bytes qualifier = 1;
+
+        // The timestamp of the cell in milliseconds.
+        int64 timestamp = 2;
+
+        // The value to be written into the specified cell.
+        bytes value = 3;
+    }
+
+    // A Mutation which deletes cells from the specified column, optionally
+    // restricting the deletions to a given timestamp range.
+    message DeleteFromColumn {
+        // The qualifier of the column from which cells should be deleted.
+        // Can be any byte string, including the empty string.
+        bytes qualifier = 1;
+
+        // The timestamp of the cell in milliseconds.
+        int64 timestamp = 2;
+    }
+
+    // A Mutation which deletes all cells from the containing row.
+    message DeleteFromRow {}
+
+    // Which of the possible Mutation types to apply.
+    oneof mutation {
+        // Set a cell's value.
+        SetCell set_cell = 1;
+
+        // Deletes cells from a column.
+        DeleteFromColumn delete_from_column = 2;
+
+        // Deletes cells from the entire row.
+        DeleteFromRow delete_from_row = 3;
+    }
+}
+
+// A mutation of a single row.
+message RowMutation {
+    option (scalapb.message).type = "nl.tudelft.htable.core.RowMutation";
+
+    // The unique name of the table to mutate.
+    string table_name = 1;
+
+    // The key of the row to which the mutation should be applied.
+    bytes row_key = 2;
+
+    // Changes to be atomically applied to the specified row. Entries are applied
+    // in order, meaning that earlier mutations can be masked by later ones.
+    repeated Mutation mutations = 3;
+}
+
+// Request message for ClientService.Read.
+message ReadRequest {
+    option (scalapb.message).extends = "nl.tudelft.htable.protocol.client.ClientRequest";
+
+    // The query for this request.
+    Query query = 1;
+}
+
+// Response message for ClientService.Read.
+message ReadResponse {
+    option (scalapb.message).extends = "nl.tudelft.htable.protocol.client.ClientResponse";
+
+    // The rows contained in this response.
+    repeated Row rows = 1;
+}
+
+// Request message for ClientService.Mutate.
+message MutateRequest {
+    option (scalapb.message).extends = "nl.tudelft.htable.protocol.client.ClientRequest";
+
+    // The row mutation to perform.
+    RowMutation mutation = 1;
+}
+
+// Response message for ClientService.Mutate.
+message MutateResponse {
+    option (scalapb.message).extends = "nl.tudelft.htable.protocol.client.ClientResponse";
+}
+
+service ClientService {
+    // Read the specified row (range) and stream back the response.
+    rpc Read(ReadRequest) returns (stream ReadResponse) {}
+
+    // Mutate the specified row atomically.
+    rpc Mutate(MutateRequest) returns (MutateResponse) {}
+}

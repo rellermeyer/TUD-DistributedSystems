@@ -1,0 +1,70 @@
+syntax = "proto3";
+
+import "scalapb/scalapb.proto";
+
+package nl.tudelft.htable.protocol;
+
+option (scalapb.options) = {
+  scope: PACKAGE
+  lenses: false
+  import: "nl.tudelft.htable.protocol._"
+  bytes_type: "akka.util.ByteString"
+};
+
+// A tablet that is served by a node.
+message Tablet {
+    option (scalapb.message).type = "nl.tudelft.htable.core.Tablet";
+
+    // The name of the table.
+    string table_name = 1;
+
+    // The start key of the tablet.
+    bytes start_key = 2;
+
+    // The end key of the tablet.
+    bytes end_key = 3;
+
+    // The optional tablet identifier.
+    int32 id = 4;
+}
+
+// A row in a table.
+message Row {
+    option (scalapb.message).type = "nl.tudelft.htable.core.Row";
+
+    // The row key for this response.
+    bytes row_key = 1;
+
+    // The cells contained in this row.
+    repeated RowCell cells = 2;
+}
+
+
+// A row cell contents returned as part of the read response stream.
+message RowCell {
+    option (scalapb.message).type = "nl.tudelft.htable.core.RowCell";
+
+    // The cell's qualifier (column name).
+    bytes qualifier = 1;
+
+    // The cell's stored timestamp in milliseconds, which also uniquely identifies it
+    // within its column.
+    int64 timestamp = 2;
+
+    // The value stored in the cell.
+    bytes value = 3;
+}
+
+
+// A contiguous range of rows.
+message RowRange {
+    option (scalapb.message).type = "nl.tudelft.htable.core.RowRange";
+
+    // The row key at which to start the range.
+    // If the field is not given, it is interpreted as the empty string, inclusive.
+    bytes start_key = 1;
+
+    // The row key at which to end the range.
+    // If the field is not set, interpreted as the infinite row key, exclusive.
+    bytes end_key = 2;
+}

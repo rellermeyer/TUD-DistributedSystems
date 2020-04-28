@@ -1,0 +1,62 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "nl.tudelft.htable.protocol.admin";
+
+import "scalapb/scalapb.proto";
+import "Base.proto";
+
+package nl.tudelft.htable.protocol.client;
+
+// Request message for [AdminService.CreateTable].
+message CreateTableRequest {
+    option (scalapb.message).extends = "nl.tudelft.htable.protocol.admin.AdminRequest";
+
+    // The name by which the new table should be referred to within the cluster.
+    string table_name = 1;
+}
+
+// Request message for [AdminService.DeleteTable].
+message DeleteTableRequest {
+    option (scalapb.message).extends = "nl.tudelft.htable.protocol.admin.AdminRequest";
+
+    // The name of the table to delete.
+    string table_name = 1;
+}
+
+// Request message for [AdminService.Balance].
+message BalanceRequest {
+    option (scalapb.message).extends = "nl.tudelft.htable.protocol.admin.AdminRequest";
+
+    // The tablets that should be refreshed.
+    repeated Tablet tablets = 1;
+
+    // Invalidate the entire assignment.
+    bool invalidate = 2;
+}
+
+// Response message for [AdminService.CreateTable]
+message CreateTableResponse {
+    option (scalapb.message).extends = "nl.tudelft.htable.protocol.admin.AdminResponse";
+}
+
+// Response message for [AdminService.DeleteTable]
+message DeleteTableResponse {
+    option (scalapb.message).extends = "nl.tudelft.htable.protocol.admin.AdminResponse";
+}
+
+// Response message for [AdminService.Balance]
+message BalanceResponse {
+    option (scalapb.message).extends = "nl.tudelft.htable.protocol.admin.AdminResponse";
+}
+
+service AdminService {
+    // Create a new table in the cluster.
+    rpc CreateTable (CreateTableRequest) returns (CreateTableResponse) {}
+
+    // Delete a table in the cluster.
+    rpc DeleteTable(DeleteTableRequest) returns (DeleteTableResponse) {}
+
+    // Re-balance the assignments of the cluster.
+    rpc Balance(BalanceRequest) returns (BalanceResponse) {}
+}
