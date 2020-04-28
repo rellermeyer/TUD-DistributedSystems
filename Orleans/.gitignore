@@ -1,0 +1,11 @@
+*.class
+*.log
+ClientTest
+HelloWorld*
+.idea/
+
+target/
+
+src/main/resources/MongodbConnection
+deployment/docker/orleans.jar
+.DS_Store
