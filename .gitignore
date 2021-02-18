@@ -72,4 +72,14 @@ fabric.properties
 
 # remove build folder
 **/*/target
-/target/
+
+# remove sbt related folders
+dist/*
+target/
+lib_managed/
+src_managed/
+project/boot/
+project/plugins/project/
+.history
+.cache
+.lib/
