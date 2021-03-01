@@ -5,7 +5,7 @@
 
 The design is based on expanding Apache Flink [[1]](#1) with parts of the optimizations presented in WASP [[2]](#2). A visual representation of the full WASP implementation is depicted below, with components that we are implementing in green, components that we are simulating in yellow, and components that we are not implementing as red.
 
-![WASP Design](images/Wasp_Design.png)
+![WASP Design](images/WASP_Design.png)
 
 Adaptations of Apache Flink:
  - adapt task scheduler with scheduling algorithm of WASP, explained below
