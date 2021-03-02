@@ -1,4 +1,6 @@
-class Node(id: Int) {
+class TaskManager(id: Int) {
+  // TODO: put local monitor stuff here (bandwidth, latency, processing rate, ...)
+
   def getId: Int = {
     id
   }
