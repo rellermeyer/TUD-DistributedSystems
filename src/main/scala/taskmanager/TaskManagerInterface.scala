@@ -7,8 +7,8 @@ import java.rmi.RemoteException;
 import executionplan.Task
 
 trait TaskManagerInterface extends Remote {
-    @throws(classOf[MalformedURLException])
-    @throws(classOf[NotBoundException])
-    @throws(classOf[RemoteException])
-    def assignTask[A, B](task: Task[A, B]): Unit // TODO: add Task argument 
+    // @throws(classOf[MalformedURLException])
+    // @throws(classOf[NotBoundException])
+    // @throws(classOf[RemoteException])
+    // def assignTask[A, B](task: Task[A, B]): Unit // TODO: add Task argument 
 }

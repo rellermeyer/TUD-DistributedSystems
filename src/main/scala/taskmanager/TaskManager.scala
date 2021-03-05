@@ -7,10 +7,10 @@ import java.io.InputStreamReader
 import java.rmi.Naming
 import java.rmi.server.UnicastRemoteObject
 import java.rmi.registry.LocateRegistry;
-import jobmanager._
+import jobmanager.JobManagerInterface
 import executionplan._
 
-class TaskManager extends UnicastRemoteObject with TaskManagerInterface {
+object TaskManager extends UnicastRemoteObject with TaskManagerInterface {
   /*
    * Create a new JVM instance for each Task Manager (via a new terminal invocation of it)
    * lookup the Job Manager's RMI registry, check the number of already registered Task
@@ -21,38 +21,18 @@ class TaskManager extends UnicastRemoteObject with TaskManagerInterface {
 
   // TODO: put local monitor stuff here (bandwidth, latency, processing rate, ...)
   
-  private var id = 0 // Initialized by the return value of the rmi call to JobManager
+  var id = 0 // Initialized by the return value of the rmi call to JobManager
 
   def main(args: Array[String]) = {
-    val registryURL = "rmi://localhost:1099"
-    val jobManager: JobManagerInterface = Naming.lookup(registryURL).asInstanceOf[JobManagerInterface]
+    val registry = LocateRegistry.getRegistry(1099)
+    println(registry.list.mkString);
+
+    val jobManagerName = "jobmanager"
+    val jobManager: JobManagerInterface = registry.lookup(jobManagerName).asInstanceOf[JobManagerInterface]
+    println("Found JobManager!")
     id = jobManager.register() // get id from JobManager
-    Naming.bind("taskmanager" + id, this) // http://192.168.1.5:2000/taskmanager2
-    myPrint("Added to registry")
-
-    val port = 8000 + id;
-    val serverSocket = new ServerSocket(port)
-    myPrint("Listening on port: " + port)
-
-  
-  }
-  
-  def assignTask[A, B](task : Task[A, B]): Unit = {
-      // TODO: implement
-      myPrint("Started task")
-
-      // while (true) {
-      //     // accept() blocks execution until a client connects
-      //     val clientSocket = serverSocket.accept()
-      //     // outputStream to client
-      //     val outputStream = new PrintWriter(clientSocket.getOutputStream(), true)
-      //     // inputStream to receive data from client
-      //     val inputStream = new InputStreamReader(clientSocket.getInputStream())
-      // }
-    }
-
-  // better name?
-  def myPrint(text: String) {
-    println(id + ": " + text)
+    println("Registered id")
+    Naming.bind("rmi://localhost:1099/taskmanager", this) // http://192.168.1.5:2000/taskmanager2
+    println("Bound to registry")
   }
 }

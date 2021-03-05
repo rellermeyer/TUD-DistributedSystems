@@ -5,6 +5,7 @@ import java.rmi.Naming
 import java.rmi.server.UnicastRemoteObject
 import executionplan._
 import scala.collection.mutable.ArrayBuffer
+import taskmanager._
 
 object JobManager extends UnicastRemoteObject with JobManagerInterface {
   /* 
@@ -15,11 +16,9 @@ object JobManager extends UnicastRemoteObject with JobManagerInterface {
   val taskManagers = ArrayBuffer[TaskManagerInfo]()
   def main(args: Array[String]) = {
     val registryPort = 1099
-    val registryURL = "rmi://localhost:" + registryPort + "/taskmanager"
+    // val registryURL = "rmi://localhost:" + registryPort
     val registry = LocateRegistry.createRegistry(registryPort)
-
-    // Initialize TaskManagers
-
+    registry.bind("jobmanager", this)
   }
 
   // register the poor taskmanager
