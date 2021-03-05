@@ -1,4 +1,4 @@
-package jobmanager
+// package jobmanager
 
 import java.net.MalformedURLException;
 import java.rmi.NotBoundException;

@@ -1,3 +1,3 @@
 package executionplan
 
-case class Task[A, B](from: String, to: String, operator: String, fun: A => B)
+case class Task(from: String, to: String, operator: String)

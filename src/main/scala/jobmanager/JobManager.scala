@@ -1,4 +1,4 @@
-package jobmanager
+// package jobmanager
 
 import java.rmi.registry.LocateRegistry
 import java.rmi.Naming
@@ -7,19 +7,17 @@ import executionplan._
 import scala.collection.mutable.ArrayBuffer
 import taskmanager._
 
-object JobManager extends UnicastRemoteObject with JobManagerInterface {
-  /* 
-  *  Start a Job Manager that creates a registry
-  *  at a specific port for Task Manager JVM
-  *  instances to connect to
-  */
-  val taskManagers = ArrayBuffer[TaskManagerInfo]()
-  def main(args: Array[String]) = {
-    val registryPort = 1099
-    // val registryURL = "rmi://localhost:" + registryPort
-    val registry = LocateRegistry.createRegistry(registryPort)
-    registry.bind("jobmanager", this)
+object JobManagerRunner {
+  def main(args: Array[String]): Unit = {
+    val registry = LocateRegistry.getRegistry(1099)
+    val JobManager = new JobManager
+    registry.bind("jobmanager", JobManager)
+    println("JobManager bound!")
   }
+}
+
+class JobManager extends UnicastRemoteObject with JobManagerInterface {
+  val taskManagers = ArrayBuffer[TaskManagerInfo]()
 
   // register the poor taskmanager
   def register(): Int = {
