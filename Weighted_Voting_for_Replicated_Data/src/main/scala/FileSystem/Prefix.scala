@@ -1,4 +1,6 @@
-class Prefix (suiteR: Int, suiteW: Int){
+package FileSystem
+
+class Prefix(suiteR: Int, suiteW: Int){
 
   /**
    * constructor
@@ -19,7 +21,7 @@ class Prefix (suiteR: Int, suiteW: Int){
   /**
    * mutator methods
    */
-  def versionNumber_= (newNumber: Int): Unit =  _versionNumber = newNumber
+  def versionNumber_=(newNumber: Int): Unit =  _versionNumber = newNumber
 }
 
 /**

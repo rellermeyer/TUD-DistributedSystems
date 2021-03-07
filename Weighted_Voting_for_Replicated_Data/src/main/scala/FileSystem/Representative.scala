@@ -1,4 +1,6 @@
-class Representative(suiteId: Int, repWeight: Int, suiteR: Int, suiteW: Int) {
+package FileSystem
+
+class Representative(suiteId: Int, suiteR: Int, suiteW: Int, repWeight: Int) {
 
   /**
    * constructor
@@ -21,20 +23,20 @@ class Representative(suiteId: Int, repWeight: Int, suiteR: Int, suiteW: Int) {
    * mutator methods
    * allows for mutation of private properties through the syntax: instanceName.content = newContent,
    * as if the property content is publicly accessible
-   * this syntax is actually a shorthand for: instanceName.content_=(newContent), but the parenthese can be dropped
-   * and the underscore replaced by whitespace
+   * this syntax is actually a shorthand for: instanceName.content_=(newContent), but the parentheses can be dropped
+   * and the underscore can be replaced by whitespace
    */
-  def content_= (newContent: Int): Unit =  _content = newContent
+  def content_=(newContent: Int): Unit =  _content = newContent
 }
 
 /**
  * companion object
  * functions somewhat as a constructor for the corresponding class if you use it to set public properties of the class
- * allows for instance creation through the syntax: val instanceName = Representative(parameters)
+ * allows for instance creation through the syntax: val instanceName = FIleSystem.Representative(parameters)
  */
 object Representative {
-  def apply(suiteId: Int, repWeight: Int, suiteR: Int, suiteW: Int): Representative = {
-    val newRep = new Representative(suiteId, repWeight, suiteR, suiteW)
+  def apply(suiteId: Int, suiteR: Int, suiteW: Int, repWeight: Int): Representative = {
+    val newRep = new Representative(suiteId, suiteR, suiteW, repWeight)
     newRep
   }
 }
