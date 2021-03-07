@@ -1,17 +1,19 @@
 package FileSystem
 
-class Container(newContainerId: Int) {
+class Container(newContainerId: Int, newLatency: Int) {
 
   /**
    * constructor
    */
-  private val _containerId: Int = newContainerId
+  private val _containerId: Int = newContainerId //TODO: may not be needed
+  private val _latency: Int = newLatency
   private var _representatives: Vector[Representative] = scala.collection.immutable.Vector.empty
 
   /**
    * accessor methods
    */
   def containerId: Int = _containerId
+  def latency: Int = _latency
   def representatives: Vector[Representative] = _representatives
 
   def findRepresentative(suiteId: Int): Option[Representative] = {
@@ -19,7 +21,7 @@ class Container(newContainerId: Int) {
   }
 
   def createRepresentative(suiteId: Int, suiteR: Int, suiteW: Int, repWeight: Int): Unit = {
-    if (!(findRepresentative(suiteId).isDefined)) {
+    if (findRepresentative(suiteId).isEmpty) {
       val newRepresentative = Representative(suiteId: Int, suiteR: Int, suiteW: Int, repWeight: Int)
       _representatives = _representatives :+ newRepresentative
       println("container " + _containerId + " creates representative with weight " + repWeight)
@@ -50,8 +52,8 @@ class Container(newContainerId: Int) {
  * companion object
  */
 object Container {
-  def apply(newContainerId: Int): Container = {
-    val newContainer = new Container(newContainerId)
+  def apply(newContainerId: Int, newLatency: Int): Container = {
+    val newContainer = new Container(newContainerId, newLatency)
     newContainer
   }
 }
