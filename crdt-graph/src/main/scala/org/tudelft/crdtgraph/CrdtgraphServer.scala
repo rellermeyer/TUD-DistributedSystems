@@ -1,7 +1,6 @@
 package org.tudelft.crdtgraph
 
 import cats.effect.{ConcurrentEffect, Timer}
-import cats.implicits._
 import fs2.Stream
 import org.http4s.client.blaze.BlazeClientBuilder
 import org.http4s.implicits._
@@ -21,7 +20,7 @@ object CrdtgraphServer {
       // want to extract a segments not checked
       // in the underlying routes.
       httpApp = (
-        CrdtgraphRoutes.jokeRoutes[F](jokeAlg) <+>
+        CrdtgraphRoutes.jokeRoutes[F](jokeAlg)
       ).orNotFound
 
       // With Middlewares in place
