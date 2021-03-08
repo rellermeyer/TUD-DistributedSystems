@@ -2,8 +2,8 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/distributedsystem.iml" filepath="$PROJECT_DIR$/.idea/modules/distributedsystem.iml" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/distributedsystem-build.iml" filepath="$PROJECT_DIR$/.idea/modules/distributedsystem-build.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/akka-sample-cluster-scala.iml" filepath="$PROJECT_DIR$/.idea/modules/akka-sample-cluster-scala.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/akka-sample-cluster-scala-build.iml" filepath="$PROJECT_DIR$/.idea/modules/akka-sample-cluster-scala-build.iml" />
     </modules>
   </component>
 </project>
