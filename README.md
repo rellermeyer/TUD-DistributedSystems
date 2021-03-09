@@ -4,25 +4,25 @@
 
 To publish the dockerfile locally, start of by running the following command in the terminal:
 
-'''
+```
 sbt reload plugins clean compile
-'''
+```
 
 This makes sure all the dependency plugins are set and cleans the project before compiling it. 
 Now to create a local Docker image run the command 
 
-'''
+```
 sbt docker:stage
 sbt docker:publishLocal
-'''
+```
 
 This generates a directory with the Dockerfile and environment prepared for creating a Docker image.
 Next it  builds an image using the local Docker server.
 Now that this is all set up, you can run the docker image by running the following command:
 
-'''
+```
 docker run --rm -p 8080:8080 crdt-graph:0.0.1-SNAPSHOT
-'''
+```
 
 The docker image should run on port 8080, navigate to localhost:8080 to access the service in the browser. 
 
