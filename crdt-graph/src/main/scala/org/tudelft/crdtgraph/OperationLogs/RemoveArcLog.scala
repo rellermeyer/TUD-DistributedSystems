@@ -1,7 +1,7 @@
 package org.tudelft.crdtgraph.OperationLogs
 
-class RemoveArcLog(source: String, target: String, uuids: Seq[String]) extends  OperationLog(uuids) {
-  var opType = OperationType.removeArc
-  var sourceVertex: String = source
-  var targetVertex: String = target
+import org.tudelft.crdtgraph.OperationLogs.OperationType.OperationType
+
+class RemoveArcLog(var sourceVertex: String, var targetVertex: String, var arcUuids: scala.collection.mutable.Seq[String]) extends OperationLog() {
+  var opType: OperationType = OperationType.removeArc
 }

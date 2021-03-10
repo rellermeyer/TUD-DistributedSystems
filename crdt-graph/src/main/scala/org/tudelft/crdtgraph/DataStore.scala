@@ -5,125 +5,107 @@ import org.tudelft.crdtgraph.OperationLogs._
 import scala.collection.mutable._
 
 object DataStore {
-  val Vertices = new HashMap[String, ArrayBuffer[String]]()
-  val Arcs = new HashMap[String, HashMap[String, ArrayBuffer[String]]]()
+  val Vertices = new HashMap[String, Vertex]()
   val ChangesQueue = ArrayBuffer[OperationLog]()
+
 
   def addVertex(vertexName: String): Boolean = {
     var newId = java.util.UUID.randomUUID.toString()
-    var change = doAddVertex(vertexName, newId)
-    ChangesQueue += change
+    var newChange = new AddVertexLog(vertexName, newId)
+
+    applyAddVertex(newChange)
     return true
   }
+
+  def applyAddVertex(cmd: AddVertexLog): Unit ={
+    if(!Vertices.contains(cmd.vertexName)){
+      Vertices(cmd.vertexName) = new Vertex(cmd.vertexName, cmd.vertexUuid)
+    }
+    else {
+      Vertices(cmd.vertexName).addId(cmd.vertexUuid)
+    }
+    ChangesQueue += cmd
+  }
+
 
   def addArc(arcSourceVertex: String, arcTargetVertex: String): Boolean = {
     var newId = java.util.UUID.randomUUID.toString()
-    var change = doAddArc(arcSourceVertex, arcTargetVertex, newId)
-    ChangesQueue += change
+    var newChange = new AddArcLog(arcSourceVertex, arcTargetVertex, newId)
+    applyAddArc(newChange)
     return true
+  }
+
+  def applyAddArc(cmd: AddArcLog): Unit = {
+    if(!lookUpVertex(cmd.sourceVertex)){
+      throw new IllegalArgumentException //no source vertex
+    }
+    Vertices(cmd.sourceVertex).addArc(cmd.targetVertex, cmd.arcUuid)
+    ChangesQueue += cmd
   }
 
   def removeVertex(vertexName: String): Boolean = {
-    var change = doRemoveVertex(vertexName)
-    ChangesQueue += change
+    if(!lookUpVertex(vertexName)){
+      throw new IllegalArgumentException //to vertex to remove
+      //todo: discuss what should we do when this happens while synchronizing
+    }
+    var arcs = Vertices(vertexName).Arcs
+    var ids = Vertices(vertexName).Uuids
+    var change = new RemoveVertexLog(vertexName, arcs, ids)
+    applyRemoveVertex(change)
     return true;
   }
 
+  def applyRemoveVertex(cmd : RemoveVertexLog):Unit = {
+    if(!lookUpVertex(cmd.vertexName)){
+      throw new IllegalArgumentException //to vertex to remove
+      //todo: discuss what should we do when this happens while synchronizing
+    }
+    Vertices.remove(cmd.vertexName)
+    ChangesQueue += cmd
+  }
+
+
   def removeArc(arcSourceVertex: String, arcTargetVertex: String): Boolean = {
-    var change = doRemoveArcs(arcSourceVertex, arcTargetVertex)
-    ChangesQueue += change
+    if(!lookUpArc(arcSourceVertex, arcTargetVertex)){
+      throw new IllegalArgumentException //no arc to remove
+      //todo: discuss what should we do when this happens while synchronizing
+    }
+
+    val pastArcsUUIDs = Vertices(arcSourceVertex).getArcUuids(arcSourceVertex)
+    var change =  new RemoveArcLog(arcSourceVertex, arcTargetVertex, pastArcsUUIDs)
+    applyRemoveArc(change)
     return true
   }
 
-  def doAddVertex(vertexName: String, id: String): OperationLog = {
-    if(!Vertices.contains(vertexName)){
-      Vertices(vertexName) = ArrayBuffer()
-    }
-    Vertices(vertexName) += id
-    return new AddVertexLog(vertexName, ArrayBuffer(id))
-  }
-
-  def doAddArc(arcSourceVertex: String, arcTargetVertex: String, id: String): AddArcLog = {
-    if(!lookUpVertex(arcSourceVertex)){
-      throw new IllegalArgumentException
+  def applyRemoveArc(cmd: RemoveArcLog):Unit = {
+    if(!lookUpArc(cmd.sourceVertex, cmd.targetVertex)){
+      throw new IllegalArgumentException //no arc to remove
+      //todo: discuss what should we do when this happens while synchronizing
     }
 
-    if(!Arcs.contains(arcSourceVertex)){
-      Arcs(arcSourceVertex) = HashMap[String, ArrayBuffer[String]]()
-    }
-    if(!Arcs(arcSourceVertex).contains(arcTargetVertex)){
-      Arcs(arcSourceVertex)(arcTargetVertex) = ArrayBuffer()
-    }
-    Arcs(arcSourceVertex)(arcTargetVertex) += id
-    return new AddArcLog(arcSourceVertex, arcTargetVertex, ArrayBuffer(id));
-  }
-
-  def doRemoveVertex(vertexName: String): RemoveVertexLog = {
-    if(!lookUpVertex(vertexName)){
-      throw new IllegalArgumentException
-    }
-    val pastVertexUUIDs = Vertices(vertexName)
-    val pastArcsUUIDs = Arcs(vertexName)
-    Vertices.remove(vertexName)
-    Arcs.remove(vertexName)
-
-    return new RemoveVertexLog(vertexName, pastArcsUUIDs, pastVertexUUIDs);
-  }
-
-  def doRemoveArcs(arcSourceVertex: String, arcTargetVertex: String): RemoveArcLog = {
-    if(!lookUpArc(arcSourceVertex, arcTargetVertex)){
-      throw new IllegalArgumentException
-    }
-
-    val pastArcsUUIDs = Arcs(arcSourceVertex)(arcTargetVertex)
-    Arcs(arcSourceVertex).remove(arcTargetVertex)
-    return new RemoveArcLog(arcSourceVertex, arcTargetVertex, pastArcsUUIDs)
+    Vertices(cmd.sourceVertex).removeArcs(cmd.targetVertex, cmd.arcUuids)
+    ChangesQueue += cmd
   }
 
   def applyChanges(changes: ArrayBuffer[OperationLog]):Boolean = {
     changes.foreach( (f: OperationLog) =>{
-      f.opType match {
-        case OperationType.addVertex => {
-          var newVertex = f.asInstanceOf[AddVertexLog]
-          doAddVertex(newVertex.vertexName, newVertex.editedIds(0))
-        }
-        case OperationType.addArc => {
-          var newArc = f.asInstanceOf[AddArcLog]
-          try {
-            doAddArc(newArc.sourceVertex, newArc.targetVertex, newArc.editedIds(0))
-          } catch {
-            case ex: IllegalArgumentException =>{
-              println("Adding arc with no source in sync method")
-            }
+      if(!ChangesQueue.exists((x: OperationLog) => x.operationUuid == f.operationUuid)){
+        f.opType match {
+          case OperationType.addVertex => {
+            var newVertex = f.asInstanceOf[AddVertexLog]
+            applyAddVertex(newVertex)
           }
-        }
-        case OperationType.removeArc => {
-          var removedArc = f.asInstanceOf[RemoveArcLog]
-          if(!lookUpArc(removedArc.sourceVertex, removedArc.targetVertex)){
-            println("Removing a non existing arc")
-            return false //TODO
+          case OperationType.addArc => {
+            var newArc = f.asInstanceOf[AddArcLog]
+            applyAddArc(newArc)
           }
-          Arcs(removedArc.sourceVertex)(removedArc.targetVertex).--=(removedArc.editedIds)
-        }
-        case OperationType.removeVertex => {
-          var removedVertex = f.asInstanceOf[RemoveVertexLog]
-          if(!lookUpVertex(removedVertex.vertexName)){
-            println("Removing a non existing vertex")
-            return false //TODO
+          case OperationType.removeArc => {
+            var removedArc = f.asInstanceOf[RemoveArcLog]
+            applyRemoveArc(removedArc)
           }
-
-          Vertices(removedVertex.vertexName).--=(removedVertex.editedIds)
-          if(!lookUpVertex(removedVertex.vertexName)){
-            Vertices.remove(removedVertex.vertexName)
-          }
-          Arcs(removedVertex.vertexName).foreach( (arcKeyValue) =>{
-            arcKeyValue._2.--=(removedVertex.removedArcs(arcKeyValue._1))
-            if(!lookUpArc(removedVertex.vertexName, arcKeyValue._1)){
-              Arcs(removedVertex.vertexName).remove(arcKeyValue._1)
-            }
-          })
-          if(!Arcs(removedVertex.vertexName).nonEmpty){
-            Arcs.remove(removedVertex.vertexName)
+          case OperationType.removeVertex => {
+            var removedVertex = f.asInstanceOf[RemoveVertexLog]
+            applyRemoveVertex(removedVertex)
           }
         }
       }
@@ -132,30 +114,12 @@ object DataStore {
   }
 
 
-  def dumpState(): String = {
-    var finalResult = "";
-    for ((k,v) <- Vertices) {
-      finalResult+="v:";
-      finalResult+=k;
-      finalResult+="\n";
-      println(v)
-      for ( x <- v){
-        println(x)
-        finalResult+=x;
-        finalResult+="\n";
-      }
-    }
-    return finalResult;
-  }
-
   def lookUpVertex(vertexName: String): Boolean = {
-    return Vertices.contains(vertexName) && Vertices(vertexName).nonEmpty
+    return Vertices.contains(vertexName) && Vertices(vertexName).Uuids.nonEmpty
   }
 
   def lookUpArc(arcSourceVertex: String, arcTargetVertex: String): Boolean = {
-    return Arcs.contains(arcSourceVertex) &&
-      Arcs(arcSourceVertex).contains(arcTargetVertex) &&
-      Arcs(arcSourceVertex)(arcTargetVertex).nonEmpty
+    return Vertices.contains(arcSourceVertex) && Vertices(arcSourceVertex).isConnectedTo(arcTargetVertex)
   }
 
 

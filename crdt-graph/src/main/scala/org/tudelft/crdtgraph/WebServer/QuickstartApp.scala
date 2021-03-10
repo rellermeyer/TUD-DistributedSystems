@@ -6,10 +6,10 @@ import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
+import org.tudelft.crdtgraph.DataStore
 import spray.json.DefaultJsonProtocol._
 
 import scala.io.StdIn
-
 import scala.concurrent.Future
 
 object WebServer {
@@ -46,13 +46,13 @@ object WebServer {
 
     val route: Route =
       get {
-        pathPrefix("item" / LongNumber) { id =>
-          // there might be no item for a given id
-          val maybeItem: Future[Option[Item]] = fetchItem(id)
-
-          onSuccess(maybeItem) {
-            case Some(item) => complete(item)
-            case None       => complete(StatusCodes.NotFound)
+        pathPrefix("graph/vertex" / """.+""".r) { id =>
+          var vertex = id.asInstanceOf[String]
+          var result = DataStore.lookUpVertex(vertex)
+          if(result){
+            return complete(StatusCodes.OK)
+          } else {
+            return complete(StatusCodes.NotFound)
           }
         }
       } ~

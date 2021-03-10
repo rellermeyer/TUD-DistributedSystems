@@ -1,9 +1,9 @@
 package org.tudelft.crdtgraph.OperationLogs
 
+import org.tudelft.crdtgraph.OperationLogs.OperationType.OperationType
+
 import scala.collection.mutable._
 
-class RemoveVertexLog(name: String, arcs: HashMap[String, ArrayBuffer[String]], uuids: Seq[String]) extends  OperationLog(uuids) {
-  var opType = OperationType.removeVertex
-  var removedArcs: HashMap[String, ArrayBuffer[String]] = arcs
-  var vertexName: String = name
+class RemoveVertexLog(var vertexName: String, var arcUuids: HashMap[String, ArrayBuffer[String]], var vertexUuids: Seq[String]) extends  OperationLog() {
+  var opType: OperationType = OperationType.removeVertex
 }

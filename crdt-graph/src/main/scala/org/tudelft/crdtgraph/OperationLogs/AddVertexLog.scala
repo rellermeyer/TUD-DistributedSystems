@@ -1,6 +1,5 @@
 package org.tudelft.crdtgraph.OperationLogs
 
-class AddVertexLog(name: String, uuids: Seq[String]) extends  OperationLog(uuids) {
+class AddVertexLog(var vertexName: String, var vertexUuid: String) extends  OperationLog() {
   var opType = OperationType.addVertex
-  var vertexName: String = name
 }
