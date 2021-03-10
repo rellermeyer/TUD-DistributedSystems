@@ -14,6 +14,15 @@ class Vertex(var name: String, initId: String) {
         }
     }
 
+    def removeIds(ids: Seq[String]): Unit = {
+        Uuids --= ids
+    }
+
+    def toBeRemoved():Boolean = {
+        return Uuids.isEmpty && Arcs.isEmpty
+        //todo: discuss if we should check for still present arcs
+    }
+
     def addArc(targetVertex: String, id: String): Unit = {
         if(!Arcs.contains(targetVertex)){
             Arcs(targetVertex) = ArrayBuffer()
@@ -34,5 +43,8 @@ class Vertex(var name: String, initId: String) {
 
     def removeArcs(targetVertex: String, arcUuids : Seq[String] ): Unit = {
         Arcs(targetVertex) --= arcUuids
+        if(Arcs(targetVertex).isEmpty){
+            Arcs.remove(targetVertex)
+        }
     }
 }

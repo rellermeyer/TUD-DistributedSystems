@@ -27,7 +27,6 @@ object DataStore {
     ChangesQueue += cmd
   }
 
-
   def addArc(arcSourceVertex: String, arcTargetVertex: String): Boolean = {
     var newId = java.util.UUID.randomUUID.toString()
     var newChange = new AddArcLog(arcSourceVertex, arcTargetVertex, newId)
@@ -38,6 +37,7 @@ object DataStore {
   def applyAddArc(cmd: AddArcLog): Unit = {
     if(!lookUpVertex(cmd.sourceVertex)){
       throw new IllegalArgumentException //no source vertex
+      //todo: discuss what should we do when this happens while synchronizing
     }
     Vertices(cmd.sourceVertex).addArc(cmd.targetVertex, cmd.arcUuid)
     ChangesQueue += cmd
@@ -60,10 +60,16 @@ object DataStore {
       throw new IllegalArgumentException //to vertex to remove
       //todo: discuss what should we do when this happens while synchronizing
     }
-    Vertices.remove(cmd.vertexName)
+
+    cmd.arcUuids.foreach( arcKeyValue =>{
+      Vertices(cmd.vertexName).removeArcs(arcKeyValue._1, arcKeyValue._2)
+    })
+    Vertices(cmd.vertexName).removeIds(cmd.vertexUuids)
+    if(Vertices(cmd.vertexName).toBeRemoved()){
+      Vertices.remove(cmd.vertexName)
+    }
     ChangesQueue += cmd
   }
-
 
   def removeArc(arcSourceVertex: String, arcTargetVertex: String): Boolean = {
     if(!lookUpArc(arcSourceVertex, arcTargetVertex)){
@@ -113,7 +119,6 @@ object DataStore {
     return true
   }
 
-
   def lookUpVertex(vertexName: String): Boolean = {
     return Vertices.contains(vertexName) && Vertices(vertexName).Uuids.nonEmpty
   }
@@ -121,6 +126,5 @@ object DataStore {
   def lookUpArc(arcSourceVertex: String, arcTargetVertex: String): Boolean = {
     return Vertices.contains(arcSourceVertex) && Vertices(arcSourceVertex).isConnectedTo(arcTargetVertex)
   }
-
 
 }

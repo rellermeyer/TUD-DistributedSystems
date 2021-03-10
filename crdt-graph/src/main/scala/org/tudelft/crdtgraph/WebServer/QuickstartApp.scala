@@ -46,13 +46,13 @@ object WebServer {
 
     val route: Route =
       get {
-        pathPrefix("graph/vertex" / """.+""".r) { id =>
+        pathPrefix("graph" / "vertex" / """.+""".r) { id =>
           var vertex = id.asInstanceOf[String]
           var result = DataStore.lookUpVertex(vertex)
           if(result){
-            return complete(StatusCodes.OK)
+            complete(StatusCodes.OK)
           } else {
-            return complete(StatusCodes.NotFound)
+            complete(StatusCodes.NotFound)
           }
         }
       } ~
