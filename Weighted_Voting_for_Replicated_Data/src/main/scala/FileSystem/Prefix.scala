@@ -5,11 +5,9 @@ class Prefix(suiteR: Int, suiteW: Int){
   /**
    * constructor
    */
-  private var _versionNumber: Int = 1
+  private var _versionNumber: Int = 0
   private val _r: Int = suiteR
   private val _w: Int = suiteW
-  //private val suiteSize: Int = is this needed?
-  //TODO: list of representatives. Not sure if needed either
 
   /**
    * accessor methods

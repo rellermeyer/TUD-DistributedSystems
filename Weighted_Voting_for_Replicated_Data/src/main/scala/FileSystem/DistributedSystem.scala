@@ -1,11 +1,14 @@
 package FileSystem
 
-class DistributedSystem {
+import scala.util.Random
+
+class DistributedSystem(newFailProb: Double) {
 
   /**
    * constructor
    */
   private var _containers: Seq[Container] = Seq.empty[Container]
+  private var _failProb: Double = newFailProb
 
   /**
    * Initialize a number of new containers
@@ -14,14 +17,14 @@ class DistributedSystem {
    * @param latencies
    */
 
-  /*def createContainers(latencies: Seq[Int]): Unit = {
+  def createContainers(latencies: Seq[Int]): Unit = {
     for (l <- latencies) {
       _containers = _containers :+ Container(l)
       println("Created container with latency " + l)
     }
-  }*/
+  }
 
-  def createContainers(numContainers: Int, latencies: Seq[Int]): Unit = {
+  /*def createContainers(numContainers: Int, latencies: Seq[Int]): Unit = {
     if (numContainers == latencies.length) {
       val newIndices = _containers.length to (_containers.length + numContainers)
       for ((l, i) <- latencies.zip(newIndices)) {
@@ -32,7 +35,7 @@ class DistributedSystem {
     else {
       println("Error: number of latencies does not match number of new containers")
     }
-  }
+  }*/
 
   /**
    * Initialize a new file suite on all existing containers
@@ -44,8 +47,8 @@ class DistributedSystem {
    */
   def createSuite(suiteId: Int, suiteR: Int, suiteW: Int, repWeights: Seq[Int]): Unit = {
     if (repWeights.length == _containers.length) {
-      for ((c, w) <- _containers.zip(repWeights)) {
-        c.createRepresentative(suiteId, suiteR, suiteW, w)
+      for (cid <- _containers.indices) {
+        _containers(cid).createRepresentative(suiteId, suiteR, suiteW, repWeights(cid))
       }
     }
     else {
@@ -59,14 +62,19 @@ class DistributedSystem {
    * @return
    */
   //TODO: do containers always respond, or only when they have a representative?
-  def collectSuite(suiteId: Int): Seq[(Int, Int, Int)] = {
-    var response: Seq[(Int, Int, Int)] = Seq.empty[(Int, Int, Int)]
+  //TODO: Struct for response
+  //TODO: error message if suite doesn't exist
+  def collectSuite(suiteId: Int): Seq[(Int, Int, Int, Int)] = {
+    var response: Seq[(Int, Int, Int, Int)] = Seq.empty[(Int, Int, Int, Int)]
     var rep: Option[Representative] = None
-      for (c <- _containers) {
-        rep = c.findRepresentative(suiteId)
-        if (rep.isDefined) {
-          response = response :+ (c.containerId, c.latency, rep.get.weight)
+    val r: Random = scala.util.Random
+    var event: Double = r.nextDouble()
+      for (cid <- _containers.indices) {
+        rep = _containers(cid).findRepresentative(suiteId)
+        if (rep.isDefined && event >= _failProb) {
+          response = response :+ (cid, _containers(cid).latency, rep.get.weight, rep.get.prefix.versionNumber)
         }
+        event = r.nextFloat()
       }
     response
   }
@@ -85,14 +93,20 @@ class DistributedSystem {
       -1 //TODO: better error handling
     }
   }
+
+  def writeSuite(containerIds: Seq[Int], suiteId: Int, newContent: Int): Unit = {
+    for (cid <- containerIds) {
+      _containers(cid).writeRepresentative(suiteId, newContent)
+    }
+  }
 }
 
 /**
  * companion object
  */
 object DistributedSystem {
-  def apply(): DistributedSystem = {
-    val newSystem = new DistributedSystem()
+  def apply(newFailProb: Double): DistributedSystem = {
+    val newSystem = new DistributedSystem(newFailProb)
     newSystem
   }
 }
