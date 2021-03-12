@@ -8,12 +8,11 @@ class DistributedSystem(newFailProb: Double) {
    * constructor
    */
   private var _containers: Seq[Container] = Seq.empty[Container]
-  private var _failProb: Double = newFailProb
+  private val _failProb: Double = newFailProb
 
   /**
    * Initialize a number of new containers
    * New containers can be added to existing set
-   * @param numContainers
    * @param latencies
    */
 
@@ -23,19 +22,6 @@ class DistributedSystem(newFailProb: Double) {
       println("Created container with latency " + l)
     }
   }
-
-  /*def createContainers(numContainers: Int, latencies: Seq[Int]): Unit = {
-    if (numContainers == latencies.length) {
-      val newIndices = _containers.length to (_containers.length + numContainers)
-      for ((l, i) <- latencies.zip(newIndices)) {
-        _containers = _containers :+ Container(i, l)
-        println("Created container " + i + " with latency " + l)
-      }
-    }
-    else {
-      println("Error: number of latencies does not match number of new containers")
-    }
-  }*/
 
   /**
    * Initialize a new file suite on all existing containers
@@ -62,17 +48,16 @@ class DistributedSystem(newFailProb: Double) {
    * @return
    */
   //TODO: do containers always respond, or only when they have a representative?
-  //TODO: Struct for response
   //TODO: error message if suite doesn't exist
-  def collectSuite(suiteId: Int): Seq[(Int, Int, Int, Int)] = {
-    var response: Seq[(Int, Int, Int, Int)] = Seq.empty[(Int, Int, Int, Int)]
+  def collectSuite(suiteId: Int): FileSystemResponse = {
+    val response: FileSystemResponse = FileSystemResponse()
     var rep: Option[Representative] = None
     val r: Random = scala.util.Random
     var event: Double = r.nextDouble()
       for (cid <- _containers.indices) {
         rep = _containers(cid).findRepresentative(suiteId)
         if (rep.isDefined && event >= _failProb) {
-          response = response :+ (cid, _containers(cid).latency, rep.get.weight, rep.get.prefix.versionNumber)
+          response.addResponse(ContainerResponse(cid, _containers(cid).latency, rep.get.weight, rep.get.prefix))
         }
         event = r.nextFloat()
       }

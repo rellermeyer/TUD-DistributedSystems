@@ -18,6 +18,14 @@ class Container(newLatency: Int) {
     _representatives.find(element => element.repId == suiteId)
   }
 
+  /*def respond(suiteId: Int): ContainerResponse = {
+    val rep = findRepresentative(suiteId)
+    //if (rep.isDefined) {
+      println("read rep:" + rep.get.content)
+      ContainerResponse()
+    //}
+  }*/
+
   def createRepresentative(suiteId: Int, suiteR: Int, suiteW: Int, repWeight: Int): Unit = {
     if (findRepresentative(suiteId).isEmpty) {
       val newRepresentative = Representative(suiteId: Int, suiteR: Int, suiteW: Int, repWeight: Int)
