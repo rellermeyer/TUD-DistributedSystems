@@ -4,7 +4,7 @@ lazy val akkaVersion    = "2.6.13"
 lazy val root = (project in file(".")).
   settings(
     inThisBuild(List(
-      organization    := "com.example",
+      organization    := "org.tudelft",
       scalaVersion    := "2.13.4"
     )),
     name := "CRDT graph",
@@ -20,3 +20,7 @@ lazy val root = (project in file(".")).
       "org.scalatest"     %% "scalatest"                % "3.1.4"         % Test
     )
   )
+
+enablePlugins(UniversalPlugin)
+enablePlugins(JavaAppPackaging)
+enablePlugins(DockerPlugin)
