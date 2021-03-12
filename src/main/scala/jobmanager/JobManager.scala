@@ -18,6 +18,8 @@ object JobManagerRunner {
 
 class JobManager extends UnicastRemoteObject with JobManagerInterface {
   val taskManagers = ArrayBuffer[TaskManagerInfo]()
+  val reconfigurationManager = ReconfigurationManager
+  var alpha = 0.8.toFloat
 
   // register the poor taskmanager
   def register(): Int = {
@@ -44,16 +46,22 @@ class JobManager extends UnicastRemoteObject with JobManagerInterface {
       ipRate: Int,
       opRate: Int
   ) = {
+    println ("Received report from " + id)
     taskManagers(id).numSlots = numSlots
-    taskManagers(id).latenciesToSelf = latenciesToSelf.clone()
-    taskManagers(id).bandwidthsToSelf = bandwidthsToSelf.clone()
+    taskManagers(id).latenciesToSelf = latenciesToSelf
+    taskManagers(id).bandwidthsToSelf = bandwidthsToSelf
     taskManagers(id).ipRate = ipRate
     taskManagers(id).opRate = opRate
+
+    // TODO: only call it once in a while not all the time new data comes in
+    // TODO: implement actual parallelism (need to increase or decrease, scale up or down)
+    reconfigurationManager.solveILP(taskManagers, 1.0.toFloat, alpha)
   }
 }
 
-case class Latency(fromID: Int, time: Float)
-case class BW(fromID: Int, rate: Float)
+
+case class Latency(var fromID: Int, var time: Float)
+case class BW(var fromID: Int, var rate: Float)
 case class TaskManagerInfo(
     id: Int,
     var numSlots: Int,

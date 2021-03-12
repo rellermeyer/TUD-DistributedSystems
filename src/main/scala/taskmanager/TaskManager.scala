@@ -8,6 +8,7 @@ import java.rmi.Naming
 import java.rmi.server.UnicastRemoteObject
 import java.rmi.registry.LocateRegistry;
 import executionplan._
+import scala.util.Random
 
 object TaskManagerRunner {
   /*
@@ -29,14 +30,66 @@ object TaskManagerRunner {
     registry.bind("taskmanager" + id, TaskManager)
 
     println("TaskManager " + id + " bound!")
+    val rand = new Random
+
+    val no_taskManagers = registry.list().length - 1 // exclude JobManager
+
+    var latencies = new Array[Latency](no_taskManagers)
+    var bws = new Array[BW](no_taskManagers)
+
+    // Simulate some random bandwidth and latency
+    for (i <- 0 until no_taskManagers) {
+      latencies(i) = new Latency(
+        i,
+        Random.nextFloat()*3 // max 3 seconds latency
+        )
+      if (i != id) {
+        bws(i) = new BW(i, Random.nextFloat()*3)    
+      }
+    }
+
+    jobManager.monitorReport(
+      id,
+      rand.nextInt(3), // upper bound exclusive, so max 2 slots
+      latencies, 
+      bws, 
+      rand.nextInt(1000),
+      rand.nextInt(500)
+    )
   }
 }
+
 
 class TaskManager(val id: Int)
     extends UnicastRemoteObject
     with TaskManagerInterface {
+
+
   def assignTask(task: Task): Unit = {
     // Create socket connection with task.from and task.to
     // And start executing the operator on the inputstream and piping it to outputstream
+    // val outputSocket = 
   }
+
+  def getAllTaskMgrIDs() {
+    
+  }
+
+  def myPrint(text: String) {
+    println (id + ": " + text)
+  }
+
+  // ServerSocket used for INCOMING data
+  val port = 8000
+  val serverSocket = new ServerSocket(port)
+  myPrint ("Server socket started on port: " + port)
+
+  // while (true) {
+  //   // accept() blocks execution until a client connects
+  //   val inputSocket = serverSocket.accept()
+  //   // outputStream to client
+  //   val outputStream = new PrintWriter(inputSocket.getOutputStream(), true)
+  //   // inputStream to receive data from client
+  //   val inputStream = new InputStreamReader(inputSocket.getInputStream())
+  // }
 }

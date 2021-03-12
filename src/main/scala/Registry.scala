@@ -1,7 +1,7 @@
 import java.rmi.registry.LocateRegistry
 import java.rmi.server.UnicastRemoteObject
 
-object Main extends UnicastRemoteObject {
+object Registry extends UnicastRemoteObject {
   def main(args: Array[String]): Unit = {
     /*
      *  Create global registry for the JobManager and TaskManagers to connect to.

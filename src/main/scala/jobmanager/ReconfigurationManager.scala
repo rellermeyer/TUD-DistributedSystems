@@ -12,13 +12,15 @@ import com.google.ortools.linearsolver.MPVariable
 object ReconfigurationManager {
   def solveILP(
       taskManagers: ArrayBuffer[TaskManagerInfo],
-      prl: Float,
+      prl: Float,   //Desired parallelism : The desired sum of all slots of all data centers
       alpha: Float
   ) = {
+
     val solver = MPSolver.createSolver("SCIP");
     if (solver == null) {
       System.out.println("Could not create solver SCIP")
     } else {
+      println ("SCIP solver started")
       val m = taskManagers.length
       val infinity = java.lang.Double.POSITIVE_INFINITY
       val p = new Array[MPVariable](m)
@@ -34,16 +36,18 @@ object ReconfigurationManager {
       //Equation 2
       for (i <- 0 until m) {
         for (j <- 0 until m - 1) {
-          eqn2(i)(j) = solver.makeConstraint(
-            0,
-            alpha * taskManagers(i).bandwidthsToSelf(j).rate,
+          eqn2(i)(j) = solver.makeConstraint( // a*B from j to i (normally u to s)
+            0,                                                 // minimum value for left-hand side
+            alpha * taskManagers(i).bandwidthsToSelf(j).rate,  // maximum value for left-hand side
             "eqn2_" + taskManagers(i)
               .bandwidthsToSelf(j)
               .fromID + "_" + taskManagers(i).id
           )
+          
+          // Only one coefficient is used in the equation, set all others to 0
           for (k <- 0 until m) {
             if (k == i) {
-              eqn2(i)(j).setCoefficient(p(k), taskManagers(i).ipRate / prl)
+              eqn2(i)(j).setCoefficient(p(k), taskManagers(k).ipRate / prl) // lambda_I / p
             } else {
               eqn2(i)(j).setCoefficient(p(k), 0)
             }
@@ -99,9 +103,9 @@ object ReconfigurationManager {
       }
 
       //Equation 5
-      val eqn5 = solver.makeConstraint(prl, prl, "eqn5")
+      val eqn5 = solver.makeConstraint(prl, prl, "eqn5") // sum(p(i)) = prl
       for (i <- 0 until m) {
-        eqn5.setCoefficient(p(i), 1)
+        eqn5.setCoefficient(p(i), 1) //  1*p[0] + 1*p[1] + ...
       }
 
       //Objective
@@ -129,8 +133,8 @@ object ReconfigurationManager {
           obj(i)(j).setMinimization();
         }
       }
-
       val resultStatus = solver.solve();
+      print("Result: " + resultStatus)    // *DUMMY PRINT
     }
   }
 
