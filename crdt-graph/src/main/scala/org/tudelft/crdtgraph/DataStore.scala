@@ -136,24 +136,23 @@ object DataStore {
           var updates = ArrayBuffer[OperationLog]()
           // Amount of updates. Will be used to extract updates from ChangesQueue
           var amountOfUpdates = 0
-
+          print("Test")
           // Initialize amountOfUpdates so it can be used by a loop
           if(ChangesQueue.length - (counter + 1) > 0) {
             amountOfUpdates = ChangesQueue.length - (counter + 1)
           }
 
           // Extract updates from ChangesQueue
-          for(i <- amountOfUpdates) {
+          for(i <- 1 to amountOfUpdates) {
             updates += ChangesQueue(counter)
             counter += 1
           }
 
           //convert updates to JSON
 
-          // Send updates to all targets
+          // Send updates to all targets. Decide on what framework to use
           for(x <- targets) {
             // Send message to target
-
           }
 
           // Make the thread sleep for 10 seconds
