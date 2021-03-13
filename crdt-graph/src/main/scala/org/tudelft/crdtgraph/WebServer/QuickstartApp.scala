@@ -43,8 +43,6 @@ object WebServer {
           }
         }
       } ~
-
-
         get {
           pathPrefix("addvertex" / """\w+""".r) { id =>
             if (!DataStore.lookUpVertex(id)){
@@ -55,7 +53,6 @@ object WebServer {
             }
           }
         } ~
-
         get {
           pathPrefix("addarc" / """[a-zA-Z0-9\&\-\.']*""".r ) { id  =>
             val split = id.split("-")
@@ -78,8 +75,6 @@ object WebServer {
             }
           }
         } ~
-
-
         get {
           pathPrefix("removevertex" / """\w+""".r) { id =>
             // there might be no item for a given id
@@ -91,9 +86,6 @@ object WebServer {
             }
           }
         } ~
-
-
-
         get {
           //gives nullpointer
           pathPrefix("removearc" / """[a-zA-Z0-9\&\-\.']*""".r) { id =>
@@ -109,8 +101,6 @@ object WebServer {
             }
           }
         } ~
-
-
         get {
           //ask west how to create operationlogs
           pathPrefix("applychanges" / """[a-zA-Z0-9\&\-\.']*""".r) { id =>
@@ -126,17 +116,12 @@ object WebServer {
 
           }
         } ~
-
-
-
         get {
           pathPrefix("lookupvertex" / """\w+""".r) { id =>
             val returnval = DataStore.lookUpVertex(id)
             complete("called lookUpVertex on  " + id + " return is: " + returnval)
           }
         } ~
-
-
         get {
           pathPrefix("lookuparc" / """[a-zA-Z0-9\&\-\.']*""".r) { id =>
             val split = id.split("-")
@@ -144,6 +129,14 @@ object WebServer {
             val dst = split(1)
             val returnval = DataStore.lookUpArc(src, dst)
             complete("called lookUpArc on  " + src + " and " + dst + " return is: " + returnval)
+          }
+        }~
+        get {
+          pathPrefix("synchronize") {
+            pathEnd{
+              DataStore.synchronize(ArrayBuffer[Int]())
+              complete("called synchronizer")
+            }
           }
         }
 
