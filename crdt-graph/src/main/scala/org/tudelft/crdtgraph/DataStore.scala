@@ -127,4 +127,40 @@ object DataStore {
     return Vertices.contains(arcSourceVertex) && Vertices(arcSourceVertex).isConnectedTo(arcTargetVertex)
   }
 
+  def synchronize(targets: ArrayBuffer[Int]) = {
+    new Thread(new Runnable {
+      def run: Unit = {
+        var counter = 0
+        while(counter >= 0) {
+          // Updates that will have to be sent
+          var updates = ArrayBuffer[OperationLog]()
+          // Amount of updates. Will be used to extract updates from ChangesQueue
+          var amountOfUpdates = 0
+
+          // Initialize amountOfUpdates so it can be used by a loop
+          if(ChangesQueue.length - (counter + 1) > 0) {
+            amountOfUpdates = ChangesQueue.length - (counter + 1)
+          }
+
+          // Extract updates from ChangesQueue
+          for(i <- amountOfUpdates) {
+            updates += ChangesQueue(counter)
+            counter += 1
+          }
+
+          //convert updates to JSON
+
+          // Send updates to all targets
+          for(x <- targets) {
+            // Send message to target
+
+          }
+
+          // Make the thread sleep for 10 seconds
+          Thread.sleep(10000)
+        }
+      }
+    }).start
+  }
+
 }
