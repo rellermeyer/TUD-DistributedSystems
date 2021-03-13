@@ -8,6 +8,9 @@ import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
 import org.tudelft.crdtgraph.DataStore
 import spray.json.DefaultJsonProtocol._
+import org.tudelft.crdtgraph.DataStore
+import scala.collection.mutable.ArrayBuffer
+
 
 import org.tudelft.crdtgraph.DataStore
 import org.tudelft.crdtgraph.OperationLogs._
@@ -52,7 +55,6 @@ object WebServer {
             }
           }
         } ~
-
 
         get {
           pathPrefix("addarc" / """[a-zA-Z0-9\&\-\.']*""".r ) { id  =>
