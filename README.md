@@ -1,5 +1,13 @@
 # Graph-CRDT : Distributed Systems Group 10
 
+To run the app on a specific port, such as 8083, run:
+
+```
+sbt "run 8083"
+```
+
+When not giving the argument, default port is 8080., mind that the quotes are needed for the previous example.
+
 # Running the dockerfile
 
 To publish the dockerfile locally, start of by running the following command in the terminal in the `crdt-graph` folder of the project:
