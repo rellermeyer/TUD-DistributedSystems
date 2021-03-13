@@ -9,6 +9,10 @@ import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
 import org.tudelft.crdtgraph.DataStore
 import spray.json.DefaultJsonProtocol._
 
+import org.tudelft.crdtgraph.DataStore
+import org.tudelft.crdtgraph.OperationLogs._
+
+import scala.collection.mutable.ArrayBuffer
 import scala.io.StdIn
 import scala.concurrent.Future
 
@@ -20,27 +24,7 @@ object WebServer {
   // needed for the future map/flatmap in the end and future in fetchItem and saveOrder
   implicit val executionContext = system.dispatcher
 
-  var orders: List[Item] = Nil
 
-  // domain model
-  final case class Item(name: String, id: Long)
-  final case class Order(items: List[Item])
-
-  // formats for unmarshalling and marshalling
-  implicit val itemFormat = jsonFormat2(Item)
-  implicit val orderFormat = jsonFormat1(Order)
-
-  // (fake) async database query api
-  def fetchItem(itemId: Long): Future[Option[Item]] = Future {
-    orders.find(o => o.id == itemId)
-  }
-  def saveOrder(order: Order): Future[Done] = {
-    orders = order match {
-      case Order(items) => items ::: orders
-      case _            => orders
-    }
-    Future { Done }
-  }
 
   def main(args: Array[String]) {
 
@@ -56,20 +40,108 @@ object WebServer {
           }
         }
       } ~
+
+
         get {
-          pathPrefix("hello" / """\w+""".r) { id =>
-            // there might be no item for a given id
-            complete("Hello " + id)
+          pathPrefix("addvertex" / """\w+""".r) { id =>
+            if (!DataStore.lookUpVertex(id)){
+              val returnval = DataStore.addVertex(id)
+              complete("Called addVertex on " + id + ", returnval is " + returnval)
+            } else {
+              complete("There is already a vertex called " + id)
+            }
           }
         } ~
-        post {
-          path("create-order") {
-            entity(as[Order]) { order =>
-              val saved: Future[Done] = saveOrder(order)
-              onComplete(saved) { done =>
-                complete("order created")
+
+
+        get {
+          pathPrefix("addarc" / """[a-zA-Z0-9\&\-\.']*""".r ) { id  =>
+            val split = id.split("-")
+            val src = split(0)
+            val dst = split(1)
+            if(!DataStore.lookUpArc(src, dst)){
+              if(!DataStore.lookUpVertex(src)){
+                complete("Vertex " + src + " does not exist, cannot perform addArc")
+
+              } else if(!DataStore.lookUpVertex(dst)){
+                complete("Vertex " + dst + " does not exist, cannot perform addArc")
+
+              } else{
+                val returnval = DataStore.addArc(src, dst)
+                complete("called addArc with " + src + " and " + dst + " with returnval " + returnval)
               }
+
+            } else {
+              complete("There is already an arc with this src and dst")
             }
+          }
+        } ~
+
+
+        get {
+          pathPrefix("removevertex" / """\w+""".r) { id =>
+            // there might be no item for a given id
+            if(DataStore.lookUpVertex(id)){
+              val returnval = DataStore.removeVertex(id)
+              complete("called removeVertex on " + id + ", returnval is " + returnval)
+            } else {
+              complete("No vertex called " + id)
+            }
+          }
+        } ~
+
+
+
+        get {
+          //gives nullpointer
+          pathPrefix("removearc" / """[a-zA-Z0-9\&\-\.']*""".r) { id =>
+            val split = id.split("-")
+            val src = split(0)
+            val dst = split(1)
+            if(DataStore.lookUpArc(src, dst)){
+              val returnval = DataStore.removeArc(src, dst)
+              //complete("called removeArc on " + src + " and " + dst + ", returnval is " + returnval)
+              complete("test")
+            } else {
+              complete("No arc called " + id)
+            }
+          }
+        } ~
+
+
+        get {
+          //ask west how to create operationlogs
+          pathPrefix("applychanges" / """[a-zA-Z0-9\&\-\.']*""".r) { id =>
+            var oplogs = id.split("-")
+            var operationLogs = ArrayBuffer[OperationLog]()
+            for (oplog <- oplogs){
+              var optype = oplog.split(",")(0)
+              var opUUID = oplog.split(",")(1)
+            }
+            //val returnval = DataStore.applyChanges(operationLogs)
+            //complete("Applied changes with returnval " + returnval)
+            complete("test")
+
+          }
+        } ~
+
+
+
+        get {
+          pathPrefix("lookupvertex" / """\w+""".r) { id =>
+            val returnval = DataStore.lookUpVertex(id)
+            complete("called lookUpVertex on  " + id + " return is: " + returnval)
+          }
+        } ~
+
+
+        get {
+          pathPrefix("lookuparc" / """[a-zA-Z0-9\&\-\.']*""".r) { id =>
+            val split = id.split("-")
+            val src = split(0)
+            val dst = split(1)
+            val returnval = DataStore.lookUpArc(src, dst)
+            complete("called lookUpArc on  " + src + " and " + dst + " return is: " + returnval)
           }
         }
 
