@@ -2,15 +2,25 @@ import FileSystem.{Container, DistributedSystem, Representative}
 
 object Temp {
   def main(args: Array[String]): Unit = {
+
+    //Create a test "distributed" file system
     val fileSystem = DistributedSystem(0.0)
-    fileSystem.createContainers(Seq(1, 2, 3, 4, 5))
-    fileSystem.createSuite(1, 1, 1, Seq(0, 1, 2, 3, 4))
-    fileSystem.createSuite(2, 3, 2, Seq(5, 6, 7, 8, 9))
-    println(fileSystem.collectSuite(1))
-    println(fileSystem.collectSuite(2))
-    fileSystem.writeSuite(Seq(0, 2, 4), 1, 1)
-    fileSystem.writeSuite(Seq(1, 3), 2, 2)
-    println(fileSystem.collectSuite(1))
-    println(fileSystem.collectSuite(2))
+    fileSystem.createContainers(Seq(0, 2, 1, 4, 3))
+    fileSystem.createSuite(1, 1, 1, Seq(0, 2, 1, 4, 3))
+
+    //This demonstrates that you can gather a correct response,
+    //and that find latest picks the first correct option in the list
+    //Note that response also contains the prefixes, but those are not printed
+    var response = fileSystem.collectSuite(1)
+    println(response)
+    println(response.findLatest())
+    println(response.findReadQuorum(30, 0))
+
+    //This demonstrates that findLatest correctly returns the rep that has been updated
+    fileSystem.writeSuite(Seq(2), 1, 1)
+    response = fileSystem.collectSuite(1)
+    println(response.findLatest())
+
+    println(response.findReadQuorum(30, 1))
   }
 }
