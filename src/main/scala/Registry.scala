@@ -6,7 +6,7 @@ object Registry extends UnicastRemoteObject {
     /*
      *  Create global registry for the JobManager and TaskManagers to connect to.
      */
-    val registryPort = 1099
+    val registryPort = 1098
     val registry = LocateRegistry.createRegistry(registryPort)
     println("Registry running on port " + registryPort)
   }

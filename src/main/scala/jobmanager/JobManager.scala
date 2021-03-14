@@ -9,10 +9,16 @@ import scala.collection.mutable.ArrayBuffer
 
 object JobManagerRunner {
   def main(args: Array[String]): Unit = {
-    val registry = LocateRegistry.getRegistry(1099)
+    val registry = LocateRegistry.getRegistry(1098)
     val JobManager = new JobManager
-    registry.bind("jobmanager", JobManager)
+    val jobManagerName = "jobmanager"
+
+    registry.bind(jobManagerName, JobManager)
     println("JobManager bound!")
+    
+    sys.addShutdownHook {
+      registry.unbind(jobManagerName)
+    }
   }
 }
 

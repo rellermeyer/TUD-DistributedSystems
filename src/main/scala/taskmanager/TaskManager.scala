@@ -19,7 +19,7 @@ object TaskManagerRunner {
    * Terminal command `sbt "runMain taskmanager.TaskManager"`
    */
   def main(args: Array[String]): Unit = {
-    val registry = LocateRegistry.getRegistry(1099)
+    val registry = LocateRegistry.getRegistry(1098)
 
     val jobManagerName = "jobmanager"
     val jobManager: JobManagerInterface =
@@ -27,9 +27,15 @@ object TaskManagerRunner {
 
     val id = jobManager.register() // get id from JobManager
     val TaskManager = new TaskManager(id)
-    registry.bind("taskmanager" + id, TaskManager)
+    val taskManagerName = "taskmanager" + id
+    registry.bind(taskManagerName, TaskManager)
 
     println("TaskManager " + id + " bound!")
+
+    sys.addShutdownHook {
+      registry.unbind(taskManagerName)
+    }
+
     val rand = new Random
 
     val no_taskManagers = registry.list().length - 1 // exclude JobManager
@@ -41,55 +47,54 @@ object TaskManagerRunner {
     for (i <- 0 until no_taskManagers) {
       latencies(i) = new Latency(
         i,
-        Random.nextFloat()*3 // max 3 seconds latency
-        )
+        Random.nextFloat() * 3 // max 3 seconds latency
+      )
       if (i != id) {
-        bws(i) = new BW(i, Random.nextFloat()*3)    
+        bws(i) = new BW(i, Random.nextFloat() * 3)
       }
     }
 
     jobManager.monitorReport(
       id,
       rand.nextInt(3), // upper bound exclusive, so max 2 slots
-      latencies, 
-      bws, 
+      latencies,
+      bws,
       rand.nextInt(1000),
       rand.nextInt(500)
     )
   }
 }
 
-
 class TaskManager(val id: Int)
     extends UnicastRemoteObject
     with TaskManagerInterface {
 
-
   def assignTask(task: Task): Unit = {
     // Create socket connection with task.from and task.to
     // And start executing the operator on the inputstream and piping it to outputstream
-    // val outputSocket = 
+    // val outputSocket =
   }
 
-  def getAllTaskMgrIDs() {
-    
-  }
+  def getAllTaskMgrIDs() {}
 
   def myPrint(text: String) {
-    println (id + ": " + text)
+    println(id + ": " + text)
   }
 
   // ServerSocket used for INCOMING data
   val port = 8000
   val serverSocket = new ServerSocket(port)
-  myPrint ("Server socket started on port: " + port)
+  myPrint("Server socket started on port: " + port)
 
-  // while (true) {
-  //   // accept() blocks execution until a client connects
-  //   val inputSocket = serverSocket.accept()
-  //   // outputStream to client
-  //   val outputStream = new PrintWriter(inputSocket.getOutputStream(), true)
-  //   // inputStream to receive data from client
-  //   val inputStream = new InputStreamReader(inputSocket.getInputStream())
-  // }
+  // new Thread {
+  //   while (true) {
+  //     // accept() blocks execution until a client connects.
+  //     // this socket is only used for INCOMING data!!
+  //     val inputSocket = serverSocket.accept()
+
+  //     val outputStream = new PrintWriter(inputSocket.getOutputStream(), true) // not sure we need this
+  //     val inputStream = new InputStreamReader(inputSocket.getInputStream())
+  //   }
+  // }.start()
+
 }
