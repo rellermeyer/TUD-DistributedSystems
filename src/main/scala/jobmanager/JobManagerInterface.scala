@@ -14,6 +14,11 @@ trait JobManagerInterface extends Remote {
   @throws(classOf[MalformedURLException])
   @throws(classOf[NotBoundException])
   @throws(classOf[RemoteException])
+  def unregister(id: Int): Unit
+
+  @throws(classOf[MalformedURLException])
+  @throws(classOf[NotBoundException])
+  @throws(classOf[RemoteException])
   def monitorReport(
       id: Int,
       numSlots: Int,
@@ -22,4 +27,10 @@ trait JobManagerInterface extends Remote {
       ipRate: Int,
       opRate: Int
   ): Unit
+
+  
+  @throws(classOf[MalformedURLException])
+  @throws(classOf[NotBoundException])
+  @throws(classOf[RemoteException])
+  def runStaticJob(): Unit
 }

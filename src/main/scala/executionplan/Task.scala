@@ -1,3 +1,3 @@
 package executionplan
 
-case class Task(from: String, to: String, operator: String)
+case class Task(jobID: Int, from: Int, to: Int, operator: String)
