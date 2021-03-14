@@ -23,7 +23,7 @@ object TaskManagerRunner {
    * Terminal command `sbt "runMain taskmanager.TaskManager"`
    */
   def main(args: Array[String]): Unit = {
-    val registry = LocateRegistry.getRegistry(1099)
+    val registry = LocateRegistry.getRegistry(1098)
 
     val jobManagerName = "jobmanager"
     val jobManager: JobManagerInterface =
@@ -53,10 +53,10 @@ object TaskManagerRunner {
     for (i <- 0 until no_taskManagers) {
       latencies(i) = new Latency(
         i,
-        Random.nextFloat()*3 // max 3 seconds latency
-        )
+        Random.nextFloat() * 3 // max 3 seconds latency
+      )
       if (i != id) {
-        bws(i) = new BW(i, Random.nextFloat()*3)    
+        bws(i) = new BW(i, Random.nextFloat() * 3)
       }
     }
 
@@ -70,7 +70,6 @@ object TaskManagerRunner {
     // )
   }
 }
-
 
 class TaskManager(val id: Int)
     extends UnicastRemoteObject
@@ -150,6 +149,6 @@ class TaskManager(val id: Int)
   }
 
   def myPrint(text: String) {
-    println (id + ": " + text)
+    println(id + ": " + text)
   }
 }

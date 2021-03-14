@@ -1,8 +1,9 @@
-.idea/
-.bsp/
-target/
-project/
-.vscode/
-.metals/
-.bloop/
-
+.idea/*
+.bsp/*
+target/*
+.vscode/*
+.metals/*
+.bloop/*
+.devcontainer/*
+project/*
+!/project/plugins.sbt

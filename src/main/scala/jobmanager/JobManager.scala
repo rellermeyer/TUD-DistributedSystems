@@ -9,7 +9,7 @@ import scala.collection.mutable.ArrayBuffer
 
 object JobManagerRunner {
   def main(args: Array[String]): Unit = {
-    val registry = LocateRegistry.getRegistry(1099)
+    val registry = LocateRegistry.getRegistry(1098)
     val JobManager = new JobManager
     val jobManagerName = "jobmanager"
 
@@ -65,7 +65,7 @@ class JobManager extends UnicastRemoteObject with JobManagerInterface {
     tm2.assignTask(new Task(jobID = jobIDCounter, from = id1, to = id3, operator = "map"))
     tm3.assignTask(new Task(jobID = jobIDCounter, from = id2, to = id4, operator = "reduce"))
     tm4.assignTask(new Task(jobID = jobIDCounter, from = id3, to = -1, operator = "reduce"))
-    
+
     jobIDCounter = jobIDCounter + 1
   }
 

@@ -1,7 +1,6 @@
 // package jobmanager
 
 import scala.collection.mutable.ArrayBuffer
-import com.google.ortools.Loader
 import com.google.ortools.linearsolver.MPConstraint
 import com.google.ortools.linearsolver.MPObjective
 import com.google.ortools.linearsolver.MPSolver
@@ -12,15 +11,23 @@ import com.google.ortools.linearsolver.MPVariable
 object ReconfigurationManager {
   def solveILP(
       taskManagers: ArrayBuffer[TaskManagerInfo],
-      prl: Float,   //Desired parallelism : The desired sum of all slots of all data centers
+      prl: Float, //Desired parallelism : The desired sum of all slots of all data centers
       alpha: Float
   ) = {
 
-    val solver = MPSolver.createSolver("SCIP");
+    val solver =
+      try new MPSolver(
+        "ILP",
+        MPSolver.OptimizationProblemType.valueOf("SCIP")
+      )
+      catch {
+        case e: IllegalArgumentException => null
+      }
+
     if (solver == null) {
       System.out.println("Could not create solver SCIP")
     } else {
-      println ("SCIP solver started")
+      println("SCIP solver started")
       val m = taskManagers.length
       val infinity = java.lang.Double.POSITIVE_INFINITY
       val p = new Array[MPVariable](m)
@@ -36,18 +43,24 @@ object ReconfigurationManager {
       //Equation 2
       for (i <- 0 until m) {
         for (j <- 0 until m - 1) {
-          eqn2(i)(j) = solver.makeConstraint( // a*B from j to i (normally u to s)
-            0,                                                 // minimum value for left-hand side
-            alpha * taskManagers(i).bandwidthsToSelf(j).rate,  // maximum value for left-hand side
-            "eqn2_" + taskManagers(i)
-              .bandwidthsToSelf(j)
-              .fromID + "_" + taskManagers(i).id
-          )
-          
+          eqn2(i)(j) =
+            solver.makeConstraint( // a*B from j to i (normally u to s)
+              0, // minimum value for left-hand side
+              alpha * taskManagers(i)
+                .bandwidthsToSelf(j)
+                .rate, // maximum value for left-hand side
+              "eqn2_" + taskManagers(i)
+                .bandwidthsToSelf(j)
+                .fromID + "_" + taskManagers(i).id
+            )
+
           // Only one coefficient is used in the equation, set all others to 0
           for (k <- 0 until m) {
             if (k == i) {
-              eqn2(i)(j).setCoefficient(p(k), taskManagers(k).ipRate / prl) // lambda_I / p
+              eqn2(i)(j).setCoefficient(
+                p(k),
+                taskManagers(k).ipRate / prl
+              ) // lambda_I / p
             } else {
               eqn2(i)(j).setCoefficient(p(k), 0)
             }
@@ -134,7 +147,7 @@ object ReconfigurationManager {
         }
       }
       val resultStatus = solver.solve();
-      print("Result: " + resultStatus)    // *DUMMY PRINT
+      print("Result: " + resultStatus) // *DUMMY PRINT
     }
   }
 
