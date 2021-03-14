@@ -20,7 +20,6 @@ This makes sure all the dependency plugins are set and cleans the project before
 Now to create a local Docker image run the command 
 
 ```
-sbt docker:stage
 sbt docker:publishLocal
 ```
 
@@ -29,7 +28,7 @@ Next it  builds an image using the local Docker server.
 Now that this is all set up, you can run the docker image by running the following command:
 
 ```
-docker run --rm -p 8080:8080 crdt-graph:0.1.0-SNAPSHOT
+docker run --rm -p 8080:8080 -i crdt-graph:0.1.0-SNAPSHOT
 ```
 
 If this command does not work, please run 
