@@ -40,4 +40,4 @@ Where the last created docker image would be on top and should contain the name 
 
 The docker image should run on port 8080, navigate to localhost:8080 to access the service in the browser. 
 
-! TODO: Add port configuration !
+When the image is stopped, the container is automatically removed.
