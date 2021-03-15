@@ -77,7 +77,7 @@ object DataStore {
       //todo: discuss what should we do when this happens while synchronizing
     }
 
-    val pastArcsUUIDs = Vertices(arcSourceVertex).getArcUuids(arcSourceVertex)
+    val pastArcsUUIDs = Vertices(arcSourceVertex).getArcUuids(arcTargetVertex)
     var change =  new RemoveArcLog(arcSourceVertex, arcTargetVertex, pastArcsUUIDs)
     applyRemoveArc(change)
     return true
