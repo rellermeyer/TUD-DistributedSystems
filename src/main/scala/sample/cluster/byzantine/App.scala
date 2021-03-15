@@ -13,7 +13,8 @@ object App {
       val cluster = Cluster(ctx.system)
 
       if (cluster.selfMember.hasRole("node")) {
-        ctx.spawn(Node(r.nextInt(100), 2), s"Node$id")
+//        ctx.spawn(Node(r.nextInt(100), 2), s"Node$id")
+        ctx.spawn(SyncNode(id, 3), s"Node$id")
       }
       if (cluster.selfMember.hasRole("decider")) {
         ctx.spawn(LargeCoBeRa(), "LargeCoBeRa")
@@ -28,9 +29,6 @@ object App {
       startUp("node", 0, 1)
       startUp("node", 0, 2)
       startUp("node", 0, 3)
-      startUp("node", 0, 4)
-      startUp("node", 0, 5)
-      startUp("node", 0, 6)
     } else {
       require(args.length == 3, "Usage: role port")
       startUp(args(0), args(1).toInt, args(2).toInt)

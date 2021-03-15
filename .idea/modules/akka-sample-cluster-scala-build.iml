@@ -129,4 +129,8 @@
       </library>
     </orderEntry>
   </component>
+  <component name="SbtModule">
+    <option name="buildForURI" value="file:/$MODULE_DIR$/../../../../year%204/ds/" />
+    <option name="imports" value="SUB:DOLLARbf4bf2967fd7c297629e.`akkaSUB:DOLLARminussampleSUB:DOLLARminusclusterSUB:DOLLARminusscala`, _root_.sbt.Keys._, _root_.sbt.ScriptedPlugin.autoImport._, _root_.com.typesafe.sbt.MultiJvmPlugin.autoImport._, _root_.sbtdynver.DynVerPlugin.autoImport._, _root_.sbtassembly.AssemblyPlugin.autoImport._, _root_.sbt._, _root_.sbt.nio.Keys._, _root_.sbt.plugins.IvyPlugin, _root_.sbt.plugins.JvmPlugin, _root_.sbt.plugins.CorePlugin, _root_.sbt.ScriptedPlugin, _root_.sbt.plugins.SbtPlugin, _root_.sbt.plugins.SemanticdbPlugin, _root_.sbt.plugins.JUnitXmlReportPlugin, _root_.sbt.plugins.Giter8TemplatePlugin, _root_.com.typesafe.sbt.MultiJvmPlugin, _root_.sbtdynver.DynVerPlugin, _root_.sbtassembly.AssemblyPlugin, _root_.scala.xml.{TopScope=&gt;SUB:DOLLARscope}" />
+  </component>
 </module>
