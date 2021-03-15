@@ -2,7 +2,9 @@ package org.tudelft.crdtgraph
 
 import scala.collection.mutable._
 
-class Vertex(var name: String, initId: String) {
+
+
+class Vertex(name: String, initId: String) {
     var Arcs = HashMap[String, ArrayBuffer[String]]()
     var Uuids = ArrayBuffer[String]()
 
@@ -48,3 +50,4 @@ class Vertex(var name: String, initId: String) {
         }
     }
 }
+
