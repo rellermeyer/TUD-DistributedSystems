@@ -60,14 +60,14 @@ object TaskManagerRunner {
       }
     }
 
-    // jobManager.monitorReport(
-    //   id,
-    //   rand.nextInt(3), // upper bound exclusive, so max 2 slots
-    //   latencies, 
-    //   bws, 
-    //   rand.nextInt(1000),
-    //   rand.nextInt(500)
-    // )
+    jobManager.monitorReport(
+      id,
+      rand.nextInt(3), // upper bound exclusive, so max 2 slots
+      latencies, 
+      bws, 
+      rand.nextInt(1000),
+      rand.nextInt(500)
+    )
   }
 }
 
@@ -152,3 +152,13 @@ class TaskManager(val id: Int)
     println(id + ": " + text)
   }
 }
+
+case class TaskManagerInfo(
+    id: Int,
+    var numSlots: Int,
+    var numTasksDeployed: Int,
+    var latenciesToSelf: Array[Latency],
+    var bandwidthsToSelf: Array[BW],
+    var ipRate: Int,
+    var opRate: Int
+)

@@ -31,10 +31,10 @@ class JobManager extends UnicastRemoteObject with JobManagerInterface {
 
   // register the poor taskmanager
   def register(): Int = {
-    taskManagerIdCounter = taskManagerIdCounter + 1
     taskManagers.append(
       new TaskManagerInfo(
         id = taskManagerIdCounter,
+        0,
         0,
         Array.empty[Latency],
         Array.empty[BW],
@@ -42,7 +42,8 @@ class JobManager extends UnicastRemoteObject with JobManagerInterface {
         0
       )
     )
-    return taskManagerIdCounter;
+    taskManagerIdCounter = taskManagerIdCounter + 1
+    return taskManagerIdCounter-1;
   }
 
   def unregister(id: Int): Unit = {
@@ -95,11 +96,3 @@ class JobManager extends UnicastRemoteObject with JobManagerInterface {
 
 case class Latency(var fromID: Int, var time: Float)
 case class BW(var fromID: Int, var rate: Float)
-case class TaskManagerInfo(
-    id: Int,
-    var numSlots: Int,
-    var latenciesToSelf: Array[Latency],
-    var bandwidthsToSelf: Array[BW],
-    var ipRate: Int,
-    var opRate: Int
-)
