@@ -33,7 +33,7 @@ class FileSystemResponse {
     -1
   }
 
-  def findWriteQuorum(r: Int, versionNumber: Int): Seq[Int] = {
+  def findWriteQuorum(w: Int, versionNumber: Int): Seq[Int] = {
     val currentReps: Seq[ContainerResponse] = _containerResponses.filter(_.prefix.versionNumber == versionNumber).sortBy(_.latency)
     var writeQuorum: Seq[Int] = Seq.empty[Int]
     var totalWeight: Int = 0
@@ -41,7 +41,7 @@ class FileSystemResponse {
       writeQuorum = writeQuorum :+ c.cid
       totalWeight += c.weight
       println("new rep added: cid " + c.cid + ", weight " + c.weight)
-      if (totalWeight >= r) {
+      if (totalWeight >= w) {
         println("quorum present")
         return writeQuorum
       }
