@@ -8,29 +8,27 @@ class FileSystemResponse {
     _containerResponses = _containerResponses :+ newResponse
   }
 
-  /*def sortByLatency(): Seq[ContainerResponse] = {
-    _containerResponses.sortBy(_.latency)
-  }*/
-
   def findLatest(): ContainerResponse = {
     _containerResponses.maxBy(_.prefix.versionNumber)
   }
 
   def findReadQuorum(r: Int, versionNumber: Int): Int = {
-    val currentReps: Seq[ContainerResponse] = _containerResponses.filter(_.prefix.versionNumber == versionNumber).sortBy(_.latency)
-    var readQuorum: Seq[Int] = Seq.empty[Int]
+    val currentReps: Seq[ContainerResponse] = _containerResponses.sortBy(_.latency)
     var totalWeight: Int = 0
+    var readCandidate: Int = -1
+    var foundCandidate: Boolean = false
     for (c <- currentReps) {
-      readQuorum = readQuorum :+ c.cid
       totalWeight += c.weight
-      println("new rep added: cid " + c.cid + ", weight " + c.weight)
+      if (c.prefix.versionNumber == versionNumber && !foundCandidate) {
+        readCandidate = c.cid
+      }
       if (totalWeight >= r) {
         println("quorum present")
-        return readQuorum(0)
+        return readCandidate
       }
     }
     println("no quorum present")
-    -1
+    readCandidate
   }
 
   def findWriteQuorum(w: Int, versionNumber: Int): Seq[Int] = {

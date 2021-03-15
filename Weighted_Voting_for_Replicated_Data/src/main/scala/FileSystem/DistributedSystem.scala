@@ -2,12 +2,12 @@ package FileSystem
 
 import scala.util.Random
 
-class DistributedSystem(newFailProb: Double) {
+class DistributedSystem(numContainers: Int, latencies: Seq[Int], newFailProb: Double) {
 
   /**
    * constructor
    */
-  private var _containers: Seq[Container] = Seq.empty[Container]
+  private val _containers: Seq[Container] = createContainers(numContainers, latencies )
   private val _failProb: Double = newFailProb
 
   /**
@@ -16,11 +16,13 @@ class DistributedSystem(newFailProb: Double) {
    * @param latencies
    */
 
-  def createContainers(latencies: Seq[Int]): Unit = {
+  def createContainers(numContainers: Int, latencies: Seq[Int]): Seq[Container] = {
+    var newContainers: Seq[Container] = Seq.empty[Container]
     for (l <- latencies) {
-      _containers = _containers :+ Container(l)
+      newContainers = newContainers :+ Container(l)
       println("Created container with latency " + l)
     }
+    newContainers
   }
 
   /**
@@ -90,8 +92,8 @@ class DistributedSystem(newFailProb: Double) {
  * companion object
  */
 object DistributedSystem {
-  def apply(newFailProb: Double): DistributedSystem = {
-    val newSystem = new DistributedSystem(newFailProb)
+  def apply(numContainers: Int, latencies: Seq[Int], newFailProb: Double): DistributedSystem = {
+    val newSystem = new DistributedSystem(numContainers, latencies, newFailProb)
     newSystem
   }
 }

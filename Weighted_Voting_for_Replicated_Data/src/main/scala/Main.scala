@@ -1,30 +1,14 @@
-import FileSystem.{Container, DistributedSystem, Representative}
+import FileSystem.DistributedSystem
 import VotingSystem.FileSuiteManager
 
-object Temp {
+object Main {
   def main(args: Array[String]): Unit = {
 
-    //Create a test "distributed" file system
-    //val fileSystem = DistributedSystem(0.0)
-    /*fileSystem.createContainers(Seq(0, 2, 1, 4, 3))
-    fileSystem.createSuite(1, 1, 1, Seq(0, 2, 1, 4, 3))
+    val numContainers: Int = 10
+    val latencies: Seq[Int] = Seq(1, 2, 3, 4, 5, 1, 2, 3, 4, 5)
+    val failureProb: Double = 0.0
 
-    //This demonstrates that you can gather a correct response,
-    //and that find latest picks the first correct option in the list
-    //Note that response also contains the prefixes, but those are not printed
-    var response = fileSystem.collectSuite(1)
-    println(response)
-    println(response.findLatest())
-    println(response.findReadQuorum(30, 0))
-
-    //This demonstrates that findLatest correctly returns the rep that has been updated
-    fileSystem.writeSuite(Seq(2), 1, 1)
-    response = fileSystem.collectSuite(1)
-    println(response.findLatest())
-
-    println(response.findReadQuorum(30, 1))*/
-
-    /*val fileSystem = DistributedSystem(0.0)
+    val fileSystem = DistributedSystem(numContainers, latencies, failureProb)
     val manager = FileSuiteManager(fileSystem)
 
     //    UI:
@@ -63,7 +47,7 @@ object Temp {
           if (latencies.isEmpty){
             println("(!) No container was created, returning to main menu")
           } else {
-            fileSystem.createContainers(latencies) // remove latencies.size here to make compatable with newer version.
+            //fileSystem.createContainers(latencies) // remove latencies.size here to make compatable with newer version.
             var i = 0
             for( i <- 0 to latencies.size-1){
               println("("+(i+1)+") Created a container with latency: " + latencies(i) )
@@ -90,11 +74,12 @@ object Temp {
       var Wsuite = get_user_choice()
       var repWeights = Seq[Int]()
       println("(!) What are the weights of the representatives?")
-      //      for( i <- 0 to DistributedSystem._containers.size){                     // idea here is to call all containers and ask a weight for each container/representative
-      //        println("(!) What is the weight of the representative in container "+i+"?")
-      //        repWeights = repWeights :+ get_user_choice()
-      //      }
-      manager.create(suiteID, Rsuite, Wsuite, Seq(1))       // Put repWeights instead of Seq(1, 2, 3, 4, 5)
+      for (i <- 0 until numContainers){                     // idea here is to call all containers and ask a weight for each container/representative
+        println("(!) What is the weight of the representative in container "+i+"?")
+        var newWeight = get_user_choice()
+        repWeights = repWeights :+ newWeight
+      }
+      manager.create(suiteID, Rsuite, Wsuite, repWeights)       // Put repWeights instead of Seq(1, 2, 3, 4, 5)
     }
 
 
@@ -117,44 +102,51 @@ object Temp {
 
     // Read suite
     def readSuiteUI() : Unit = {
-      var containerID = -1
+      /*var containerID = -1
       println("(!) What is the ID of the container you want to read?")
       containerID = get_user_choice()
       if (containerID == -1){
         println("(E) No container ID was taken as input for readSuiteUI!")
         exitUI()
-      } else {
+      } else {*/
         var suiteID = -1
-        if (containerID == -1){
+        /*if (containerID == -1){
           println("(E) No suite ID was taken as input for readSuiteUI!")
           exitUI()
-        } else {
-          println("(!) What is the ID of the suite you want to read?")
+        } else {*/
+          println("(!) What is the ID of the file you want to read?")
           suiteID = get_user_choice()
           println(manager.read(suiteID))
-        }
-      }
+        //}
+      //}
+    }
+
+    def writeSuiteUI(): Unit = {
+      var suiteID = -1
+      var newContent = -1
+      println("(!) What is the ID of the file you want to write to?")
+      suiteID = get_user_choice()
+      println("(!) What is the content you want to write to file " + suiteID + "?")
+      newContent = get_user_choice()
+      println(manager.write(suiteID, newContent))
     }
 
     // Main menu:
     while ( { exit_boolean }) {
       println("(!) Main menu - Choose an event:")
-      println("(-)  1: Create containers")
-      println("(-)  2: Create suite")
-      println("(-)  3: Collect suite")
-      println("(-)  4: Read suite")
+      println("(-)  1: Create suite")
+      println("(-)  2: Read suite")
+      println("(-)  3: Write suite")
       println("(-)  0: Quit")
       menu_integer = get_user_choice()
       if (menu_integer == 0){
         exitUI()
       } else if (menu_integer == 1){
-        createContainersUI()
-      } else if (menu_integer == 2){
         createSuiteUI()
-      } else if (menu_integer == 3){
-        collectSuiteUI()
-      } else if (menu_integer == 4){
+      } else if (menu_integer == 2){
         readSuiteUI()
+      } else if (menu_integer == 3){
+        writeSuiteUI()
       }
 
       else if (menu_integer == -1){
@@ -166,6 +158,6 @@ object Temp {
       }
     }
     println("(!) User left UI")
-    // end UI */
+    // end UI
   }
 }
