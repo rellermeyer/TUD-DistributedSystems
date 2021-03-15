@@ -11,13 +11,14 @@ object DataStore {
 
   def addVertex(vertexName: String): Boolean = {
     var newId = java.util.UUID.randomUUID.toString()
-    var newChange = new AddVertexLog(vertexName, newId)
+    var newChange = new OperationLog()
+    newChange.AddVertexLog(vertexName, newId)
 
     applyAddVertex(newChange)
     return true
   }
 
-  def applyAddVertex(cmd: AddVertexLog): Unit ={
+  def applyAddVertex(cmd: OperationLog): Unit ={
     if(!Vertices.contains(cmd.vertexName)){
       Vertices(cmd.vertexName) = new Vertex(cmd.vertexName, cmd.vertexUuid)
     }
@@ -29,12 +30,14 @@ object DataStore {
 
   def addArc(arcSourceVertex: String, arcTargetVertex: String): Boolean = {
     var newId = java.util.UUID.randomUUID.toString()
-    var newChange = new AddArcLog(arcSourceVertex, arcTargetVertex, newId)
+    var newChange = new OperationLog()
+    newChange.AddArcLog(arcSourceVertex, arcTargetVertex, newId)
+
     applyAddArc(newChange)
     return true
   }
 
-  def applyAddArc(cmd: AddArcLog): Unit = {
+  def applyAddArc(cmd: OperationLog): Unit = {
     if(!lookUpVertex(cmd.sourceVertex)){
       throw new IllegalArgumentException //no source vertex
       //todo: discuss what should we do when this happens while synchronizing
@@ -48,22 +51,25 @@ object DataStore {
       throw new IllegalArgumentException //to vertex to remove
       //todo: discuss what should we do when this happens while synchronizing
     }
-    var arcs = Vertices(vertexName).Arcs
-    var ids = Vertices(vertexName).Uuids
-    var change = new RemoveVertexLog(vertexName, arcs, ids)
+    //remove all the arcs
+    Vertices(vertexName).Arcs.foreach( arcKeyValue => {
+      removeArc(vertexName, arcKeyValue._1)
+    })
+
+    //remove the vertex
+    var change = new OperationLog()
+    change.RemoveVertexLog(vertexName, Vertices(vertexName).Uuids.clone)
+
     applyRemoveVertex(change)
     return true;
   }
 
-  def applyRemoveVertex(cmd : RemoveVertexLog):Unit = {
+  def applyRemoveVertex(cmd : OperationLog):Unit = {
     if(!lookUpVertex(cmd.vertexName)){
       throw new IllegalArgumentException //to vertex to remove
       //todo: discuss what should we do when this happens while synchronizing
     }
 
-    cmd.arcUuids.foreach( arcKeyValue =>{
-      Vertices(cmd.vertexName).removeArcs(arcKeyValue._1, arcKeyValue._2)
-    })
     Vertices(cmd.vertexName).removeIds(cmd.vertexUuids)
     if(Vertices(cmd.vertexName).toBeRemoved()){
       Vertices.remove(cmd.vertexName)
@@ -77,13 +83,15 @@ object DataStore {
       //todo: discuss what should we do when this happens while synchronizing
     }
 
-    val pastArcsUUIDs = Vertices(arcSourceVertex).getArcUuids(arcTargetVertex)
-    var change =  new RemoveArcLog(arcSourceVertex, arcTargetVertex, pastArcsUUIDs)
+    val pastArcsUUIDs = Vertices(arcSourceVertex).getArcUuids(arcTargetVertex).clone
+    var change =  new OperationLog()
+    change.RemoveArcLog(arcSourceVertex, arcTargetVertex, pastArcsUUIDs)
+
     applyRemoveArc(change)
     return true
   }
 
-  def applyRemoveArc(cmd: RemoveArcLog):Unit = {
+  def applyRemoveArc(cmd: OperationLog):Unit = {
     if(!lookUpArc(cmd.sourceVertex, cmd.targetVertex)){
       throw new IllegalArgumentException //no arc to remove
       //todo: discuss what should we do when this happens while synchronizing
@@ -93,25 +101,21 @@ object DataStore {
     ChangesQueue += cmd
   }
 
-  def applyChanges(changes: ArrayBuffer[OperationLog]):Boolean = {
-    changes.foreach( (f: OperationLog) =>{
-      if(!ChangesQueue.exists((x: OperationLog) => x.operationUuid == f.operationUuid)){
-        f.opType match {
+  def applyChanges(changes: Vector[OperationLog]):Boolean = {
+    changes.foreach( (changeLog: OperationLog) =>{
+      if(!ChangesQueue.exists((x: OperationLog) => x.operationUuid == changeLog.operationUuid)){
+        changeLog.opType match {
           case OperationType.addVertex => {
-            var newVertex = f.asInstanceOf[AddVertexLog]
-            applyAddVertex(newVertex)
+            applyAddVertex(changeLog)
           }
           case OperationType.addArc => {
-            var newArc = f.asInstanceOf[AddArcLog]
-            applyAddArc(newArc)
+            applyAddArc(changeLog)
           }
           case OperationType.removeArc => {
-            var removedArc = f.asInstanceOf[RemoveArcLog]
-            applyRemoveArc(removedArc)
+            applyRemoveArc(changeLog)
           }
           case OperationType.removeVertex => {
-            var removedVertex = f.asInstanceOf[RemoveVertexLog]
-            applyRemoveVertex(removedVertex)
+            applyRemoveVertex(changeLog)
           }
         }
       }

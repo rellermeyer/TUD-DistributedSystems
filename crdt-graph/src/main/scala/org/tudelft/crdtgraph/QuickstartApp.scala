@@ -10,34 +10,64 @@ import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
 import org.tudelft.crdtgraph.DataStore
 import spray.json.DefaultJsonProtocol._
-
 import DataStore._
 import spray.json._
-
 
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.mutable.HashMap
 import scala.collection.mutable.Seq
 import scala.io.StdIn
 import scala.concurrent.Future
-
 import spray.json.DefaultJsonProtocol
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.http.scaladsl.server.Directives
+import org.tudelft.crdtgraph.OperationLogs._
 
 
 final case class VertexCaseClass(vertexName: String)
 final case class ArcCaseClass(sourceVertex: String, targetVertex: String)
-final case class OperationLogsCaseClass(messages: List[String])
 
 
 trait JsonSupport extends SprayJsonSupport with DefaultJsonProtocol {
   implicit val vertexFormat = jsonFormat1(VertexCaseClass)
   implicit val arcFormat = jsonFormat2(ArcCaseClass)
-  implicit val orderFormat = jsonFormat1(OperationLogsCaseClass)
 }
 
 object WebServer extends Directives with JsonSupport {
+  implicit object OperationLogFormat extends JsonFormat[OperationLog] {
+    def write(obj: OperationLog): JsValue = {
+      JsObject(
+        ("opType", JsString(obj.opType)),
+        ("operationUuid", JsString(obj.operationUuid)),
+        ("timestamp", JsString(obj.timestamp)),
+        ("vertexName", JsString(obj.vertexName)),
+        ("vertexUuid", JsString(obj.vertexUuid)),
+        ("vertexUuids", JsArray(obj.vertexUuids.toVector.map(x => JsString(x)).toVector)),
+        ("sourceVertex", JsString(obj.sourceVertex)),
+        ("targetVertex", JsString(obj.targetVertex)),
+        ("arcUuid", JsString(obj.arcUuid)),
+        ("arcUuids", JsArray(obj.arcUuids.map((id:String) => JsString(id)).toVector))
+      )
+    }
+
+    def read(json: JsValue): OperationLog = json match {
+      case JsObject(fields) => {
+        var log = new OperationLog()
+        log.opType = fields("opType").convertTo[String]
+        log.operationUuid = fields("operationUuid").convertTo[String]
+        log.timestamp = fields("timestamp").convertTo[String]
+        log.vertexName = fields("vertexName").convertTo[String]
+        log.vertexUuid = fields("vertexUuid").convertTo[String]
+        log.vertexUuids = fields("vertexUuids").convertTo[Array[String]]
+        log.sourceVertex = fields("sourceVertex").convertTo[String]
+        log.targetVertex = fields("targetVertex").convertTo[String]
+        log.arcUuid = fields("arcUuid").convertTo[String]
+        log.arcUuids = fields("arcUuids").convertTo[Array[String]]
+        log
+      }
+      case _ => deserializationError("Json is required")
+    }
+  }
 
   // needed to run the route
   implicit val system = ActorSystem()
@@ -45,33 +75,20 @@ object WebServer extends Directives with JsonSupport {
   // needed for the future map/flatmap in the end and future in fetchItem and saveOrder
   implicit val executionContext = system.dispatcher
 
+  val trueString = "true"
+  val falseString = "false"
 
 
   def main(args: Array[String]) {
-
     val route: Route =
-      get {
-        pathPrefix("graph" / "vertex" / """.+""".r) { id =>
-          var vertex = id.asInstanceOf[String]
-          var result = DataStore.lookUpVertex(vertex)
-          if(result){
-            complete(StatusCodes.OK)
-          } else {
-            complete(StatusCodes.NotFound)
-          }
-        }
-      } ~
         post {
           pathPrefix("addvertex") {
             entity(as[VertexCaseClass]) { vertex =>
-              if (!DataStore.lookUpVertex(vertex.vertexName)){
-                if (DataStore.addVertex(vertex.vertexName)) {
-                  complete("Added vertex " + vertex.vertexName)
-                } else {
-                  complete("Could not add vertex " + vertex.vertexName)
-                }
+
+              if (DataStore.addVertex(vertex.vertexName)) {
+                complete(trueString)
               } else {
-                complete("There is already a vertex called " + vertex.vertexName)
+                complete(falseString)
               }
             }
           }
@@ -82,22 +99,18 @@ object WebServer extends Directives with JsonSupport {
               val src = arc.sourceVertex
               val dst = arc.targetVertex
 
-              if(!DataStore.lookUpArc(src, dst)){
-                if(!DataStore.lookUpVertex(src)){
-                  complete("Vertex " + src + " does not exist, cannot perform addArc")
+              if(!DataStore.lookUpVertex(src)) {
+                complete(falseString)
 
-                } else if(!DataStore.lookUpVertex(dst)){
-                  complete("Vertex " + dst + " does not exist, cannot perform addArc")
+              } else if(!DataStore.lookUpVertex(dst)) {
+                complete(falseString)
 
-                } else{
-                  if (DataStore.addArc(src, dst)) {
-                    complete("Added arc between " + src + " and " + dst)
-                  } else {
-                    complete("Could not add arc between " + src + " and " + dst)
-                  }
-                }
               } else {
-                complete("There is already an arc with this src and dst")
+                if (DataStore.addArc(src, dst)) {
+                  complete(trueString)
+                } else {
+                  complete(falseString)
+                }
               }
             }
           }
@@ -108,39 +121,43 @@ object WebServer extends Directives with JsonSupport {
               val vertexName = vertex.vertexName
               if(DataStore.lookUpVertex(vertexName)){
                 if (DataStore.removeVertex(vertexName)) {
-                  complete("Removed vertex " + vertexName +  " succesfully")
+                  complete(trueString)
                 } else {
-                  complete("Could not remove vertex " + vertexName)
+                  complete(falseString)
                 }
               } else {
-                complete("No vertex called " + vertexName)
+                complete(falseString)
               }
             }
           }
         } ~
         delete {
-          //gives nullpointer
           pathPrefix("removearc") {
             entity(as[ArcCaseClass]) { arc =>
               val src = arc.sourceVertex
               val dst = arc.targetVertex
               if(DataStore.lookUpArc(src, dst)){
                 if(DataStore.removeArc(src, dst)) {
-                  complete("Removed arc between " + src + " and " + dst + " succesfully")
+                  complete(trueString)
                 } else {
-                  complete("Could not remove arc")
+                  complete(falseString)
                 }
               } else {
-                complete("No arc called between " + src + " and " + dst)
+                complete(falseString)
               }
             }
           }
         } ~
         post {
           pathPrefix("applychanges") {
-            entity(as[OperationLogsCaseClass]) { oplog =>
-              println(oplog)
-              complete(oplog)
+            entity(as[JsValue]) { oplog =>
+              var logs = oplog.convertTo[Vector[OperationLog]]
+              if( DataStore.applyChanges(logs)){
+                complete(trueString)
+              }
+              else{
+                complete(falseString)
+              }
             }
           }
         } ~
@@ -148,9 +165,9 @@ object WebServer extends Directives with JsonSupport {
           pathPrefix("lookupvertex") {
             parameter("vertexName") { vertexName =>
               if(DataStore.lookUpVertex(vertexName)){
-                complete("Vertex " + vertexName + " exists")
+                complete(trueString)
               } else {
-                complete("Vertex " + vertexName + " does not exist")
+                complete(falseString)
               }
             }
           }
@@ -159,11 +176,17 @@ object WebServer extends Directives with JsonSupport {
           pathPrefix("lookuparc") {
             parameter("sourceVertex", "targetVertex") { (sourceVertex, targetVertex) =>
               if(DataStore.lookUpArc(sourceVertex, targetVertex)){
-                complete("Arc between " + sourceVertex + " and " + targetVertex + " exists")
+                complete(trueString)
               } else {
-                complete("No arc between " + sourceVertex + " and " + targetVertex)
+                complete(falseString)
               }
             }
+          }
+        } ~
+        get {
+          pathPrefix("debug-get-changes")  {
+            var xd = DataStore.ChangesQueue.toVector
+            complete(xd.map( log => log.toJson))
           }
         }
 
