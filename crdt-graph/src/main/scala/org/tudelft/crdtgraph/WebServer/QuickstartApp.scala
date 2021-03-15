@@ -128,9 +128,10 @@ object WebServer {
             complete("called lookUpArc on  " + src + " and " + dst + " return is: " + returnval)
           }
         }
-
-    val bindingFuture = Http().bindAndHandle(route, "localhost", 8080)
-    println(s"Server online at http://localhost:8080/\nPress RETURN to stop...")
+    
+    val port = if (args.length > 0) args(0).toInt else 8080
+    val bindingFuture = Http().bindAndHandle(route, "0.0.0.0", port)
+    println(s"Server online at http://localhost:%s/\nPress RETURN to stop...".format(port))
     StdIn.readLine() // let it run until user presses return
     bindingFuture
       .flatMap(_.unbind()) // trigger unbinding from the port
