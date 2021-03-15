@@ -1,31 +1,40 @@
 package FileSystem
 
-class FileSuite (suiteId: Int){
+class FileSuite (suiteId: Int, fileSystem: DistributedSystem){
 
   /**
    * constructor
    */
   private val _suiteId: Int = suiteId
-  private val _suiteR: Int = suiteR
-  private val _suiteW: Int = suiteW
-
-  private val _repsList: Seq[ContainerResponse] = scala.collection.immutable.Vector.empty
-
+  private val _fileSystem: DistributedSystem = fileSystem
+  private var _fsResp:  FileSystemResponse = fileSystem.collectSuite(_suiteId)
 
   /**
    * accessor methods
    */
   def suiteId: Int = _suiteId
-  def suiteR: Int = _suiteR
-  def suiteW: Int = _suiteW
+  def suiteR: Int = _fsResp.findLatest().prefix.r
+  def suiteW: Int = _fsResp.findLatest().prefix.w
+
+  def createFSuite(suiteId: Int, suiteR: Int, suiteW: Int, repWeights: Seq[Int]): Unit = {
+    fileSystem.createSuite(suiteId, suiteR, suiteW, repWeights)
+  }
+
+  def suitRead(): Int = {
+    var prefix = _fsResp.findLatest().prefix
+    var cId = _fsResp.findReadQuorum(prefix.r, prefix.versionNumber)
+
+    fileSystem.readSuite(cId, _suiteId)
+  }
+
+  def suitWrite(newContent: Int): Unit = {
+    var prefix = _fsResp.findLatest().prefix
+    var cIds = _fsResp.findWriteQuorum(prefix.r, prefix.versionNumber)
+
+    fileSystem.writeSuite(cIds, _suiteId, newContent)
+  }
 
 
-
-  // def repWeights: Seq[Int] = _repWeights
-
-  // def getRep(i: Int): Representative = _repsList(i)
-  // def addRep(rep: Representative): Seq[Representative] = _repsList :+ rep
-  // def removeRep(i: Int) = _repsList.
 
 
 
