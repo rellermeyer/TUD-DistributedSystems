@@ -84,7 +84,6 @@ object WebServer extends Directives with JsonSupport {
         post {
           pathPrefix("addvertex") {
             entity(as[VertexCaseClass]) { vertex =>
-
               if (DataStore.addVertex(vertex.vertexName)) {
                 complete(trueString)
               } else {
@@ -185,8 +184,8 @@ object WebServer extends Directives with JsonSupport {
         } ~
         get {
           pathPrefix("debug-get-changes")  {
-            var xd = DataStore.ChangesQueue.toVector
-            complete(xd.map( log => log.toJson))
+            var changes = DataStore.ChangesQueue.toVector
+            complete(changes.map( log => log.toJson))
           }
         }
 
