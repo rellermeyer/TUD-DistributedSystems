@@ -23,7 +23,7 @@ object TaskManagerRunner {
    * Terminal command `sbt "runMain taskmanager.TaskManager"`
    */
   def main(args: Array[String]): Unit = {
-    val registry = LocateRegistry.getRegistry(1098)
+    val registry = LocateRegistry.getRegistry(1099)
 
     val jobManagerName = "jobmanager"
     val jobManager: JobManagerInterface =
@@ -44,7 +44,8 @@ object TaskManagerRunner {
 
     val rand = new Random
 
-    val no_taskManagers = registry.list().length - 1 // exclude JobManager
+    // TODO: Make non static for number of registered task managers
+    val no_taskManagers = 3 // exclude JobManager
 
     var latencies = new Array[Latency](no_taskManagers)
     var bws = new Array[BW](no_taskManagers)
@@ -58,13 +59,16 @@ object TaskManagerRunner {
       if (i != id) {
         bws(i) = new BW(i, Random.nextFloat() * 3)
       }
+      else {
+        bws(i) = new BW(i, 0)
+      }
     }
 
     jobManager.monitorReport(
       id,
       rand.nextInt(3), // upper bound exclusive, so max 2 slots
-      latencies, 
-      bws, 
+      latencies,
+      bws,
       rand.nextInt(1000),
       rand.nextInt(500)
     )
@@ -76,12 +80,12 @@ class TaskManager(val id: Int)
     with TaskManagerInterface {
 
   var availableTaskSlots = 2
-  val taskSlots = scala.collection.mutable.Map[Int, TaskSlot]()
+  val taskSlots = scala.collection.mutable.Map[String, TaskSlot]()
 
   // ServerSocket used for INCOMING data
-  val port = 8000 + id
+  val port = 9000 + id
   val serverSocket = new ServerSocket(port)
-  myPrint ("Server socket started on port: " + port)
+  myPrint("Server socket started on port: " + port)
 
   new Thread {
     override def run {
@@ -90,60 +94,82 @@ class TaskManager(val id: Int)
         val inputSocket = serverSocket.accept()
         val inputStream = new DataInputStream(inputSocket.getInputStream())
         val jobID = inputStream.readInt() // jobID communicated through socket
-        myPrint("Connected inputsocket for jobID: " + jobID)
-        
-        taskSlots.synchronized { // prevent accessing taskSlots at same time as assignTask()
-          var taskSlot = getTaskSlot(jobID)
-          // assign output socket and operator type
-          taskSlot.inputSocket = inputSocket
+        val taskID = inputStream.readInt() // taskID communicated through socket
+        myPrint(
+          "Connected inputsocket for (jobID, taskID): (" + jobID + ", " + taskID + ")"
+        )
+        var taskSlot = getTaskSlot(jobID, taskID)
+        // assign output socket and operator type
+        taskSlot.from :+ new DataInputStream(inputSocket.getInputStream())
 
-          // try to run the task slot
-          runTaskSlot(jobID)
-        }
+        // try to run the task slot
+        runTaskSlot(jobID, taskID)
       }
     }
   }.start()
 
-  def getTaskSlot(jobID: Int): TaskSlot = {
-    // try to find already existing one
-    var taskSlot = taskSlots.getOrElse(jobID, null)
+  def getTaskSlot(jobID: Int, taskID: Int): TaskSlot = {
+    taskSlots.synchronized { // prevent creating a taskSlot twice
+      val key = jobID + "" + taskID
+      // try to find already existing one
+      var taskSlot = taskSlots.getOrElse(key, null)
 
-    // create new one
-    if (taskSlot == null) {
-      myPrint("Creating new taskslot for jobID " + jobID)
-      taskSlot = new TaskSlot(jobID)
-      taskSlots.put(jobID, taskSlot)
+      // create new one
+      if (taskSlot == null) {
+        myPrint("Creating new taskslot for key " + key)
+        taskSlot = new TaskSlot(key)
+        taskSlots.put(key, taskSlot)
+      }
+      return taskSlot
     }
-    return taskSlot
   }
 
   def assignTask(task: Task): Unit = {
-    taskSlots.synchronized { // prevent accessing taskSlots at same time as serversocket
-      myPrint("Received task with jobID: " + task.jobID)
-      var taskSlot = getTaskSlot(task.jobID)
-      
-      if (task.to != -1) { // if this is not the sink, propagate output to next taskslot
-        val outputSocket = new Socket("localhost", 8000 + task.to)
-        new DataOutputStream(outputSocket.getOutputStream()).writeInt(task.jobID) // let receiver know the jobID corresponding to this socket
-        taskSlot.outputSocket = outputSocket
-      }
-      taskSlot.operator = task.operator
+    myPrint("Received task with jobID: " + task.jobID)
+    var taskSlot = getTaskSlot(task.jobID, task.taskID)
 
-      // try to run the task slot
-      runTaskSlot(task.jobID)
+    taskSlot.operator = task.operator
+    taskSlot.fromCount = task.from.length
+
+    // Set output streams (if this is not the sink)
+    if (task.to.length > 0) {
+      var taskIDCopy = task.taskID
+
+      for (i <- task.to.indices) {
+        taskIDCopy += 1
+        val outputSocket = new Socket("localhost", 8000 + task.to(i))
+        val dos = new DataOutputStream(outputSocket.getOutputStream())
+        dos.writeInt(
+          task.jobID
+        ) // let receiver know the jobID corresponding to this socket
+        dos.writeInt(
+          taskIDCopy
+        ) // taskID should correspond to what is sent via the assignTask() call. So the order of to: [] should correspond with the order of assigning tasks in the JobManager
+        taskSlot.to :+ dos
+      }
     }
+
+    // try to run the task slot
+    runTaskSlot(task.jobID, task.taskID)
   }
 
-  def runTaskSlot(jobID: Int) = {
-    val slot: TaskSlot = taskSlots.get(jobID).get
+  def runTaskSlot(jobID: Int, taskID: Int) = {
+    val slot: TaskSlot = getTaskSlot(jobID, taskID)
 
     // if map or reduce
     // (outputsocket can be null in case of sink)
-    if (slot.inputSocket != null && slot.operator != null) { 
+    if (
+      slot.from.length == slot.fromCount &&
+      slot.operator != null
+    ) {
       new Thread(slot).start()
     }
     // if data source (no inputsocket needed)
-    else if (slot.outputSocket != null && slot.operator != null && slot.operator.equals("data")) { 
+    else if (
+      slot.to.length > 0 &&
+      slot.operator != null &&
+      slot.operator.equals("data")
+    ) {
       new Thread(slot).start()
     }
   }

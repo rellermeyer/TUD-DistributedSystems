@@ -9,13 +9,13 @@ import scala.collection.mutable.ArrayBuffer
 
 object JobManagerRunner {
   def main(args: Array[String]): Unit = {
-    val registry = LocateRegistry.getRegistry(1098)
+    val registry = LocateRegistry.getRegistry(1099)
     val JobManager = new JobManager
     val jobManagerName = "jobmanager"
 
     registry.bind(jobManagerName, JobManager)
     println("JobManager bound!")
-    
+
     sys.ShutdownHookThread {
       println("Unregistering JobManager")
       registry.unbind(jobManagerName)
@@ -28,6 +28,7 @@ class JobManager extends UnicastRemoteObject with JobManagerInterface {
   val taskManagers = ArrayBuffer[TaskManagerInfo]()
   val reconfigurationManager = ReconfigurationManager
   var alpha = 0.8.toFloat
+  var counter: Int = 0
 
   // register the poor taskmanager
   def register(): Int = {
@@ -43,7 +44,7 @@ class JobManager extends UnicastRemoteObject with JobManagerInterface {
       )
     )
     taskManagerIdCounter = taskManagerIdCounter + 1
-    return taskManagerIdCounter-1;
+    return taskManagerIdCounter - 1;
   }
 
   def unregister(id: Int): Unit = {
@@ -52,24 +53,94 @@ class JobManager extends UnicastRemoteObject with JobManagerInterface {
 
   var jobIDCounter = 0
   def runStaticJob() = {
-    val id1 = taskManagers(taskManagers.length - 1).id
-    val id2 = taskManagers(taskManagers.length - 2).id
-    val id3 = taskManagers(taskManagers.length - 3).id
-    val id4 = taskManagers(taskManagers.length - 4).id
+    // val ps = Array(1, 2, 2, 2)
+    // val ops = Array("map", "reduce")
+    // val parallelisms = Array(5, 1)
 
-    val tm1 = Naming.lookup("taskmanager" + id1).asInstanceOf[TaskManagerInterface]
-    val tm2 = Naming.lookup("taskmanager" + id2).asInstanceOf[TaskManagerInterface]
-    val tm3 = Naming.lookup("taskmanager" + id3).asInstanceOf[TaskManagerInterface]
-    val tm4 = Naming.lookup("taskmanager" + id4).asInstanceOf[TaskManagerInterface]
+    // val dataSource = taskManagers(0).id
 
-    tm1.assignTask(new Task(jobID = jobIDCounter, from = -1, to = id2, operator = "data"))
-    tm2.assignTask(new Task(jobID = jobIDCounter, from = id1, to = id3, operator = "map"))
-    tm3.assignTask(new Task(jobID = jobIDCounter, from = id2, to = id4, operator = "reduce"))
-    tm4.assignTask(new Task(jobID = jobIDCounter, from = id3, to = -1, operator = "reduce"))
+    // for (taskID <- ops.indices) {
+    //   var parallelism = parallelisms(taskID)
+    //   while (parallelism > 0) {
+    //     for (s <- ps.indices) {
+    //       var pss = ps(s)
+    //       while (pss > 0) {
+    //         // assign taskID to taskManager s
 
-    jobIDCounter = jobIDCounter + 1
+    //         pss += 1
+    //         parallelism -= 1
+    //       }
+    //     }
+    //   }
+    // }
+
+    val id1 = taskManagers(0).id
+    val id2 = taskManagers(1).id
+    val id3 = taskManagers(2).id
+    val id4 = taskManagers(3).id
+
+    val tm1 =
+      Naming.lookup("taskmanager" + id1).asInstanceOf[TaskManagerInterface]
+    val tm2 =
+      Naming.lookup("taskmanager" + id2).asInstanceOf[TaskManagerInterface]
+    val tm3 =
+      Naming.lookup("taskmanager" + id3).asInstanceOf[TaskManagerInterface]
+    val tm4 =
+      Naming.lookup("taskmanager" + id4).asInstanceOf[TaskManagerInterface]
+
+    var taskIDCounter = 0
+    tm1.assignTask(
+      new Task(
+        jobIDCounter,
+        taskIDCounter,
+        from = Array(),
+        to = Array(id2, id3, id3),
+        operator = "data"
+      )
+    )
+    taskIDCounter += 1
+    tm2.assignTask(
+      new Task(
+        jobIDCounter,
+        taskIDCounter,
+        from = Array(id1),
+        to = Array(id4),
+        operator = "map"
+      )
+    )
+    taskIDCounter += 1
+    tm3.assignTask(
+      new Task(
+        jobIDCounter,
+        taskIDCounter,
+        from = Array(id1),
+        to = Array(id4),
+        operator = "map"
+      )
+    )
+    taskIDCounter += 1
+    tm3.assignTask(
+      new Task(
+        jobIDCounter,
+        taskIDCounter,
+        from = Array(id1),
+        to = Array(id4),
+        operator = "map"
+      )
+    )
+    taskIDCounter += 1
+    tm4.assignTask(
+      new Task(
+        jobIDCounter,
+        taskIDCounter,
+        from = Array(id2, id2, id3),
+        to = Array(),
+        operator = "reduce"
+      )
+    )
+
+    jobIDCounter += 1
   }
-
 
   // update metrics about a taskmanager
   def monitorReport(
@@ -80,7 +151,8 @@ class JobManager extends UnicastRemoteObject with JobManagerInterface {
       ipRate: Int,
       opRate: Int
   ) = {
-    println ("Received report from " + id)
+    counter = counter + 1
+    println("Received report from " + id)
     taskManagers(id).numSlots = numSlots
     taskManagers(id).latenciesToSelf = latenciesToSelf
     taskManagers(id).bandwidthsToSelf = bandwidthsToSelf
@@ -89,10 +161,14 @@ class JobManager extends UnicastRemoteObject with JobManagerInterface {
 
     // TODO: only call it once in a while not all the time new data comes in
     // TODO: implement actual parallelism (need to increase or decrease, scale up or down)
-    reconfigurationManager.solveILP(taskManagers, 1.0.toFloat, alpha)
+    if (counter == 3) {
+      for (i <- taskManagers.indices) {
+        println(taskManagers(i).bandwidthsToSelf.mkString(", "))
+      }
+      reconfigurationManager.solveILP(taskManagers, 1.0.toFloat, alpha)
+    }
   }
 }
-
 
 case class Latency(var fromID: Int, var time: Float)
 case class BW(var fromID: Int, var rate: Float)

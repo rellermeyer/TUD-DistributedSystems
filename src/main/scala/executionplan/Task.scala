@@ -1,3 +1,3 @@
 package executionplan
 
-case class Task(jobID: Int, from: Int, to: Int, operator: String)
+case class Task(jobID: Int, taskID: Int, from: Array[Int], to: Array[Int], operator: String)
