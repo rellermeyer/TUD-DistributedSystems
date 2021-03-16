@@ -7,10 +7,10 @@ import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
 import org.tudelft.crdtgraph.DataStore
+import org.tudelft.crdtgraph.Synchronizer
 import spray.json.DefaultJsonProtocol._
 import org.tudelft.crdtgraph.DataStore
 import scala.collection.mutable.ArrayBuffer
-
 
 import org.tudelft.crdtgraph.DataStore
 import org.tudelft.crdtgraph.OperationLogs._
@@ -134,7 +134,8 @@ object WebServer {
         get {
           pathPrefix("synchronize") {
             pathEnd{
-              DataStore.synchronize(ArrayBuffer[Int]())
+              var list = ArrayBuffer[String]("https://webhook.site/c813ea04-0879-40b6-8d84-f31452768652")
+              Synchronizer.synchronize(list)
               complete("called synchronizer")
             }
           }
