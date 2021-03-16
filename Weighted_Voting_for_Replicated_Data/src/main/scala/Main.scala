@@ -91,7 +91,7 @@ object Main {
     //    println(fileSystem.readSuite(0,1))
 
     // Collect suite
-    def collectSuiteUI() : Unit = {
+    /*def collectSuiteUI() : Unit = {
       var suiteID = -1
       println("(!) What is the ID of the suite you want to collect?")
       suiteID = get_user_choice()
@@ -102,7 +102,7 @@ object Main {
         println("(!) Collected suite "+suiteID+":")
         println(fileSystem.collectSuite(suiteID))
       }
-    }
+    }*/
 
     // Read suite
     def readSuiteUI() : Unit = {
@@ -120,7 +120,11 @@ object Main {
         } else {*/
           println("(!) What is the ID of the file you want to read?")
           suiteID = get_user_choice()
-          println(manager.read(suiteID))
+          val result = manager.read(suiteID)
+          result match {
+            case Left(f) => println("Could not read file suite:\n" + f.reason)
+            case Right(r) => println("Content of file " + suiteID + " is " + r)
+          }
         //}
       //}
     }
@@ -132,7 +136,11 @@ object Main {
       suiteID = get_user_choice()
       println("(!) What is the content you want to write to file " + suiteID + "?")
       newContent = get_user_choice()
-      println(manager.write(suiteID, newContent))
+      val result = manager.write(suiteID, newContent)
+      result match {
+        case Left(f) => println("Could not write to file suite:\n" + f.reason)
+        case Right(r) => println("Successfully written " + newContent + " to file with id " + suiteID)
+      }
     }
 
     // Main menu:
