@@ -74,67 +74,66 @@ class JobManager extends UnicastRemoteObject with JobManagerInterface {
     //   }
     // }
 
+    // initialize taskID counter for each TM
+    val taskIDCounters = Array(taskManagers.length)(0)
+
     val id1 = taskManagers(0).id
     val id2 = taskManagers(1).id
     val id3 = taskManagers(2).id
     val id4 = taskManagers(3).id
 
-    val tm1 =
-      Naming.lookup("taskmanager" + id1).asInstanceOf[TaskManagerInterface]
-    val tm2 =
-      Naming.lookup("taskmanager" + id2).asInstanceOf[TaskManagerInterface]
-    val tm3 =
-      Naming.lookup("taskmanager" + id3).asInstanceOf[TaskManagerInterface]
-    val tm4 =
-      Naming.lookup("taskmanager" + id4).asInstanceOf[TaskManagerInterface]
+    val tm1 = Naming.lookup("taskmanager" + id1).asInstanceOf[TaskManagerInterface]
+    val tm2 = Naming.lookup("taskmanager" + id2).asInstanceOf[TaskManagerInterface]
+    val tm3 = Naming.lookup("taskmanager" + id3).asInstanceOf[TaskManagerInterface]
+    val tm4 = Naming.lookup("taskmanager" + id4).asInstanceOf[TaskManagerInterface]
 
-    var taskIDCounter = 0
     tm1.assignTask(
       new Task(
         jobIDCounter,
-        taskIDCounter,
+        taskID = 0,
         from = Array(),
         to = Array(id2, id3, id3),
+        toTaskIDs = Array(0, 0, 1), // two separate tasks on 
         operator = "data"
       )
     )
-    taskIDCounter += 1
     tm2.assignTask(
       new Task(
         jobIDCounter,
-        taskIDCounter,
+        taskID = 0,
         from = Array(id1),
         to = Array(id4),
+        toTaskIDs = Array(0),
         operator = "map"
       )
     )
-    taskIDCounter += 1
     tm3.assignTask(
       new Task(
         jobIDCounter,
-        taskIDCounter,
+        taskID = 0,
         from = Array(id1),
         to = Array(id4),
+        toTaskIDs = Array(0),
         operator = "map"
       )
     )
-    taskIDCounter += 1
     tm3.assignTask(
       new Task(
         jobIDCounter,
-        taskIDCounter,
+        taskID = 1,
         from = Array(id1),
         to = Array(id4),
+        toTaskIDs = Array(0),
         operator = "map"
       )
     )
-    taskIDCounter += 1
     tm4.assignTask(
       new Task(
         jobIDCounter,
-        taskIDCounter,
+        taskID = 0,
         from = Array(id2, id2, id3),
         to = Array(),
+        toTaskIDs = Array(),
         operator = "reduce"
       )
     )
@@ -161,12 +160,12 @@ class JobManager extends UnicastRemoteObject with JobManagerInterface {
 
     // TODO: only call it once in a while not all the time new data comes in
     // TODO: implement actual parallelism (need to increase or decrease, scale up or down)
-    if (counter == 3) {
-      for (i <- taskManagers.indices) {
-        println(taskManagers(i).bandwidthsToSelf.mkString(", "))
-      }
-      reconfigurationManager.solveILP(taskManagers, 1.0.toFloat, alpha)
-    }
+    // if (counter == 3) {
+    //   for (i <- taskManagers.indices) {
+    //     println(taskManagers(i).bandwidthsToSelf.mkString(", "))
+    //   }
+    //   reconfigurationManager.solveILP(taskManagers, 1.0.toFloat, alpha)
+    // }
   }
 }
 

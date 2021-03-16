@@ -79,103 +79,77 @@ class TaskManager(val id: Int)
     extends UnicastRemoteObject
     with TaskManagerInterface {
 
-  var availableTaskSlots = 2
+  var availableTaskSlots = 2 // TODO: Actually use this
   val taskSlots = scala.collection.mutable.Map[String, TaskSlot]()
 
   // ServerSocket used for INCOMING data
+  val portOffset = 9000
   val port = 9000 + id
   val serverSocket = new ServerSocket(port)
-  myPrint("Server socket started on port: " + port)
+  println("Server socket started on port: " + port)
 
   new Thread {
     override def run {
-      // wait for incoming socket connection and read the corresponding jobID
       while (true) {
         val inputSocket = serverSocket.accept()
         val inputStream = new DataInputStream(inputSocket.getInputStream())
         val jobID = inputStream.readInt() // jobID communicated through socket
         val taskID = inputStream.readInt() // taskID communicated through socket
-        myPrint(
+        println(
           "Connected inputsocket for (jobID, taskID): (" + jobID + ", " + taskID + ")"
         )
         var taskSlot = getTaskSlot(jobID, taskID)
-        // assign output socket and operator type
-        taskSlot.from :+ new DataInputStream(inputSocket.getInputStream())
-
+        // add the inputstream to the taskslot
+        taskSlot.from += new DataInputStream(inputSocket.getInputStream())
         // try to run the task slot
         runTaskSlot(jobID, taskID)
       }
     }
   }.start()
 
-  def getTaskSlot(jobID: Int, taskID: Int): TaskSlot = {
-    taskSlots.synchronized { // prevent creating a taskSlot twice
-      val key = jobID + "" + taskID
-      // try to find already existing one
-      var taskSlot = taskSlots.getOrElse(key, null)
-
-      // create new one
-      if (taskSlot == null) {
-        myPrint("Creating new taskslot for key " + key)
-        taskSlot = new TaskSlot(key)
-        taskSlots.put(key, taskSlot)
-      }
-      return taskSlot
-    }
-  }
-
   def assignTask(task: Task): Unit = {
-    myPrint("Received task with jobID: " + task.jobID)
+    println("Received task for (jobID, taskID): (" + task.jobID + ", " + task.taskID + ")")
+
     var taskSlot = getTaskSlot(task.jobID, task.taskID)
+    taskSlot.task = task
 
-    taskSlot.operator = task.operator
-    taskSlot.fromCount = task.from.length
-
-    // Set output streams (if this is not the sink)
-    if (task.to.length > 0) {
-      var taskIDCopy = task.taskID
-
-      for (i <- task.to.indices) {
-        taskIDCopy += 1
-        val outputSocket = new Socket("localhost", 8000 + task.to(i))
-        val dos = new DataOutputStream(outputSocket.getOutputStream())
-        dos.writeInt(
-          task.jobID
-        ) // let receiver know the jobID corresponding to this socket
-        dos.writeInt(
-          taskIDCopy
-        ) // taskID should correspond to what is sent via the assignTask() call. So the order of to: [] should correspond with the order of assigning tasks in the JobManager
-        taskSlot.to :+ dos
-      }
+    // Set output streams (if any)
+    for (i <- task.to.indices) {
+      val outputSocket = new Socket("localhost", portOffset + task.to(i))
+      val dos = new DataOutputStream(outputSocket.getOutputStream())
+      // let receiver know the jobID and HIS corresponding taskID
+      dos.writeInt(task.jobID)
+      dos.writeInt(task.toTaskIDs(i)) // NOTE: this is the taskID for the RECEIVER
+      // add the outputstream to the taskslot
+      taskSlot.to += dos
     }
-
     // try to run the task slot
     runTaskSlot(task.jobID, task.taskID)
   }
 
-  def runTaskSlot(jobID: Int, taskID: Int) = {
-    val slot: TaskSlot = getTaskSlot(jobID, taskID)
+  def runTaskSlot(jobID: Int, taskID: Int) = synchronized {
+    val slot = getTaskSlot(jobID, taskID)
 
-    // if map or reduce
-    // (outputsocket can be null in case of sink)
-    if (
-      slot.from.length == slot.fromCount &&
-      slot.operator != null
-    ) {
-      new Thread(slot).start()
-    }
-    // if data source (no inputsocket needed)
-    else if (
-      slot.to.length > 0 &&
-      slot.operator != null &&
-      slot.operator.equals("data")
-    ) {
-      new Thread(slot).start()
-    }
+    // check if both inputs and outputs are connected
+    if (slot.task != null &&
+        slot.task.from.length == slot.from.length &&
+        slot.task.to.length == slot.to.length) {
+          new Thread(slot).start()
+        }
   }
 
-  def myPrint(text: String) {
-    println(id + ": " + text)
+  def getTaskSlot(jobID: Int, taskID: Int): TaskSlot = synchronized {
+    val key = jobID + "" + taskID
+    // try to find already existing one
+    var taskSlot = taskSlots.getOrElse(key, null)
+
+    if (taskSlot == null) {
+      // create new one
+      println("Creating new taskslot for (jobID, taskID): (" + jobID + ", " + taskID + ")")
+      taskSlot = new TaskSlot(key)
+      taskSlots.put(key, taskSlot)
+    }
+    return taskSlot
   }
 }
 

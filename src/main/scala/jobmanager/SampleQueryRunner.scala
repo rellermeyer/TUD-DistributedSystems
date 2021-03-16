@@ -1,6 +1,7 @@
 // package jobmanager
 
 import java.rmi.Naming
+import scala.collection.mutable.ArrayBuffer
 
 object SampleQueryRunner {
     def main(args: Array[String]): Unit = {
