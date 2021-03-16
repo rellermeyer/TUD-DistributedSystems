@@ -4,8 +4,8 @@ import VotingSystem.FileSuiteManager
 object Main {
   def main(args: Array[String]): Unit = {
 
-    val numContainers: Int = 10
-    val latencies: Seq[Int] = Seq(1, 2, 3, 4, 5, 1, 2, 3, 4, 5)
+    val numContainers: Int = 5
+    val latencies: Seq[Int] = Seq(1, 2, 3, 4, 5)
     val failureProb: Double = 0.0
 
     val fileSystem = DistributedSystem(numContainers, latencies, failureProb)
@@ -35,7 +35,7 @@ object Main {
 
 
     // Create containers menu:
-    def createContainersUI() : Unit = {
+    def createContainersUI(): Unit = {
       var exit_createContainersUI = true
       var latencies = Seq[Int]()
       while ( { exit_createContainersUI }) {
@@ -79,7 +79,11 @@ object Main {
         var newWeight = get_user_choice()
         repWeights = repWeights :+ newWeight
       }
-      manager.create(suiteID, Rsuite, Wsuite, repWeights)       // Put repWeights instead of Seq(1, 2, 3, 4, 5)
+      val result = manager.create(suiteID, Rsuite, Wsuite, repWeights)       // Put repWeights instead of Seq(1, 2, 3, 4, 5)
+      result match {
+        case Left(f) => println("Could not create file suite:\n" + f.reason)
+        case Right(r) => println("Successfully created file suite with id " + suiteID)
+      }
     }
 
 

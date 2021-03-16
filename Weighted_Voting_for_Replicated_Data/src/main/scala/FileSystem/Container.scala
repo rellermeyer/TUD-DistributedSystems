@@ -5,6 +5,8 @@ class Container(newLatency: Int) {
   /**
    * constructor
    */
+  case class FailResult(reason:String)
+
   private val _latency: Int = newLatency
   private var _representatives: Seq[Representative] = scala.collection.immutable.Vector.empty
 
@@ -18,47 +20,38 @@ class Container(newLatency: Int) {
     _representatives.find(element => element.repId == suiteId)
   }
 
-  /*def respond(suiteId: Int): ContainerResponse = {
-    val rep = findRepresentative(suiteId)
-    //if (rep.isDefined) {
-      println("read rep:" + rep.get.content)
-      ContainerResponse()
-    //}
-  }*/
-
-  def createRepresentative(suiteId: Int, suiteR: Int, suiteW: Int, repWeight: Int): Unit = {
+  def createRepresentative(suiteId: Int, suiteR: Int, suiteW: Int, repWeight: Int): Either[FailResult, Unit] = {
     if (findRepresentative(suiteId).isEmpty) {
       val newRepresentative = Representative(suiteId: Int, suiteR: Int, suiteW: Int, repWeight: Int)
       _representatives = _representatives :+ newRepresentative
-      println("container creates representative with weight " + repWeight)
+      Right()
     }
     else {
-      println("Representative exists already, TODO: better error handling") //TODO: better error handling
+      Left(FailResult("createRepresentative failed: a representative of file " + suiteId + " exists already"))
     }
   }
 
-  def readRepresentative(suiteId: Int): Int = {
+  def readRepresentative(suiteId: Int): Either[FailResult, Int] = {
     val rep = findRepresentative(suiteId)
     if (rep.isDefined) {
-	    println("read rep:" + rep.get.content)
-      rep.get.content
+      Right(rep.get.content)
     }
     else {
-      println("rep does not exist")
-      -1
+      Left(FailResult("readRepresentative failed: no representative of file " + suiteId + " exists in container"))
     }
   }
 
-  def writeRepresentative(suiteId: Int, newContent: Int): Unit = {
+  def writeRepresentative(suiteId: Int, newContent: Int): Either[FailResult, Unit] = {
     val rep = findRepresentative(suiteId)
     if (rep.isDefined) {
-      println("write rep: " + rep.get.content + " overwritten by " + newContent)
+      //println("write rep: " + rep.get.content + " overwritten by " + newContent)
       rep.get.content = newContent
       rep.get.prefix.versionNumber += 1
-      println("new version number: " + rep.get.prefix.versionNumber)
+      //println("new version number: " + rep.get.prefix.versionNumber)
+      Right()
     }
     else {
-      println("rep does not exist")
+      Left(FailResult("writeRepresentative failed: no representative of file " + suiteId + " exists in container"))
     }
   }
 }
