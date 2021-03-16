@@ -5,17 +5,10 @@ import akka.http.scaladsl.Http
 import akka.stream.ActorMaterializer
 import akka.Done
 import akka.http.scaladsl.server.Route
-import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.model.StatusCodes
-import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
-import org.tudelft.crdtgraph.DataStore
-import spray.json.DefaultJsonProtocol._
 import DataStore._
 import spray.json._
 
-import scala.collection.mutable.ArrayBuffer
-import scala.collection.mutable.HashMap
-import scala.collection.mutable.Seq
 import scala.io.StdIn
 import scala.concurrent.Future
 import spray.json.DefaultJsonProtocol
@@ -23,17 +16,16 @@ import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.http.scaladsl.server.Directives
 import org.tudelft.crdtgraph.OperationLogs._
 
-
+//Custom case classes to parse vertices and arcs in post requests containing JSON
 final case class VertexCaseClass(vertexName: String)
 final case class ArcCaseClass(sourceVertex: String, targetVertex: String)
 
-
+//JSON formats used to parse the body of post requests
 trait JsonSupport extends SprayJsonSupport with DefaultJsonProtocol {
   implicit val vertexFormat = jsonFormat1(VertexCaseClass)
   implicit val arcFormat = jsonFormat2(ArcCaseClass)
-}
 
-object WebServer extends Directives with JsonSupport {
+  //OperationLog needs special format with custom write and read functions to parse it
   implicit object OperationLogFormat extends JsonFormat[OperationLog] {
     def write(obj: OperationLog): JsValue = {
       JsObject(
@@ -68,19 +60,25 @@ object WebServer extends Directives with JsonSupport {
       case _ => deserializationError("Json is required")
     }
   }
+}
 
+object WebServer extends Directives with JsonSupport {
   // needed to run the route
   implicit val system = ActorSystem()
   implicit val materializer = ActorMaterializer()
   // needed for the future map/flatmap in the end and future in fetchItem and saveOrder
   implicit val executionContext = system.dispatcher
 
+  //True is returned with success, false is returned with failure
   val trueString = "true"
   val falseString = "false"
 
 
   def main(args: Array[String]) {
-    val route: Route =
+    val route: Route = {
+        //Route to add a vertex to the datastore. Returns true on success, false otherwise
+        //HTTP Post request in the following form: {"vertexName": "abc"}
+        //Only one vertex per request
         post {
           pathPrefix("addvertex") {
             entity(as[VertexCaseClass]) { vertex =>
@@ -92,6 +90,10 @@ object WebServer extends Directives with JsonSupport {
             }
           }
         } ~
+        //Route to add a arc between to vertices to the datastore. Returns true on success, false otherwise
+        //Vertices that the new arc connects to each other need to exist beforehand, otherwise false is returned
+        //HTTP Post request in the following form: {"sourceVertex":"xyz", "targetVertex":"abc"}
+        //Only one arc per request
         post {
           pathPrefix("addarc") {
             entity(as[ArcCaseClass]) { arc =>
@@ -114,6 +116,10 @@ object WebServer extends Directives with JsonSupport {
             }
           }
         } ~
+        //Route to remove a vertex from the datastore. Returns true on success, false otherwise
+        //Vertices need to exist in the datastore beforehand, otherwise false is returned
+        //HTTP Delete request in the following form: {"vertexName": "abc"}
+        //Only one vertex per request
         delete {
           pathPrefix("removevertex") {
             entity(as[VertexCaseClass]) { vertex =>
@@ -130,6 +136,10 @@ object WebServer extends Directives with JsonSupport {
             }
           }
         } ~
+        //Route to remove an arc between two vertices in the datastore. Returns true on success, false otherwise
+        //Arc and vertices need to exist beforehand, otherwise false is returned
+        //HTTP Delete request in the following form: {"sourceVertex":"xyz", "targetVertex":"abc"}
+        //Only one arc per request
         delete {
           pathPrefix("removearc") {
             entity(as[ArcCaseClass]) { arc =>
@@ -160,6 +170,9 @@ object WebServer extends Directives with JsonSupport {
             }
           }
         } ~
+        //Route to lookup if a vertex exists in the datastore. Returns true on success, false otherwise
+        //HTTP Get request in the following form (e.g. with cURL): "curl http://localhost:8081/lookupvertex\?vertexName\=abc"
+        //Only one vertex per request
         get {
           pathPrefix("lookupvertex") {
             parameter("vertexName") { vertexName =>
@@ -171,6 +184,9 @@ object WebServer extends Directives with JsonSupport {
             }
           }
         } ~
+        //Route to lookup if an arc exists in the datastore. Returns true on success, false otherwise
+        //HTTP Get request in the following form (e.g. with cURL): "curl http://localhost:8080/lookuparc\?sourceVertex\=abc\&targetVertex\=xyz"
+        //Only one arc per request
         get {
           pathPrefix("lookuparc") {
             parameter("sourceVertex", "targetVertex") { (sourceVertex, targetVertex) =>
@@ -182,16 +198,18 @@ object WebServer extends Directives with JsonSupport {
             }
           }
         } ~
+       //Route for debug purposes
         get {
           pathPrefix("debug-get-changes")  {
             var changes = DataStore.ChangesQueue.toVector
             complete(changes.map( log => log.toJson))
           }
         }
+    }
 
     val port = if (args.length > 0) args(0).toInt else 8080
     val bindingFuture = Http().bindAndHandle(route, "0.0.0.0", port)
-    println(s"Server online at http://localhost:8080/\nPress RETURN to stop...")
+    println(s"Server online at http://localhost:" + port + "/\nPress RETURN to stop...")
     StdIn.readLine() // let it run until user presses return
     bindingFuture
       .flatMap(_.unbind()) // trigger unbinding from the port
