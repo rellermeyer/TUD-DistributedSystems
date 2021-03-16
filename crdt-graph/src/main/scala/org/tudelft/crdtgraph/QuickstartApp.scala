@@ -189,7 +189,8 @@ object WebServer extends Directives with JsonSupport {
           }
         }
 
-    val bindingFuture = Http().bindAndHandle(route, "localhost", 8080)
+    val port = if (args.length > 0) args(0).toInt else 8080
+    val bindingFuture = Http().bindAndHandle(route, "0.0.0.0", port)
     println(s"Server online at http://localhost:8080/\nPress RETURN to stop...")
     StdIn.readLine() // let it run until user presses return
     bindingFuture
