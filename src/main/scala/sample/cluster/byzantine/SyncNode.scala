@@ -11,7 +11,7 @@ object SyncNode {
   val SyncNodeServiceKey: ServiceKey[SyncNode.Event] = ServiceKey[SyncNode.Event]("Nodes")
 
   private final val C = 2
-  private final val EPISOLON = 0.01
+  private final val EPISOLON = 0.1
   private final val T = 1
 
   sealed trait Event
@@ -21,10 +21,12 @@ object SyncNode {
   sealed trait Request extends Event with CborSerializable
   case class Save(nodeId: Int, replyTo: ActorRef[SyncNode.Event]) extends Request
   case class RegisterMyID(messageId: Int, nodeId: Int, reply: ActorRef[SyncNode.Event]) extends Request
+  case class SelectedActiveID(messageId: Int, selectedId: Int, selectedAddress: ActorRef[SyncNode.Event], reply: ActorRef[SyncNode.Event]) extends Request
+  case class Query(messageId: Int, queryId: Int, queryAddress: ActorRef[SyncNode.Event], senderId: Int, reply: ActorRef[SyncNode.Event]) extends Request
 
   sealed trait Response extends Event with CborSerializable
   case class Ack(messageId: Int) extends Response
-  case class QueryReply(messageId: Int) extends Response
+  case class QueryReply(messageId: Int, queryId: Int, reply: ActorRef[SyncNode.Event]) extends Response
 
 
   def apply(nodeId: Int, numberOfNodes: Int): Behavior[SyncNode.Event] = Behaviors.setup { ctx =>
@@ -43,6 +45,10 @@ object SyncNode {
 
     var nodesReferences = IndexedSeq.empty[ActorRef[SyncNode.Event]]
     var activeNodes: Map[Int, ActorRef[SyncNode.Event]] = Map.empty
+    var selectedNodes: List[(Int, ActorRef[SyncNode.Event])] = List.empty
+    // A list with queryID, queryAddress, senderID, senderAddress
+    var queryList: List[(Int, ActorRef[SyncNode.Event], Int, ActorRef[SyncNode.Event])] = List.empty
+    var queryReplies: List[Int] = List.empty
 
     // define the state of the actor
     val r = scala.util.Random
@@ -66,14 +72,10 @@ object SyncNode {
     var saveNodes: Set[Int] = Set.empty
 
     def resetSaveNodes(): Unit = saveNodes = Set.empty
-    def broadCastSaves(): Unit = nodesReferences.foreach(ref => {
-      println(s"I am $nodeId and I am broadcasting saves to $ref")
-      ref ! Save(nodeId, ctx.self)
-    })
+    def broadCastSaves(): Unit = nodesReferences.foreach(ref => ref ! Save(nodeId, ctx.self))
 
     def receivedMessageId(seqNum: Int): Unit = outstandingMessageIDs = outstandingMessageIDs.filter(_ != seqNum)
 
-    ctx.log.info(s"I am node: $nodeId and im ${if (active) "active" else "not active"}")
     Behaviors.withTimers { timers =>
       Behaviors.receiveMessage {
         case NodesUpdated(newWorkers) =>
@@ -82,33 +84,116 @@ object SyncNode {
           if (nodesReferences.size == numberOfNodes && active) {
             nodesReferences.foreach(ref => {
               seqNum = seqNum + 1
-              println(s"sending message with seqnum $nodeId-$seqNum")
               outstandingMessageIDs = outstandingMessageIDs :+ seqNum
               ref ! RegisterMyID(seqNum, nodeId, ctx.self)
             })
           }
-          else if (nodesReferences.size == numberOfNodes) {
+          else if (nodesReferences.size == numberOfNodes)
             broadCastSaves()
-          }
           Behaviors.same
         case RegisterMyID(seqNum, senderId, senderAddress) =>
-          println(s"registering an active id: $senderId")
           activeNodes = activeNodes + (senderId -> senderAddress)
+          light = activeNodes.size < (maxA + EPISOLON * p * numberOfNodes)
+          senderAddress ! Ack(seqNum)
+          Behaviors.same
+        case SelectedActiveID(seqNum, selectedID, selectedAddress, senderAddress) =>
+          println(s"registering an selected ID: $selectedID")
+          selectedNodes = selectedNodes :+ (selectedID, selectedAddress)
+          senderAddress ! Ack(seqNum)
+          Behaviors.same
+        case Query(seqNum, queryID, queryAddress, senderId, senderAddress) =>
+          queryList = queryList :+ (queryID, queryAddress, senderId, senderAddress)
+          senderAddress ! Ack(seqNum)
+          Behaviors.same
+        case QueryReply(seqNum, queryId, senderAddress) =>
+          queryReplies = queryReplies :+ queryId
           senderAddress ! Ack(seqNum)
           Behaviors.same
         case Ack(seqNum) =>
-          println(s"received ack for seqnum $seqNum")
-          println(s"current outstanding message $outstandingMessageIDs")
           receivedMessageId(seqNum)
           println(s"new outstanding messageids $outstandingMessageIDs")
-          if (outstandingMessageIDs.size == 0 || outstandingMessageIDs.isEmpty)
+          if (outstandingMessageIDs.isEmpty)
             broadCastSaves()
           Behaviors.same
         case Save(senderId, senderAddress) =>
           saveNodes += senderId
-          println(s"I am node $nodeId savenodes: $saveNodes")
-          if (saveNodes.size == numberOfNodes)
-            println(s"---------- DONE WITH ROUND $roundID ----------")
+          println(s"saved nodes $saveNodes: ${saveNodes.size}/$numberOfNodes")
+          if (saveNodes.size == numberOfNodes) {
+            println(s"---------- DONE WITH ROUND $nodeId:$roundID ----------")
+            resetSaveNodes()
+            roundID = roundID + 1
+            roundID match {
+              case 3 =>
+                println(s"I am node $nodeId and I am light: $light")
+                if (light) {
+                  val (selectedId, selectedAddress) = activeNodes.toList(r.nextInt(activeNodes.size))
+                  activeNodes.foreach(entry => {
+                    seqNum = seqNum + 1
+                    println(s"sending selected message with seqnum $nodeId-$seqNum")
+                    outstandingMessageIDs = outstandingMessageIDs :+ seqNum
+                    entry._2 ! SelectedActiveID(seqNum, selectedId, selectedAddress, ctx.self)
+                  })
+                }
+                else
+                  broadCastSaves()
+              case 4 =>
+                println(s"I am node $nodeId and I am active: $active")
+                if (active) {
+                  val n: Int = selectedNodes.size
+                  if (n > low - T) {
+                    activeNodes = selectedNodes
+                      .groupBy(tuple => tuple._1)
+                      .filter(entry => entry._2.size >= beta)
+                      .values
+                      .flatten
+                      .toMap
+
+                    activeNodes.foreach(entry => {
+                      r
+                        .shuffle(nodesReferences)
+                        .take(math.round(C * math.log(numberOfNodes)).toInt)
+                        .foreach(ref => {
+                          seqNum = seqNum + 1
+                          println(s"sending query message with seqnum $nodeId-$seqNum towards ${entry._1}")
+                          outstandingMessageIDs = outstandingMessageIDs :+ seqNum
+                          ref ! Query(seqNum, entry._1, entry._2, nodeId, ctx.self)
+                        })
+                    })
+                  }
+                }
+                else
+                  broadCastSaves()
+              case 5 =>
+                if (light) {
+                  queryList
+                    .filter(entry => activeNodes.contains(entry._1) && activeNodes.contains(entry._3))
+                    .foreach(entry => {
+                      seqNum = seqNum + 1
+                      println(s"sending query reply message with seqnum $nodeId-$seqNum")
+                      outstandingMessageIDs = outstandingMessageIDs :+ seqNum
+                      entry._4 ! QueryReply(seqNum, entry._1, ctx.self)
+                    })
+                }
+                else
+                  broadCastSaves()
+              case 6 =>
+                val validIDs: Set[Int] = queryReplies
+                  .groupBy(entry => entry)
+                  .filter(entry => entry._2.size >= delta * C * math.log(numberOfNodes))
+                  .keySet
+
+                activeNodes = activeNodes.view.filterKeys(key => !validIDs.contains(key)).toMap
+                if (active) {
+                  val n: Int = selectedNodes.size
+                  if (n > low - T) {
+                    println("perform large cobera")
+                  }
+                }
+                else
+                  broadCastSaves()
+              case _ => println("I have not been implemented")
+            }
+          }
           Behaviors.same
       }
     }

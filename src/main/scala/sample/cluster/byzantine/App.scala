@@ -14,7 +14,7 @@ object App {
 
       if (cluster.selfMember.hasRole("node")) {
 //        ctx.spawn(Node(r.nextInt(100), 2), s"Node$id")
-        ctx.spawn(SyncNode(id, 3), s"Node$id")
+        ctx.spawn(SyncNode(id, 10), s"Node$id")
       }
       if (cluster.selfMember.hasRole("decider")) {
         ctx.spawn(LargeCoBeRa(), "LargeCoBeRa")
@@ -26,9 +26,9 @@ object App {
   def main(args: Array[String]) = {
     if (args.isEmpty) {
       startUp("decider", 25251, 0)
-      startUp("node", 0, 1)
-      startUp("node", 0, 2)
-      startUp("node", 0, 3)
+      for (i <- 1 to 10) {
+        startUp("node", 0, i)
+      }
     } else {
       require(args.length == 3, "Usage: role port")
       startUp(args(0), args(1).toInt, args(2).toInt)
