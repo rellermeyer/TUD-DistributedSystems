@@ -2,23 +2,35 @@ package org.tudelft.crdtgraph
 
 import org.tudelft.crdtgraph.OperationLogs._
 
+import java.util.concurrent.locks.ReentrantLock
 import scala.collection.mutable._
 
 object DataStore {
+  private val lock = new ReentrantLock()
   val Vertices = new HashMap[String, Vertex]()
   val ChangesQueue = ArrayBuffer[OperationLog]()
 
 
   def addVertex(vertexName: String): Boolean = {
-    var newId = java.util.UUID.randomUUID.toString()
-    var newChange = new AddVertexLog(vertexName, newId)
+    lock.lock()
+    try {
+      var newId = java.util.UUID.randomUUID.toString()
+      var newChange = new OperationLog()
+      newChange.AddVertexLog(vertexName, newId)
 
-    applyAddVertex(newChange)
-    return true
+      applyAddVertex(newChange)
+      return true
+    }
+    finally {
+      lock.unlock()
+    }
   }
 
-  def applyAddVertex(cmd: AddVertexLog): Unit ={
-    if(!Vertices.contains(cmd.vertexName)){
+  private def applyAddVertex(cmd: OperationLog): Unit = {
+    if (cmd.opType != OperationType.addVertex) {
+      throw new IllegalArgumentException //coding error, should always receive addVertex
+    }
+    if (!Vertices.contains(cmd.vertexName)) {
       Vertices(cmd.vertexName) = new Vertex(cmd.vertexName, cmd.vertexUuid)
     }
     else {
@@ -28,14 +40,25 @@ object DataStore {
   }
 
   def addArc(arcSourceVertex: String, arcTargetVertex: String): Boolean = {
-    var newId = java.util.UUID.randomUUID.toString()
-    var newChange = new AddArcLog(arcSourceVertex, arcTargetVertex, newId)
-    applyAddArc(newChange)
-    return true
+    lock.lock()
+    try {
+      var newId = java.util.UUID.randomUUID.toString()
+      var newChange = new OperationLog()
+      newChange.AddArcLog(arcSourceVertex, arcTargetVertex, newId)
+
+      applyAddArc(newChange)
+      return true
+    }
+    finally {
+      lock.unlock()
+    }
   }
 
-  def applyAddArc(cmd: AddArcLog): Unit = {
-    if(!lookUpVertex(cmd.sourceVertex)){
+  private def applyAddArc(cmd: OperationLog): Unit = {
+    if (cmd.opType != OperationType.addArc) {
+      throw new IllegalArgumentException //coding error, should always receive addArc
+    }
+    if (!lookUpVertex(cmd.sourceVertex)) {
       throw new IllegalArgumentException //no source vertex
       //todo: discuss what should we do when this happens while synchronizing
     }
@@ -44,47 +67,73 @@ object DataStore {
   }
 
   def removeVertex(vertexName: String): Boolean = {
-    if(!lookUpVertex(vertexName)){
-      throw new IllegalArgumentException //to vertex to remove
-      //todo: discuss what should we do when this happens while synchronizing
+    lock.lock()
+    try {
+      if (!lookUpVertex(vertexName)) {
+        throw new IllegalArgumentException //to vertex to remove
+        //todo: discuss what should we do when this happens while synchronizing
+      }
+
+      //remove all the arcs
+      Vertices(vertexName).Arcs.foreach(arcKeyValue => {
+        var change = new OperationLog()
+        change.RemoveArcLog(vertexName, arcKeyValue._1, arcKeyValue._2.clone)
+        applyRemoveArc(change)
+      })
+
+      //remove the vertex
+      var change = new OperationLog()
+      change.RemoveVertexLog(vertexName, Vertices(vertexName).Uuids.clone)
+
+      applyRemoveVertex(change)
+      return true;
     }
-    var arcs = Vertices(vertexName).Arcs
-    var ids = Vertices(vertexName).Uuids
-    var change = new RemoveVertexLog(vertexName, arcs, ids)
-    applyRemoveVertex(change)
-    return true;
+    finally {
+      lock.unlock()
+    }
   }
 
-  def applyRemoveVertex(cmd : RemoveVertexLog):Unit = {
-    if(!lookUpVertex(cmd.vertexName)){
+  private def applyRemoveVertex(cmd: OperationLog): Unit = {
+    if (cmd.opType != OperationType.removeVertex) {
+      throw new IllegalArgumentException //coding error, should always receive removeVertex
+    }
+    if (!lookUpVertex(cmd.vertexName)) {
       throw new IllegalArgumentException //to vertex to remove
       //todo: discuss what should we do when this happens while synchronizing
     }
 
-    cmd.arcUuids.foreach( arcKeyValue =>{
-      Vertices(cmd.vertexName).removeArcs(arcKeyValue._1, arcKeyValue._2)
-    })
     Vertices(cmd.vertexName).removeIds(cmd.vertexUuids)
-    if(Vertices(cmd.vertexName).toBeRemoved()){
+    if (Vertices(cmd.vertexName).toBeRemoved()) {
       Vertices.remove(cmd.vertexName)
     }
     ChangesQueue += cmd
   }
 
   def removeArc(arcSourceVertex: String, arcTargetVertex: String): Boolean = {
-    if(!lookUpArc(arcSourceVertex, arcTargetVertex)){
-      throw new IllegalArgumentException //no arc to remove
-      //todo: discuss what should we do when this happens while synchronizing
-    }
+    lock.lock()
+    try {
+      if (!lookUpArc(arcSourceVertex, arcTargetVertex)) {
+        throw new IllegalArgumentException //no arc to remove
+        //todo: discuss what should we do when this happens while synchronizing
+      }
 
-    val pastArcsUUIDs = Vertices(arcSourceVertex).getArcUuids(arcTargetVertex)
-    var change =  new RemoveArcLog(arcSourceVertex, arcTargetVertex, pastArcsUUIDs)
-    applyRemoveArc(change)
-    return true
+      val pastArcsUUIDs = Vertices(arcSourceVertex).getArcUuids(arcTargetVertex).clone
+      var change = new OperationLog()
+      change.RemoveArcLog(arcSourceVertex, arcTargetVertex, pastArcsUUIDs)
+
+      applyRemoveArc(change)
+      return true
+    }
+    finally {
+      lock.unlock()
+    }
   }
 
-  def applyRemoveArc(cmd: RemoveArcLog):Unit = {
-    if(!lookUpArc(cmd.sourceVertex, cmd.targetVertex)){
+  private def applyRemoveArc(cmd: OperationLog): Unit = {
+    if (cmd.opType != OperationType.removeArc) {
+      throw new IllegalArgumentException //coding error, should always receive removeVertex
+    }
+    if (!lookUpArc(cmd.sourceVertex, cmd.targetVertex)) {
       throw new IllegalArgumentException //no arc to remove
       //todo: discuss what should we do when this happens while synchronizing
     }
@@ -93,30 +142,32 @@ object DataStore {
     ChangesQueue += cmd
   }
 
-  def applyChanges(changes: ArrayBuffer[OperationLog]):Boolean = {
-    changes.foreach( (f: OperationLog) =>{
-      if(!ChangesQueue.exists((x: OperationLog) => x.operationUuid == f.operationUuid)){
-        f.opType match {
-          case OperationType.addVertex => {
-            var newVertex = f.asInstanceOf[AddVertexLog]
-            applyAddVertex(newVertex)
-          }
-          case OperationType.addArc => {
-            var newArc = f.asInstanceOf[AddArcLog]
-            applyAddArc(newArc)
-          }
-          case OperationType.removeArc => {
-            var removedArc = f.asInstanceOf[RemoveArcLog]
-            applyRemoveArc(removedArc)
-          }
-          case OperationType.removeVertex => {
-            var removedVertex = f.asInstanceOf[RemoveVertexLog]
-            applyRemoveVertex(removedVertex)
+  def applyChanges(changes: Vector[OperationLog]): Boolean = {
+    lock.lock()
+    try {
+      changes.foreach((changeLog: OperationLog) => {
+        if (!ChangesQueue.exists((x: OperationLog) => x.operationUuid == changeLog.operationUuid)) {
+          changeLog.opType match {
+            case OperationType.addVertex => {
+              applyAddVertex(changeLog)
+            }
+            case OperationType.addArc => {
+              applyAddArc(changeLog)
+            }
+            case OperationType.removeArc => {
+              applyRemoveArc(changeLog)
+            }
+            case OperationType.removeVertex => {
+              applyRemoveVertex(changeLog)
+            }
           }
         }
-      }
-    })
-    return true
+      })
+      return true
+    }
+    finally {
+      lock.unlock()
+    }
   }
 
   def lookUpVertex(vertexName: String): Boolean = {
