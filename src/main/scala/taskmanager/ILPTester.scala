@@ -13,11 +13,10 @@ object ILPTester {
 
     val no_taskManagers = 3 // exclude JobManager
 
-    var latencies = new Array[Latency](no_taskManagers)
-    var bws = new Array[BW](no_taskManagers)
-
     // Simulate some random bandwidth and latency
     for (i <- 0 until no_taskManagers) {
+      var latencies = new Array[Latency](no_taskManagers)
+      var bws = new Array[BW](no_taskManagers)
       taskManagers.append(
         new TaskManagerInfo(
           id = i,
@@ -30,27 +29,30 @@ object ILPTester {
         )
       )
       for (j <- 0 until no_taskManagers) {
-        latencies(i) = new Latency(
-          i,
+        latencies(j) = new Latency(
+          j,
           Random.nextFloat() * 3 // max 3 seconds latency
-        )
-        if (i != j) {
-          bws(i) = new BW(i, Random.nextFloat() * 3)
+        )  
+        if (i != j) {                                              // TODO: check minimum, maximum value of bws (currently 500 - 3000)
+          bws(j) = new BW(j, 500 + Random.nextFloat() * 3000)     // Be careful, bandwidth should be large enough or ILP might be infeasible
         } else {
-          bws(i) = new BW(i, 0)
+          bws(j) = new BW(j, 0)
         }
-
-        taskManagers(i).numSlots = rand.nextInt(3)
-        taskManagers(i).latenciesToSelf = latencies
-        taskManagers(i).bandwidthsToSelf = bws
-        taskManagers(i).ipRate = rand.nextInt(1000)
-        taskManagers(i).opRate = rand.nextInt(500)
       }
+
+      taskManagers(i).numSlots = rand.nextInt(10) // Be careful, if every site gets a small num of slots, ILP might be infeasible
+      taskManagers(i).latenciesToSelf = latencies
+      taskManagers(i).bandwidthsToSelf = bws
+      taskManagers(i).ipRate = rand.nextInt(1000)
+      taskManagers(i).opRate = rand.nextInt(500)
+      println(taskManagers(i).numSlots)
+
     }
 
     for (i <- taskManagers.indices) {
       println(taskManagers(i).bandwidthsToSelf.mkString(", "))
     }
-    reconfigurationManager.solveILP(taskManagers, 1.0.toFloat, alpha)
+
+    reconfigurationManager.solveILP(taskManagers, 5.0.toFloat, alpha)
   }
 }
