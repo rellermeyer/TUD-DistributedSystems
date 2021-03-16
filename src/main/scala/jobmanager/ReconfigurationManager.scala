@@ -27,11 +27,6 @@ object ReconfigurationManager {
       println("LP oJSolver started")
       val m = taskManagers.length
       val infinity = java.lang.Integer.MAX_VALUE
-      val p = new Array[MPIntVar](m)
-
-      for (i <- 0 until m) {
-        p(i) = MPIntVar("p" + taskManagers(i).id, 0 until infinity)
-      }
 
       //Integer Linear Program
       var pVals: Expression = Zero // use 0 for initialization
@@ -39,30 +34,42 @@ object ReconfigurationManager {
       var LHS_constr4: Expression = Zero
       var constr = Vector.empty[MPConstraint]
 
-      for (i <- 1 until m) {
+      var numTasks = new Array[MPFloatVar](taskManagers.length)
+      for (i <- 0 until m) {
         val currP = MPFloatVar.positive("p" + i.toString())
+        numTasks(i) = currP
         var coef: Float = 0
 
         // First constraint (Equation 2)
-        for (j <- 0 until m - 1) {
-          val LHS: Expression = currP * (taskManagers(i).ipRate / prl)
-          val RHS: Expression = alpha * taskManagers(i).bandwidthsToSelf(j).rate
-          constr = constr :+ add(LHS <:= RHS)
+        for (j <- 0 until m) {
+          if (i != j) {
+            val LHS: Expression = currP * (taskManagers(i).ipRate / prl)
+            val RHS: Expression =
+              // subtract a small value in order to have less than, and not less than or equal to
+              (alpha * taskManagers(i)
+                .bandwidthsToSelf(j)
+                .rate) - Float.MinPositiveValue
+            constr = constr :+ add(LHS <:= RHS)
+          }
         }
 
         // Second Constraint (Eqution 3)
         for (j <- 0 until m) {
           var LHS: Expression = currP * (taskManagers(i).opRate / prl)
           if (j != i) {
-            for (k <- 0 until m - 1) {
+            for (k <- 0 until m) {
               if (
+                k != j &&
                 taskManagers(j).bandwidthsToSelf(k).fromID == taskManagers(
                   i
                 ).id
               ) {
                 val RHS: Expression =
-                  alpha * taskManagers(j).bandwidthsToSelf(k).rate
- //               constr = constr :+ add(LHS <:= RHS)
+                  // substract a small value in order to have less than, and not less than or equal to
+                  (alpha * taskManagers(j)
+                    .bandwidthsToSelf(k)
+                    .rate) - Float.MinPositiveValue
+                constr = constr :+ add(LHS <:= RHS)
               }
             }
           }
@@ -71,14 +78,14 @@ object ReconfigurationManager {
         // Third Constraint (Equation 4)
         val LHS: Expression = currP
         val RHS: Expression = taskManagers(i).numSlots
-//        constr = constr :+ add(LHS <:= RHS)
+        constr = constr :+ add(LHS <:= RHS)
 
         // LHS Fourth Constraint (Equation 5)
         LHS_constr4 += currP
 
         // Objective Function (minimization for all upstream and downstream)
-        for (j <- 0 until m - 1) {
-          for (k <- 0 until m - 1) {
+        for (j <- 0 until m) {
+          for (k <- 0 until m) {
             var l_ik: Float = 0
             var l_kj: Float = 0
             for (l <- 0 until m) {
@@ -102,18 +109,17 @@ object ReconfigurationManager {
 
       // Add Fourth constraint (Equation 5)
       val RHS_constr4: Expression = prl
-      // constr = constr :+ add(LHS_constr4 := RHS_constr4)
-
+      constr = constr :+ add(LHS_constr4 := RHS_constr4)
 
       // Minimize objective function
       minimize(pVals)
- 
+
       // Start the Solver
       start()
 
-      for (i <- p.indices)
-        println(p(i).value.get)
-       
+      for (i <- numTasks.indices)
+        println("p[" + i + "] = " + numTasks(i).value.get)
+
     }
   }
 }
