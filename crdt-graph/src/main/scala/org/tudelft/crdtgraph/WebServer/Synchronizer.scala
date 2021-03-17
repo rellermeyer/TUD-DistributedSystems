@@ -47,49 +47,20 @@ object Synchronizer {
         var failCount = ArrayBuffer[Int]()
         while(true) {
           configureCounters(counters, targets)
-          configureCounters(failCount, targets)
-
-          // Updates that will have to be sent
-          var updates = ArrayBuffer[ArrayBuffer[String]]()
-
-          for(x <- targets) {
-            updates += ArrayBuffer[String]()
-          }
-
-          // Amount of updates. Will be used to extract updates from ChangesQueue
-          var amountOfUpdates = ArrayBuffer[Int]()
+          configureCounters(failCount, targets
 
           print("Test")
-
-          // Initialize amountOfUpdates so it can be used by a loop
-          for(i <- 0 to targets.length - 1) {
-            amountOfUpdates += changesQueue.length - counters(i)
-          }
-          // Extract updates from ChangesQueue
-          for(i <- 0 to targets.length - 1) {
-            var temp = counters(i)
-            for(x <- 1 to amountOfUpdates(i)) {
-              if(amountOfUpdates(i) > 0) {
-                updates(i) += changesQueue(temp)
-                temp += 1
-              }
-            }
-          }
-          print("crayzy")
-
-          //convert updates to JSON
-
+            
           // Send updates to all targets. Decide on what framework to use
           for(i <- 0 to targets.length - 1) {
-            for(x <- updates(i)) {
-              val responseFuture: Future[HttpResponse] = Http().singleRequest(Post(targets(i), x))
-              responseFuture
-                .onComplete {
-                  case Success(res) => counters(i) += 1
-                  case Failure(_)   => failCount(i) += 1
-                }
-              Thread.sleep(10)
-            }
+            var temp = DataStore.ChangesQueue.drop(counters(i)).toVector.map(log => log.toJson(OperationLogFormat)).toString
+            val responseFuture: Future[HttpResponse] = Http().singleRequest(Post(targets(i), tepm))
+            responseFuture
+              .onComplete {
+                case Success(res) => counters(i) += 1
+                case Failure(_)   => failCount(i) += 1
+              }
+            Thread.sleep(10)
           }
 
           for(i <- 0 to targets.length - 1) {
