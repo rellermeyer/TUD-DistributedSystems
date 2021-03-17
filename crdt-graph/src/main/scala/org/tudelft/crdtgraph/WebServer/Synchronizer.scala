@@ -71,14 +71,20 @@ object Synchronizer {
             
           // Send updates to all targets. Decide on what framework to use
           for(i <- 0 to targets.length - 1) {
-            var temp = DataStore.ChangesQueue.drop(counters(i)).toVector.map(log => log.toJson(OperationLogFormat)).toString
+            var temp = DataStore.ChangesQueue.drop(counters(i)).toVector.map(log => log.toJson(OperationLogFormat)).toString()
+            var count = DataStore.ChangesQueue.drop(counters(i)).size()
             println(counters(i))
             println(Json.toJson(temp))
             val responseFuture: Future[HttpResponse] = Http().singleRequest(Post(targets(i) + "/applychanges", temp))
             responseFuture
               .onComplete {
-                case Success(res) => counters(i) += 0
-                case Failure(_)   => failCount(i) += 1
+                    if (temp == "[]"){
+                      case Success(res) => counters(i) += count
+                      case Failure(_)   => failCount(i) += 1
+                    } else {
+                      failCount(i) +=1
+                    }
+
               }
             Thread.sleep(10)
           }
