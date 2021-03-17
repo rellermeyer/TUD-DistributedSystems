@@ -11,9 +11,11 @@ import spray.json._
 
 import scala.io.StdIn
 import scala.concurrent.Future
+import ClusterListener._
 import spray.json.DefaultJsonProtocol
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.http.scaladsl.server.Directives
+import com.typesafe.config.ConfigFactory
 import org.tudelft.crdtgraph.OperationLogs._
 
 //Custom case classes to parse vertices and arcs in post requests containing JSON
@@ -64,7 +66,7 @@ trait JsonSupport extends SprayJsonSupport with DefaultJsonProtocol {
 
 object WebServer extends Directives with JsonSupport {
   // needed to run the route
-  implicit val system = ActorSystem()
+  implicit val system = ActorSystem("crdt-graph")
   implicit val materializer = ActorMaterializer()
   // needed for the future map/flatmap in the end and future in fetchItem and saveOrder
   implicit val executionContext = system.dispatcher
@@ -73,8 +75,12 @@ object WebServer extends Directives with JsonSupport {
   val trueString = "true"
   val falseString = "false"
 
+  // Configloader
+  lazy val config = ConfigFactory.load()
+
 
   def main(args: Array[String]) {
+    ClusterListener.startManager(system)
     val route: Route = {
         //Route to add a vertex to the datastore. Returns true on success, false otherwise
         //HTTP Post request in the following form: {"vertexName": "abc"}
@@ -190,16 +196,27 @@ object WebServer extends Directives with JsonSupport {
             var changes = DataStore.ChangesQueue.toVector
             complete(changes.map( log => log.toJson))
           }
-        }
+        } ~
+          get {
+            pathPrefix("address") {
+              var message = "This is my address \n"
+              message += ClusterListener.getSelfAddress(system)
+              message += "\n And these are all the addresses \n"
+              message += ClusterListener.getOtherMembers(system)
+
+              complete(message)
+            }
+          }
+
     }
 
     val port = if (args.length > 0) args(0).toInt else 8080
     val bindingFuture = Http().bindAndHandle(route, "0.0.0.0", port)
     println(s"Server online at http://localhost:" + port + "/\nPress RETURN to stop...")
-    StdIn.readLine() // let it run until user presses return
-    bindingFuture
-      .flatMap(_.unbind()) // trigger unbinding from the port
-      .onComplete(_ ⇒ system.terminate()) // and shutdown when done
+//    StdIn.readLine() // let it run until user presses return
+//    bindingFuture
+//      .flatMap(_.unbind()) // trigger unbinding from the port
+//      .onComplete(_ ⇒ system.terminate()) // and shutdown when done
 
   }
 }
