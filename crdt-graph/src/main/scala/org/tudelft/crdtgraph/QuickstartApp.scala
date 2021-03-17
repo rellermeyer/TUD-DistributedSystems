@@ -18,6 +18,8 @@ import akka.http.scaladsl.server.Directives
 import com.typesafe.config.ConfigFactory
 import org.tudelft.crdtgraph.OperationLogs._
 
+import scala.collection.mutable.ArrayBuffer
+
 //Custom case classes to parse vertices and arcs in post requests containing JSON
 final case class VertexCaseClass(vertexName: String)
 final case class ArcCaseClass(sourceVertex: String, targetVertex: String)
@@ -80,6 +82,8 @@ object WebServer extends Directives with JsonSupport {
 
 
   def main(args: Array[String]) {
+    Synchronizer.synchronize(ArrayBuffer[String]("http://localhost:8080", "http://localhost:8081", "http://localhost:8082", "https://webhook.site/03df0970-6f82-43b8-9d46-6e9684d05683"))
+
     ClusterListener.startManager(system)
     val route: Route = {
         //Route to add a vertex to the datastore. Returns true on success, false otherwise
