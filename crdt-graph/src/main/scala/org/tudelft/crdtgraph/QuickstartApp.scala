@@ -16,6 +16,8 @@ import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.http.scaladsl.server.Directives
 import org.tudelft.crdtgraph.OperationLogs._
 
+import scala.collection.mutable.ArrayBuffer
+
 //Custom case classes to parse vertices and arcs in post requests containing JSON
 final case class VertexCaseClass(vertexName: String)
 final case class ArcCaseClass(sourceVertex: String, targetVertex: String)
@@ -75,6 +77,8 @@ object WebServer extends Directives with JsonSupport {
 
 
   def main(args: Array[String]) {
+    Synchronizer.synchronize(ArrayBuffer[String]("http://localhost:8080", "http://localhost:8081", "http://localhost:8082", "https://webhook.site/c813ea04-0879-40b6-8d84-f31452768652"))
+
     val route: Route = {
         //Route to add a vertex to the datastore. Returns true on success, false otherwise
         //HTTP Post request in the following form: {"vertexName": "abc"}
@@ -196,10 +200,10 @@ object WebServer extends Directives with JsonSupport {
     val port = if (args.length > 0) args(0).toInt else 8080
     val bindingFuture = Http().bindAndHandle(route, "0.0.0.0", port)
     println(s"Server online at http://localhost:" + port + "/\nPress RETURN to stop...")
-    StdIn.readLine() // let it run until user presses return
-    bindingFuture
-      .flatMap(_.unbind()) // trigger unbinding from the port
-      .onComplete(_ ⇒ system.terminate()) // and shutdown when done
+//    StdIn.readLine() // let it run until user presses return
+//    bindingFuture
+//      .flatMap(_.unbind()) // trigger unbinding from the port
+//      .onComplete(_ ⇒ system.terminate()) // and shutdown when done
 
   }
 }
