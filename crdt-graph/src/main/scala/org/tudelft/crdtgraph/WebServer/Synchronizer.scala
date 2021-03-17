@@ -1,11 +1,14 @@
 package org.tudelft.crdtgraph
 
+import spray.json._
+import DefaultJsonProtocol._
 import org.tudelft.crdtgraph.DataStore._
 import org.tudelft.crdtgraph.OperationLogs._
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.stream.ActorMaterializer
+
 import akka.http.scaladsl.model._
 
 import org.tudelft.crdtgraph.WebServer.OperationLogFormat
@@ -30,14 +33,12 @@ import spray.json._
 
 import scala.io.StdIn
 import scala.concurrent.Future
-import spray.json.DefaultJsonProtocol
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.http.scaladsl.server.Directives
 import org.tudelft.crdtgraph.OperationLogs._
 
 import scala.concurrent.Future
 import scala.util.{ Failure, Success }
-
 
 object Synchronizer {
 
@@ -71,10 +72,12 @@ object Synchronizer {
             
           // Send updates to all targets. Decide on what framework to use
           for(i <- 0 to targets.length - 1) {
-            var temp = DataStore.ChangesQueue.drop(counters(i)).toVector.map(log => log.toJson(OperationLogFormat)).toString
+            var data = DataStore.ChangesQueue.drop(counters(i))
+            var temp = data.map(log => log.toJson(OperationLogFormat)).toVector.toJson(spray.json.DefaultJsonProtocol.vectorFormat)
+            println(targets(i))
             println(counters(i))
-            println(Json.toJson(temp))
-            val responseFuture: Future[HttpResponse] = Http().singleRequest(Post(targets(i) + "/applychanges", temp))
+            println(temp)
+            val responseFuture: Future[HttpResponse] = Http().singleRequest(Post(targets(i) + "/applychanges", temp.toString()))
             responseFuture
               .onComplete {
                 case Success(res) => counters(i) += 0
