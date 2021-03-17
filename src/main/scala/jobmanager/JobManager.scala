@@ -53,20 +53,88 @@ class JobManager extends UnicastRemoteObject with JobManagerInterface {
 
   var jobIDCounter = 0
   def runStaticJob() = {
-    // val ps = Array(1, 2, 2, 2)
-    // val ops = Array("map", "reduce")
-    // val parallelisms = Array(5, 1)
+    // (map, 3), (reduce, 1)
+    val ops = Array("map", "map", "reduce")
+    val parallelisms = Array(3, 2, 1)
 
-    // val dataSource = taskManagers(0).id
+    /**
+     * 1
+     *   \
+     *    4
+     *  /   \
+     * 2      6
+     *   \  /
+     *    5
+     *   /
+     * 3
+    */
 
-    // for (taskID <- ops.indices) {
-    //   var parallelism = parallelisms(taskID)
-    //   while (parallelism > 0) {
+    // 1 to = [4, 5] from = [dataSource]
+    // 2 to = [4, 5] from = [dataSource]
+    // 3 to = [4, 5] from = [dataSource]
+    // 4 to = [6]    from = [1, 2, 3]
+    // 5 to = [6]    from = [1, 2, 3]
+    // 6 to = []     from = [4, 5]
+
+    val totalParallelism = parallelisms.sum
+    // Call ILP solver with totalParallelism
+    val ps = Array(1, 3, 2) // number of tasks do deploy per site (from the ILP)
+
+    val dataSource = taskManagers(0).id
+
+    /**
+     * Find the from and to arrays for each taskmanager
+     * before assigning the tasks to them
+    **/
+
+    /**
+     *  tm1 is data
+     * [
+     *  op0: [tm2_0, tm3_0, tm3_1]
+     *  op1: [tm3_2, tm4_0]
+     *  op2: [tm4_1]
+     * ]
+     * 
+     * [
+     *  0: [tm2_0 from=[data], tm3_0 from=[data], tm3_1 from=[data]]
+     *  1: [tm3_2 from=[op0], tm4_0, from=[op0]]
+     *  2: [tm4_1 from=[op1]]
+     * ]
+     * 
+     **/
+
+
+    // from: ArrayBuffer.empty[ArrayBuffer[Int]] // from[taskManagerId] = list of taskManagerId incoming connections
+    // to: ArrayBuffer.empty[ArrayBuffer[Int]]   // to[taskManagerId] = list of taskManagerId outgoing connections
+    // currFrom: ArrayBuffer.empty[Int]  // list of nodes connected to current node
+
+    val plan = Array.fill(ops.length)(ArrayBuffer.empty[(Int, Int)])
+
+    val taskIDCounters = Array.fill(taskManagers.length)(0)
+    for (op <- ops.indices) {
+      var par = parallelisms(op)
+      for (tm <- taskManagers.indices) {
+        while (par > 0 && ps(tm) > 0) {
+          plan(op) += ((tm, taskIDCounters(tm)))
+          taskIDCounters(tm) += 1
+          ps(tm) -= 1
+          par -= 1
+        }
+      }
+    }
+
+    for (i <- plan.indices) {
+      println (plan(i).mkString(", "))
+    }
+
+    // for (taskID <- ops.indices) { // loop through the operators in this query
+    //   var parallelism = parallelisms(taskID) // get parallelism for this operator
+    //   while (parallelism > 0) { // keep assigning this operator to sites
     //     for (s <- ps.indices) {
     //       var pss = ps(s)
     //       while (pss > 0) {
     //         // assign taskID to taskManager s
-
+    //         assignTask(jobIDCounter, taskID, from[taskID], to[taskID], /*TODO*/, )
     //         pss += 1
     //         parallelism -= 1
     //       }
@@ -74,6 +142,7 @@ class JobManager extends UnicastRemoteObject with JobManagerInterface {
     //   }
     // }
 
+    /*
     // initialize taskID counter for each TM
     val taskIDCounters = Array(taskManagers.length)(0)
 
@@ -131,7 +200,7 @@ class JobManager extends UnicastRemoteObject with JobManagerInterface {
       new Task(
         jobIDCounter,
         taskID = 0,
-        from = Array(id2, id2, id3),
+        from = Array(id2, id3, id3),
         to = Array(),
         toTaskIDs = Array(),
         operator = "reduce"
@@ -139,6 +208,20 @@ class JobManager extends UnicastRemoteObject with JobManagerInterface {
     )
 
     jobIDCounter += 1
+    */
+  }
+
+
+  def assignTask(jobID: Int, taskID: Int, from: Array[Int], 
+                  to: Array[Int], toTaskIDs: Array[Int], operator: String) {
+      new Task(
+        jobID,
+        taskID,
+        from,
+        to,
+        toTaskIDs,
+        operator
+      )
   }
 
   // update metrics about a taskmanager
