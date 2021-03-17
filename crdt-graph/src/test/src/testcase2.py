@@ -1,4 +1,5 @@
-#testcase 2: Add v1 on one node, remove v1 on other node, lookup v1 on first node (expected true)
+# testcase 2: Add v1 on one node, remove v1 on other node, lookup v1 on first node
+# expected true
 
 import requests
 import time
@@ -41,4 +42,4 @@ if (r1.text == "true"):
         print(r3.text)
 
         if (r1.text == "false" and r2.text == "false"):
-            print("Node " + newVertex['vertexName'] + " got succesfully removed from other nodes as well")
+            print("Vertex " + newVertex['vertexName'] + " got succesfully removed from other nodes as well")

@@ -1,4 +1,4 @@
-#Add v1 on one node, remove v1 on another node, remove v1 on third node
+# Add v1 on one node, remove v1 on another node, remove v1 on third node
 # expected: first true, then false
 
 import requests

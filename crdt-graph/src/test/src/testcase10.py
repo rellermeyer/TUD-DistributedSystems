@@ -1,4 +1,4 @@
-# testcase 1: Add v1 on one node, do lookup on v1 on other nodes
+# testcase 10: Add v1 on one node, add v1 on another node
 # expected true
 
 import requests
@@ -23,12 +23,8 @@ if (r1.text == "true"):
     print("waiting 10 seconds for synchronization")
     time.sleep(10)
 
-    print("looking up vertex " + newVertex['vertexName'] + " on nodes on ports " + node2_port + " and " + node3_port)
-    r2 = requests.get(url + node2_port + lookupvertex_endpoint + "?vertexName=" + newVertex['vertexName'])
-    r3 = requests.get(url + node3_port + lookupvertex_endpoint + "?vertexName=" + newVertex['vertexName'])
+    print("adding vertex " + newVertex['vertexName'] + " on node with port " + node2_port)
+    r2 = requests.post(url + node2_port + addvertex_endpoint, json=newVertex)
 
-    print(r2.text)
-    print(r3.text)
-
-    if (r2.text == "true" and r3.text == "true"):
-        print("Node " + newVertex['vertexName'] + " now exists on all nodes")
+    if (r2.text == "true"):
+        print("succesfully added vertex " + newVertex['vertexName'] + " to node on port " + node2_port)

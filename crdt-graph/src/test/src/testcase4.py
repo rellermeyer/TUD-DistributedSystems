@@ -1,4 +1,5 @@
-#testcase 4: Add v1 on node 1, Add v1 on node 2 + Remove on node 1, lookup on node v1(expected true)
+# testcase 4: Add v1 on node 1, Add v1 on node 2 + Remove on node 1, lookup on node v1
+# expected true
 
 import requests
 import time
@@ -43,4 +44,11 @@ if (r1.text == "true"):
             print("waiting 10 seconds for synchronization")
             time.sleep(10)
 
-            #not finished, lookup needs to be done
+            r1 = requests.get(url + node1_port + lookupvertex_endpoint + "?vertexName=" + newVertex['vertexName'])
+            r2 = requests.get(url + node2_port + lookupvertex_endpoint + "?vertexName=" + newVertex['vertexName'])
+
+            print(r1.text)
+            print(r2.text)
+
+            if (r1.text == "true" and r2.text == "true"):
+                print("Vertex " + newVertex['vertexName'] + " exists on both nodes")

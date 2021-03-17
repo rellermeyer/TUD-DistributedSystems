@@ -1,5 +1,5 @@
-#testcase 6: Add v1, v2 on node 1, add arc v1-v2 on node 2, add same arc on another node
-#expected: first true, then false
+# testcase 6: Add v1, v2 on node 1, add arc v1-v2 on node 2, add same arc on another node
+# expected: true
 
 
 import requests
@@ -47,5 +47,6 @@ if (r1_1.text == "true" and r1_2.text == "true"):
         r3 = requests.post(url + node3_port + addarc_endpoint, json=arcv1_v2)
         print(r3.text)
 
-        if (r3.text == "false"):
-            print("Could not add arc between v1 and v2")
+        if (r3.text == "true"):
+            print("succesfully addded arc between v1 and v2")
+

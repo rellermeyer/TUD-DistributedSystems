@@ -1,4 +1,5 @@
-#testcase 3: Add v1, Add v2, add arc (v1, v2), add arc (v2, v1), remove v1, lookup arc(v1,v2) (expected false), lookup arc(v2, v1) (expected true)
+# testcase 3: Add v1, Add v2, add arc (v1, v2), add arc (v2, v1), remove v1, lookup arc(v1,v2), lookup arc(v2, v1)
+# expected false, true
 
 import requests
 
