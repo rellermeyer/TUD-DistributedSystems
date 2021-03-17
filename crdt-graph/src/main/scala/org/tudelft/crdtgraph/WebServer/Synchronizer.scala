@@ -23,32 +23,62 @@ object Synchronizer {
   implicit val materializer = ActorMaterializer()
   import system.dispatcher
 
-  def synchronize(targets: ArrayBuffer[String]) = {
+  var hard_coded_targets = ArrayBuffer[String]()
+  var sleepTime = 10000
+  var timeout = 10000
+  var maxFailCount = 120
+
+  def configureCounters(counters: ArrayBuffer[Int], targets: ArrayBuffer[String]): Unit = {
+    if(targets.length > counters.length) {
+      var diff = targets.length - counters.length
+      for(i <- 1 to diff) {
+        counters += 0
+      }
+    }
+  }
+
+  def synchronize(targets: ArrayBuffer[String], changesQueue: ArrayBuffer[String]) = {
     new Thread(new Runnable {
       def run: Unit = {
-        var counter = 0
-        while(counter >= 0) {
+        var counters = ArrayBuffer[Int]()
+        while(true) {
+          configureCounters(counters, targets)
+
           // Updates that will have to be sent
-          var updates = ArrayBuffer[OperationLog]()
-          // Amount of updates. Will be used to extract updates from ChangesQueue
-          var amountOfUpdates = 0
-          print("Test")
-          // Initialize amountOfUpdates so it can be used by a loop
-          if(ChangesQueue.length - (counter + 1) > 0) {
-            amountOfUpdates = ChangesQueue.length - (counter + 1)
+          var updates = ArrayBuffer[ArrayBuffer[String]]()
+
+          for(x <- targets) {
+            updates += ArrayBuffer[String]()
           }
 
-          // Extract updates from ChangesQueue
-          for(i <- 1 to amountOfUpdates) {
-            updates += ChangesQueue(counter)
-            counter += 1
+          // Amount of updates. Will be used to extract updates from ChangesQueue
+          var amountOfUpdates = ArrayBuffer[Int]()
+
+          print("Test")
+
+          // Initialize amountOfUpdates so it can be used by a loop
+          for(i <- 0 to targets.length - 1) {
+            amountOfUpdates += changesQueue.length - counters(i)
           }
+          // Extract updates from ChangesQueue
+          for(i <- 0 to targets.length - 1) {
+            for(x <- 1 to amountOfUpdates(i)) {
+              if(amountOfUpdates(i) > 0) {
+                updates(i) += changesQueue(counters(i)) //maybe create temporary counter
+                counters(i) += 1 //CHANGE
+              }
+            }
+          }
+          print("crayzy")
 
           //convert updates to JSON
 
           // Send updates to all targets. Decide on what framework to use
-          for(x <- targets) {
-            Http().singleRequest(Post(x, "data"))
+          for(i <- 0 to targets.length - 1) {
+            for(x <- updates(i)) {
+              Http().singleRequest(Post(targets(i), x))
+              Thread.sleep(10)
+            }
           }
 
           // Make the thread sleep for 10 seconds

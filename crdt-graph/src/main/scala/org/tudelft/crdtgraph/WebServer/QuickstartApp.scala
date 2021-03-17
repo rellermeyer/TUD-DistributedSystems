@@ -135,7 +135,8 @@ object WebServer {
           pathPrefix("synchronize") {
             pathEnd{
               var list = ArrayBuffer[String]("https://webhook.site/c813ea04-0879-40b6-8d84-f31452768652")
-              Synchronizer.synchronize(list)
+              var op = ArrayBuffer[String]("a", "b", "c")
+              Synchronizer.synchronize(list, op)
               complete("called synchronizer")
             }
           }
