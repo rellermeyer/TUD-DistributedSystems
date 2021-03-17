@@ -79,7 +79,16 @@ object Synchronizer {
             println(targets(i))
             println(counters(i))
             println(json)
-            val responseFuture: Future[HttpResponse] = Http().singleRequest(Post(targets(i) + "/applychanges", json.toString()))
+            val responseFuture = Http().singleRequest(
+              HttpRequest(
+                method = HttpMethods.POST,
+                uri = targets(i) + "/applychanges",
+                entity = HttpEntity(
+                  ContentTypes.`application/json`, json.toString()
+                )
+              )
+            )
+
             responseFuture
               .onComplete {
                       case Success(res) => if(json != "[]") counters(i) += count else failCount(i) +=1

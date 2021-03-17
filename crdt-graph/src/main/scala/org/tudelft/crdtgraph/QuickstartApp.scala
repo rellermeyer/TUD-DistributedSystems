@@ -77,7 +77,7 @@ object WebServer extends Directives with JsonSupport {
 
 
   def main(args: Array[String]) {
-    Synchronizer.synchronize(ArrayBuffer[String]("http://localhost:8080", "http://localhost:8081", "http://localhost:8082", "https://webhook.site/c813ea04-0879-40b6-8d84-f31452768652"))
+    Synchronizer.synchronize(ArrayBuffer[String]("http://localhost:8080", "http://localhost:8081", "http://localhost:8082", "https://webhook.site/03df0970-6f82-43b8-9d46-6e9684d05683"))
 
     val route: Route = {
         //Route to add a vertex to the datastore. Returns true on success, false otherwise
