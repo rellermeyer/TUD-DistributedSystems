@@ -8,7 +8,6 @@ import org.tudelft.crdtgraph.OperationLogs._
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.stream.ActorMaterializer
-
 import akka.http.scaladsl.model._
 
 import org.tudelft.crdtgraph.WebServer.OperationLogFormat
@@ -33,12 +32,14 @@ import spray.json._
 
 import scala.io.StdIn
 import scala.concurrent.Future
+import spray.json.DefaultJsonProtocol
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.http.scaladsl.server.Directives
 import org.tudelft.crdtgraph.OperationLogs._
 
 import scala.concurrent.Future
 import scala.util.{ Failure, Success }
+
 
 object Synchronizer {
 
@@ -80,8 +81,9 @@ object Synchronizer {
             val responseFuture: Future[HttpResponse] = Http().singleRequest(Post(targets(i) + "/applychanges", temp.toString()))
             responseFuture
               .onComplete {
-                case Success(res) => counters(i) += 0
-                case Failure(_)   => failCount(i) += 1
+                      case Success(res) => if(temp != "[]") counters(i) += count else failCount(i) +=1
+                      case Failure(_)   => failCount(i) += 1
+
               }
             Thread.sleep(10)
           }
