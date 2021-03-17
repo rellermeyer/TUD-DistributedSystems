@@ -33,6 +33,10 @@ print(r2.text)
 print("waiting for 10 seconds")
 time.sleep(10)
 
+print("removing v1 on node with port " + node1_port)
+r1 = requests.delete(url + node1_port + removevertex_endpoint, json=vertex1)
+print(r2.text)
+
 print("removing v1 on node with port " + node2_port)
 r2 = requests.delete(url + node2_port + removevertex_endpoint, json=vertex1)
 print(r2.text)
