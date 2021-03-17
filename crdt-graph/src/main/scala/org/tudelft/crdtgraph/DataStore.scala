@@ -87,7 +87,7 @@ object DataStore {
     lock.lock()
     try {
       if (!doLookUpVertex(vertexName)) {
-        return true //Already removed / nothing to remove
+        return false //Already removed - return false to the API
       }
 
       //remove the vertex
@@ -110,7 +110,7 @@ object DataStore {
 
     if (!doLookUpVertex(cmd.vertexName)) {
       ChangesQueue += cmd
-      return true //Already removed / nothing to remove
+      return //Already removed / nothing to remove
     }
 
     //remove all the arcs
@@ -132,8 +132,8 @@ object DataStore {
   def removeArc(arcSourceVertex: String, arcTargetVertex: String): Boolean = {
     lock.lock()
     try {
-      if (!doLookupArc(arcSourceVertex, arcTargetVertex)) {
-        return true //Already removed / nothing to remove
+      if (!doLookUpVertex(arcSourceVertex) && Vertices(arcSourceVertex).isConnectedTo(arcTargetVertex)) {
+        return false //Already removed - return false to the API
       }
 
       val pastArcsUUIDs = Vertices(arcSourceVertex).getArcUuids(arcTargetVertex).clone
@@ -153,9 +153,9 @@ object DataStore {
     if (cmd.opType != OperationType.removeArc) {
       throw new IllegalArgumentException //coding error, should always receive removeVertex
     }
-    if (!doLookupArc(cmd.sourceVertex, cmd.targetVertex)) {
+    if (!doLookUpVertex(cmd.sourceVertex) && Vertices(cmd.sourceVertex).isConnectedTo(cmd.targetVertex)) {
       ChangesQueue += cmd
-      return true //Already removed / nothing to remove
+      return //Already removed / nothing to remove
     }
 
     Vertices(cmd.sourceVertex).removeArcs(cmd.targetVertex, cmd.arcUuids)
@@ -220,6 +220,6 @@ object DataStore {
 
   //Checks if a given arc is present in the graph (with no lock).
   private def doLookupArc(arcSourceVertex: String, arcTargetVertex: String): Boolean = {
-    return Vertices.contains(arcSourceVertex) && Vertices(arcSourceVertex).isConnectedTo(arcTargetVertex)
+    return doLookUpVertex(arcSourceVertex) && doLookUpVertex(arcTargetVertex) && Vertices(arcSourceVertex).isConnectedTo(arcTargetVertex)
   }
 }

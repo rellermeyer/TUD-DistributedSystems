@@ -85,13 +85,13 @@ object WebServer extends Directives with JsonSupport {
               if (DataStore.addVertex(vertex.vertexName)) {
                 complete(trueString)
               } else {
-                complete(falseString)
+                complete(StatusCodes.BadRequest, falseString)
               }
             }
           }
         } ~
         //Route to add a arc between to vertices to the datastore. Returns true on success, false otherwise
-        //Vertices that the new arc connects to each other need to exist beforehand, otherwise false is returned
+        //Source vertex that the new arc connects to need to exist beforehand, otherwise false is returned
         //HTTP Post request in the following form: {"sourceVertex":"xyz", "targetVertex":"abc"}
         //Only one arc per request
         post {
@@ -100,44 +100,32 @@ object WebServer extends Directives with JsonSupport {
               val src = arc.sourceVertex
               val dst = arc.targetVertex
 
-              if(!DataStore.lookUpVertex(src)) {
-                complete(falseString)
-
-              } else if(!DataStore.lookUpVertex(dst)) {
-                complete(falseString)
-
+              if (DataStore.addArc(src, dst)) {
+                complete(trueString)
               } else {
-                if (DataStore.addArc(src, dst)) {
-                  complete(trueString)
-                } else {
-                  complete(falseString)
-                }
+                complete(StatusCodes.BadRequest, falseString)
               }
             }
           }
         } ~
         //Route to remove a vertex from the datastore. Returns true on success, false otherwise
-        //Vertices need to exist in the datastore beforehand, otherwise false is returned
+        //Vertex needs to exist in the datastore beforehand, otherwise false is returned
         //HTTP Delete request in the following form: {"vertexName": "abc"}
         //Only one vertex per request
         delete {
           pathPrefix("removevertex") {
             entity(as[VertexCaseClass]) { vertex =>
               val vertexName = vertex.vertexName
-              if(DataStore.lookUpVertex(vertexName)){
-                if (DataStore.removeVertex(vertexName)) {
-                  complete(trueString)
-                } else {
-                  complete(falseString)
-                }
+              if (DataStore.removeVertex(vertexName)) {
+                complete(trueString)
               } else {
-                complete(falseString)
+                complete(StatusCodes.BadRequest, falseString)
               }
             }
           }
         } ~
         //Route to remove an arc between two vertices in the datastore. Returns true on success, false otherwise
-        //Arc and vertices need to exist beforehand, otherwise false is returned
+        //Arc and the source vertex need to exist beforehand, otherwise false is returned
         //HTTP Delete request in the following form: {"sourceVertex":"xyz", "targetVertex":"abc"}
         //Only one arc per request
         delete {
@@ -145,18 +133,16 @@ object WebServer extends Directives with JsonSupport {
             entity(as[ArcCaseClass]) { arc =>
               val src = arc.sourceVertex
               val dst = arc.targetVertex
-              if(DataStore.lookUpArc(src, dst)){
-                if(DataStore.removeArc(src, dst)) {
-                  complete(trueString)
-                } else {
-                  complete(falseString)
-                }
+              if(DataStore.removeArc(src, dst)) {
+                complete(trueString)
               } else {
-                complete(falseString)
+                complete(StatusCodes.BadRequest, falseString)
               }
             }
           }
         } ~
+      //Route to synchronize changes between instances of the system.
+      //HTTP Post request with a JSON body with a serialized collection of OperationLog.
         post {
           pathPrefix("applychanges") {
             entity(as[JsValue]) { oplog =>
