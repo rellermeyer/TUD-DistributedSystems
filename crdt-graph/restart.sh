@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
+minikube stop
 minikube start
 kubectl delete -f k8s/crdt-graph-rbac.yml | echo "rbac already deleted!"
 kubectl delete -f k8s/crdt-graph-deployment.yml | echo "deployment already deleted!"
@@ -12,7 +13,24 @@ kubectl create -f k8s/crdt-graph-rbac.yml
 kubectl create -f k8s/crdt-graph-deployment.yml
 # create service
 kubectl create -f k8s/crdt-graph-service.yml
-minikube tunnel
-#KUBE_IP=$(minikube ip)
-#MANAGEMENT_PORT=$(kubectl get svc akka-simple-cluster -ojsonpath="{.spec.ports[?(@.name==\"management\")].nodePort}")
-#curl http://$KUBE_IP:$MANAGEMENT_PORT/cluster/members | jq
+
+# tunnel the load balancer
+minikube tunnel &
+sleep 2
+#
+echo "Waiting 10 seconds to get the pods to start"
+sleep 10
+kubectl get pods
+
+echo "Put in the pod names for port forwarding"
+echo "Port 7000:"
+read POD1
+kubectl port-forward $POD1 7000:8080 &
+sleep 2
+
+echo "Port 7001:"
+read POD2
+kubectl port-forward $POD2 7001:8080 &
+sleep 2
+
+minikube dashboard &

@@ -1,9 +1,11 @@
 package org.tudelft.crdtgraph
 
 import akka.actor.ActorSystem
-import akka.cluster.MemberStatus
+import akka.cluster.{Member, MemberStatus}
 import akka.stream.ActorMaterializer
 import com.typesafe.config.ConfigFactory
+
+import scala.collection.mutable.ArrayBuffer
 //import akka.stream.ActorMaterializer
 //import com.typesafe.config.ConfigFactory
 import akka.management.cluster.bootstrap.ClusterBootstrap
@@ -22,11 +24,37 @@ object ClusterListener {
     cluster.selfMember.address.toString
   }
 
-  def getOtherMembers(mainSystem: ActorSystem): String = {
+  def getAvailableMembers(mainSystem: ActorSystem): String = {
     implicit val cluster = Cluster(mainSystem)
     var message = ""
     cluster.state.getMembers.forEach(message += _.address.toString + "\n")
     cluster.state.members.filter(_.status == MemberStatus.Up).foreach(message += _.address.toString + "\n")
     message
+  }
+
+  def getAllMembers(mainSystem: ActorSystem): String = {
+    implicit val cluster = Cluster(mainSystem)
+    var message = ""
+    cluster.state.getMembers.forEach(message += _.address.toString + "\n")
+    message
+  }
+
+  def getBroadcastAddresses(mainSystem: ActorSystem): ArrayBuffer[String] = {
+    implicit val cluster = Cluster(mainSystem)
+    // Get all available members
+    var allAvailabeMembers = cluster.state.members.filter(_.status == MemberStatus.Up)
+    // Remove self from set
+    allAvailabeMembers -= cluster.selfMember
+    // Create new string buffer
+    val broadcastAddresses = ArrayBuffer[String]()
+    allAvailabeMembers.foreach(broadcastAddresses += "http://" + _.address.toString.substring(18,29) + "8080")
+    broadcastAddresses
+  }
+
+  def waitForUp(mainSystem: ActorSystem): Unit = {
+    implicit val cluster = Cluster(mainSystem)
+    while(cluster.state.members.filter(_.status == MemberStatus.Up).size == 0){
+      Thread.sleep(1000)
+    }
   }
 }

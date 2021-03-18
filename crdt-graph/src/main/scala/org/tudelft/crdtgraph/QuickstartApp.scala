@@ -82,9 +82,8 @@ object WebServer extends Directives with JsonSupport {
 
 
   def main(args: Array[String]) {
-    Synchronizer.synchronize(ArrayBuffer[String]("http://localhost:8080", "http://localhost:8081", "http://localhost:8082", "https://webhook.site/03df0970-6f82-43b8-9d46-6e9684d05683"))
-
     ClusterListener.startManager(system)
+//
     val route: Route = {
         //Route to add a vertex to the datastore. Returns true on success, false otherwise
         //HTTP Post request in the following form: {"vertexName": "abc"}
@@ -203,10 +202,10 @@ object WebServer extends Directives with JsonSupport {
         } ~
           get {
             pathPrefix("address") {
-              var message = "This is my address \n"
+              var message = "This is my address! \n"
               message += ClusterListener.getSelfAddress(system)
-              message += "\n And these are all the addresses \n"
-              message += ClusterListener.getOtherMembers(system)
+              message += "\nAnd these are the addresses I am broadcasting to: \n"
+              message += ClusterListener.getBroadcastAddresses(system)
 
               complete(message)
             }
@@ -216,11 +215,11 @@ object WebServer extends Directives with JsonSupport {
 
     val port = if (args.length > 0) args(0).toInt else 8080
     val bindingFuture = Http().bindAndHandle(route, "0.0.0.0", port)
-    println(s"Server online at http://localhost:" + port + "/\nPress RETURN to stop...")
-//    StdIn.readLine() // let it run until user presses return
-//    bindingFuture
-//      .flatMap(_.unbind()) // trigger unbinding from the port
-//      .onComplete(_ ⇒ system.terminate()) // and shutdown when done
+    println(s"Server online at http://localhost:" + port)
+
+    ClusterListener.waitForUp(system)
+
+    Synchronizer.synchronize(ClusterListener.getBroadcastAddresses(system))
 
   }
 }
