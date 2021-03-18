@@ -1,45 +1,42 @@
-# testcase 2: Add v1 on one node, remove v1 on other node, lookup v1 on first node
-# expected true
+# testcase 2: Add v1 on any node, add arc (v1, v2), lookup arc (v1, v2)(exp. false), Add v2, lookup arc (v1, v2)
+# expected false, true
 
 import requests
-import time
 
-newVertex = {"vertexName": "v1"}
+vertex1 = {"vertexName": "v1"}
+vertex2 = {"vertexName": "v2"}
+
+arcv1_v2 = {"sourceVertex": "v1", "targetVertex": "v2"}
+arcv2_v1 = {"sourceVertex": "v2", "targetVertex": "v1"}
 
 url = "http://localhost:"
 node1_port = "8080"
 node2_port = "8081"
 node3_port = "8082"
 addvertex_endpoint = "/addvertex"
+addarc_endpoint = "/addarc"
 lookupvertex_endpoint = "/lookupvertex"
 removevertex_endpoint = "/removevertex"
+removearc_endpoint = "/removearc"
+lookuparc_endpoint = "/lookuparc"
 
-print("adding vertex " + newVertex['vertexName'] + " on node with port " + node1_port)
-r1 = requests.post(url + node1_port + addvertex_endpoint, json=newVertex)
-
+print("Adding vertex " + vertex1['vertexName'] + " on node with port " + node1_port)
+r1 = requests.post(url + node1_port + addvertex_endpoint, json=vertex1)
 print(r1.text)
 
-if (r1.text == "true"):
-    print("succesfully added vertex " + newVertex['vertexName'] + " to node on port " + node1_port)
-    print("waiting 10 seconds for synchronization")
-    time.sleep(10)
+print("adding arc between v1 and v2 on node with port " + node1_port)
+r1 = requests.post(url + node1_port + addarc_endpoint, json=arcv1_v2)
+print(r1.text)
 
-    print("removing vertex " + newVertex['vertexName'] + " on node with port " + node2_port)
-    r2 = requests.delete(url + node2_port + removevertex_endpoint, json=newVertex)
 
-    print(r2.text)
+print("looking up newly created arc")
+r1 = requests.get(url + node1_port + lookuparc_endpoint + "?sourceVertex=v1&targetVertex=v2")
+print(r1.text)
 
-    if (r2.text == "true"):
-        print("Succesfully deleted vertex " + newVertex['vertexName'] + " on node with port " + node2_port)
-        print("waiting 10 seconds for synchronization")
+print("Adding vertex " + vertex2['vertexName'] + " on node with port " + node1_port)
+r1 = requests.post(url + node1_port + addvertex_endpoint, json=vertex2)
+print(r1.text)
 
-        time.sleep(10)
-
-        r1 = requests.get(url + node1_port + lookupvertex_endpoint + "?vertexName=" + newVertex['vertexName'])
-        r3 = requests.get(url + node3_port + lookupvertex_endpoint + "?vertexName=" + newVertex['vertexName'])
-
-        print(r1.text)
-        print(r3.text)
-
-        if (r1.text == "false" and r2.text == "false"):
-            print("Vertex " + newVertex['vertexName'] + " got succesfully removed from other nodes as well")
+print("looking up newly created arc")
+r1 = requests.get(url + node1_port + lookuparc_endpoint + "?sourceVertex=v1&targetVertex=v2")
+print(r1.text)
