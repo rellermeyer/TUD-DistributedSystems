@@ -24,7 +24,7 @@ object JobManagerRunner {
 }
 
 class JobManager extends UnicastRemoteObject with JobManagerInterface {
-  var taskManagerIdCounter = 0
+  var taskManagerIdCounter = -1
   val taskManagers = ArrayBuffer[TaskManagerInfo]()
   val reconfigurationManager = ReconfigurationManager
   var alpha = 0.8.toFloat
@@ -32,6 +32,7 @@ class JobManager extends UnicastRemoteObject with JobManagerInterface {
 
   // register the poor taskmanager
   def register(): Int = {
+    taskManagerIdCounter += 1
     taskManagers.append(
       new TaskManagerInfo(
         id = taskManagerIdCounter,
@@ -43,17 +44,15 @@ class JobManager extends UnicastRemoteObject with JobManagerInterface {
         0
       )
     )
-    taskManagerIdCounter = taskManagerIdCounter + 1
-    return taskManagerIdCounter - 1;
-  }
-
-  def unregister(id: Int): Unit = {
-    taskManagers.remove(taskManagers.indexOf(id))
+    taskIDCounters += 0 // initialize task counter to 0
+    return taskManagerIdCounter;
   }
 
   var jobIDCounter = 0
+  val taskIDCounters = ArrayBuffer.empty[Int] // for each TM a task counter
+  
   def runStaticJob() = {
-    // (map, 3), (reduce, 1)
+    // (map, 3), (map, 2), (reduce, 1)
     val ops = Array("map", "map", "reduce")
     val parallelisms = Array(3, 2, 1)
 
@@ -80,67 +79,67 @@ class JobManager extends UnicastRemoteObject with JobManagerInterface {
     // Call ILP solver with totalParallelism
     val ps = Array(1, 3, 2) // number of tasks do deploy per site (from the ILP)
 
-    val dataSource = taskManagers(0).id
+    val dataSources = Array(0) // indices of taskManagers who will provide data
 
     /**
-     * Find the from and to arrays for each taskmanager
-     * before assigning the tasks to them
-    **/
-
-    /**
-     *  tm1 is data
      * [
-     *  op0: [tm2_0, tm3_0, tm3_1]
-     *  op1: [tm3_2, tm4_0]
-     *  op2: [tm4_1]
+     *  data: [tm1_0]
+     *  op0:  [tm2_0, tm3_0, tm3_1]
+     *  op1:  [tm3_2, tm4_0]
+     *  op2:  [tm4_1]
      * ]
-     * 
-     * [
-     *  0: [tm2_0 from=[data], tm3_0 from=[data], tm3_1 from=[data]]
-     *  1: [tm3_2 from=[op0], tm4_0, from=[op0]]
-     *  2: [tm4_1 from=[op1]]
-     * ]
-     * 
      **/
 
+    // Plan holds for each operator the tuple (TM, TaskID)
+    // length of ops + 1 row for data sources
+    val plan = Array.fill(ops.length + 1)(ArrayBuffer.empty[(Int, Int)])
 
-    // from: ArrayBuffer.empty[ArrayBuffer[Int]] // from[taskManagerId] = list of taskManagerId incoming connections
-    // to: ArrayBuffer.empty[ArrayBuffer[Int]]   // to[taskManagerId] = list of taskManagerId outgoing connections
-    // currFrom: ArrayBuffer.empty[Int]  // list of nodes connected to current node
+    // Add data sources to plan
+    dataSources.foreach(x => {
+      plan(0) += ((x, taskIDCounters(x))) // add to plan
+      taskIDCounters(x) += 1 // increment task counter for this TM
+    })
 
-    val plan = Array.fill(ops.length)(ArrayBuffer.empty[(Int, Int)])
+    // Add operators to plan
+    for (op <- ops.indices) {            // for each operator
+      for (tm <- taskManagers.indices) { // for each task manager
 
-    val taskIDCounters = Array.fill(taskManagers.length)(0)
-    for (op <- ops.indices) {
-      var par = parallelisms(op)
-      for (tm <- taskManagers.indices) {
-        while (par > 0 && ps(tm) > 0) {
-          plan(op) += ((tm, taskIDCounters(tm)))
-          taskIDCounters(tm) += 1
-          ps(tm) -= 1
-          par -= 1
+        // While current operator still needs tasks assigned
+        //  AND current task manager still has available slots
+        while (parallelisms(op) > 0 && ps(tm) > 0) {
+          plan(op + 1) += ((tm, taskIDCounters(tm))) // add to plan
+          taskIDCounters(tm) += 1      // increment task counter for current TM
+          ps(tm) -= 1                  // decrement number of available slots for current TM
+          parallelisms(op) -= 1        // decrement number of times current operator still needs to be assigned
         }
       }
     }
-
     for (i <- plan.indices) {
       println (plan(i).mkString(", "))
     }
 
-    // for (taskID <- ops.indices) { // loop through the operators in this query
-    //   var parallelism = parallelisms(taskID) // get parallelism for this operator
-    //   while (parallelism > 0) { // keep assigning this operator to sites
-    //     for (s <- ps.indices) {
-    //       var pss = ps(s)
-    //       while (pss > 0) {
-    //         // assign taskID to taskManager s
-    //         assignTask(jobIDCounter, taskID, from[taskID], to[taskID], /*TODO*/, )
-    //         pss += 1
-    //         parallelism -= 1
-    //       }
-    //     }
-    //   }
-    // }
+    for (row <- plan.indices) {
+      plan(row).foreach { case (tm, taskID) => {
+        val from = if (row == 0) {Array.empty[Int]} else {
+          plan(row - 1).map(x => taskManagers(x._1).id).toArray
+        }
+        val to = if (row == plan.length - 1) {Array.empty[Int]} else {
+          plan(row + 1).map(x => taskManagers(x._1).id).toArray
+        }
+        val toTaskIDs = if (row == plan.length - 1) {Array.empty[Int]} else {
+          plan(row + 1).map(x => taskManagers(x._2).id).toArray
+        }
+        val tmi = Naming.lookup("taskmanager" + taskManagers(tm).id).asInstanceOf[TaskManagerInterface]
+        tmi.assignTask(new Task(
+          jobIDCounter,
+          taskID,
+          from,
+          to,
+          toTaskIDs,
+          operator = if (row > 0) ops(row - 1) else "data"
+        ))
+      }}
+    }
 
     /*
     // initialize taskID counter for each TM

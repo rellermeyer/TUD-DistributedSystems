@@ -38,7 +38,6 @@ object TaskManagerRunner {
 
     sys.ShutdownHookThread {
       println("Unregistering taskmanager" + id)
-      jobManager.unregister(id)
       registry.unbind(taskManagerName)
     }
 
