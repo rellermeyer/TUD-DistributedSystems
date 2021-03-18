@@ -11,19 +11,18 @@ trait JobManagerInterface extends Remote {
   @throws(classOf[RemoteException])
   def register(): Int
 
-  @throws(classOf[MalformedURLException])
-  @throws(classOf[NotBoundException])
-  @throws(classOf[RemoteException])
-  def monitorReport(
-      id: Int,
-      numSlots: Int,
-      latenciesToSelf: Array[Latency],
-      bandwidthsToSelf: Array[BW],
-      ipRate: Int,
-      opRate: Int
-  ): Unit
+  // @throws(classOf[MalformedURLException])
+  // @throws(classOf[NotBoundException])
+  // @throws(classOf[RemoteException])
+  // def monitorReport(
+  //     id: Int,
+  //     numSlots: Int,
+  //     latenciesToSelf: Array[Latency],
+  //     bandwidthsToSelf: Array[BW],
+  //     ipRate: Int,
+  //     opRate: Int
+  // ): Unit
 
-  
   @throws(classOf[MalformedURLException])
   @throws(classOf[NotBoundException])
   @throws(classOf[RemoteException])

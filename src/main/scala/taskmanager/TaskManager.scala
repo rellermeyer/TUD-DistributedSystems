@@ -44,7 +44,7 @@ object TaskManagerRunner {
     val rand = new Random
 
     // TODO: Make non static for number of registered task managers
-    val no_taskManagers = 3 // exclude JobManager
+    val no_taskManagers = 4 // exclude JobManager
 
     var latencies = new Array[Latency](no_taskManagers)
     var bws = new Array[BW](no_taskManagers)
@@ -56,21 +56,20 @@ object TaskManagerRunner {
         Random.nextFloat() * 3 // max 3 seconds latency
       )
       if (i != id) {
-        bws(i) = new BW(i, Random.nextFloat() * 3)
-      }
-      else {
+        bws(i) = new BW(i, 500 + Random.nextFloat() * 3000)
+      } else {
         bws(i) = new BW(i, 0)
       }
     }
 
-    jobManager.monitorReport(
-      id,
-      rand.nextInt(3), // upper bound exclusive, so max 2 slots
-      latencies,
-      bws,
-      rand.nextInt(1000),
-      rand.nextInt(500)
-    )
+    // jobManager.monitorReport(
+    //   id,
+    //   1 + rand.nextInt(3), // upper bound exclusive, so max 2 slots
+    //   latencies,
+    //   bws,
+    //   rand.nextInt(1000),
+    //   rand.nextInt(500)
+    // )
   }
 }
 
@@ -107,7 +106,9 @@ class TaskManager(val id: Int)
   }.start()
 
   def assignTask(task: Task): Unit = {
-    println("Received task for (jobID, taskID): (" + task.jobID + ", " + task.taskID + ")")
+    println(
+      "Received task for (jobID, taskID): (" + task.jobID + ", " + task.taskID + ")"
+    )
 
     var taskSlot = getTaskSlot(task.jobID, task.taskID)
     taskSlot.task = task
@@ -118,7 +119,9 @@ class TaskManager(val id: Int)
       val dos = new DataOutputStream(outputSocket.getOutputStream())
       // let receiver know the jobID and HIS corresponding taskID
       dos.writeInt(task.jobID)
-      dos.writeInt(task.toTaskIDs(i)) // NOTE: this is the taskID for the RECEIVER
+      dos.writeInt(
+        task.toTaskIDs(i)
+      ) // NOTE: this is the taskID for the RECEIVER
       // add the outputstream to the taskslot
       taskSlot.to += dos
     }
@@ -130,11 +133,13 @@ class TaskManager(val id: Int)
     val slot = getTaskSlot(jobID, taskID)
 
     // check if both inputs and outputs are connected
-    if (slot.task != null &&
-        slot.task.from.length == slot.from.length &&
-        slot.task.to.length == slot.to.length) {
-          new Thread(slot).start()
-        }
+    if (
+      slot.task != null &&
+      slot.task.from.length == slot.from.length &&
+      slot.task.to.length == slot.to.length
+    ) {
+      new Thread(slot).start()
+    }
   }
 
   def getTaskSlot(jobID: Int, taskID: Int): TaskSlot = synchronized {
@@ -144,7 +149,9 @@ class TaskManager(val id: Int)
 
     if (taskSlot == null) {
       // create new one
-      println("Creating new taskslot for (jobID, taskID): (" + jobID + ", " + taskID + ")")
+      println(
+        "Creating new taskslot for (jobID, taskID): (" + jobID + ", " + taskID + ")"
+      )
       taskSlot = new TaskSlot(key)
       taskSlots.put(key, taskSlot)
     }

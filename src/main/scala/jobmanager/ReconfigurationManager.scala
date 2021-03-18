@@ -129,10 +129,8 @@ object ReconfigurationManager {
     // Minimize objective function
     minimize(pVals)
 
-    println("Befores START")
     // Start the Solver, returns true if there is a solution, false otherwise
     var ILPResult = start()
-    println("AFTER start")
 
     // Array of tasks per site as the result from the ILP
     var ps = new Array[Int](numTasks.length)
@@ -148,8 +146,8 @@ object ReconfigurationManager {
       ps = null
     }
 
-    // release()
-    println("END " + ILPResult)
+    release()
+
     return ps
   }
 }

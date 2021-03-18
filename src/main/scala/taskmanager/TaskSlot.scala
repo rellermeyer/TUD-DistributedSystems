@@ -26,6 +26,8 @@ class TaskSlot(val key: String) extends Runnable {
       reduce()
     }
     println("Task finished")
+
+    // TODO: REMOVE THIS TASKSLOT FROM THE TASKMANAGER! IMPORTANT FOR REPLANNING!
   }
 
   def data() = {
