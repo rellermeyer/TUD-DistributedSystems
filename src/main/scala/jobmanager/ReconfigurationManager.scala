@@ -15,14 +15,15 @@ import optimus.algebra.Zero
 
 object ReconfigurationManager {
 
+  val alpha = 0.8.toFloat
+
   // Solve the ILP and return the number of tasks to deploy at each site according to the constraints
   // return: Boolean
   //    If: null, ILP did not fid a solution
   //    else: Array[Int] of tasks per site to deploy
   def solveILP(
       taskManagers: ArrayBuffer[TaskManagerInfo],
-      prl: Float, // Desired parallelism : The desired sum of all slots of all data centers
-      alpha: Float
+      prl: Float // Desired parallelism : The desired sum of all slots of all data centers
   ): Array[Int] = {
 
     for (i <- taskManagers.indices) {
@@ -124,11 +125,14 @@ object ReconfigurationManager {
     val RHS_constr4: Expression = prl
     constr = constr :+ add(LHS_constr4 := RHS_constr4)
 
+    println("Before MINIMIZATION")
     // Minimize objective function
     minimize(pVals)
 
+    println("Befores START")
     // Start the Solver, returns true if there is a solution, false otherwise
     var ILPResult = start()
+    println("AFTER start")
 
     // Array of tasks per site as the result from the ILP
     var ps = new Array[Int](numTasks.length)
@@ -144,8 +148,8 @@ object ReconfigurationManager {
       ps = null
     }
 
-    release()
-
+    // release()
+    println("END " + ILPResult)
     return ps
   }
 }

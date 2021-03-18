@@ -27,5 +27,5 @@ trait JobManagerInterface extends Remote {
   @throws(classOf[MalformedURLException])
   @throws(classOf[NotBoundException])
   @throws(classOf[RemoteException])
-  def runStaticJob(): Unit
+  def runJob(ops: Array[String], parallelisms: Array[Int]): Boolean
 }

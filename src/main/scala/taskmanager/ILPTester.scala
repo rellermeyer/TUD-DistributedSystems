@@ -3,10 +3,10 @@ import scala.util.Random
 // package taskmanager
 
 object ILPTester {
+
   def main(args: Array[String]): Unit = {
     val taskManagers = ArrayBuffer[TaskManagerInfo]()
     val reconfigurationManager = ReconfigurationManager
-    val alpha = 0.8.toFloat
 
     // init taskmanagers
     val rand = new Random
@@ -53,6 +53,6 @@ object ILPTester {
       println(taskManagers(i).bandwidthsToSelf.mkString(", "))
     }
 
-    reconfigurationManager.solveILP(taskManagers, 5.0.toFloat, alpha)
+    reconfigurationManager.solveILP(taskManagers, 5.0.toFloat)
   }
 }
