@@ -56,9 +56,46 @@ When the image is stopped, the container is automatically removed.
 
 # Project Setup
 
-This project was build in Scala, and therefore follows the normal project structure of a Scala project. The scripts are located in `crdt-graph/src/main` and tests  in `crdt-graph/src/tests`. 
+This project was build in Scala, and therefore follows the normal project structure of a Scala project. The scripts are located in `crdt-graph/src/main` and tests  in `crdt-graph/src/test`. 
 
 ## Main
+### `QuickstartApp.scala`
+
+This is the main file of the project. It specifies all of the routes for the Server and specifies some utils for the operationlog which is used in the operations that are accessed through the routes. 
+
+### `DataStore.scala`
+
+Datastore handles all of the logic of the Graph-based CRDT that was explained in the paper by Shapiro et al. these operations consist of:
+
+* Add vertex or arc
+* Remove vertex or arc
+* Lookup vertex or arc
+
+### `Vertex.scala`
+
+The vertex object is used by the Datastore and incorporates some functions about the specific vertex. These include:
+
+* Adding or removing arcs
+* Gettting arcs 
+* Adding Ids (when it is added multiple times)
+
+### OperationLogs
+#### `OperationLog.scala`
+
+Handles the store of the operation logs, which is later used to check by the client what operations has been done. 
+
+#### `OperationType.scala`
+
+Enumeration of the different types of operations. These consist of:
+* `addVertex`
+* `addArc`
+* `removeVertex`
+* `removeArc`
+
+### WebServer
+#### `Synchronizer.scala`
+
+Handles the synchronization between nodes. Running in a separate thread, it gets the operations from the operation log and broadcasts these to all of the other nodes. Keeping track of which nodes are unresponsive. 
 
 ## Test
 
