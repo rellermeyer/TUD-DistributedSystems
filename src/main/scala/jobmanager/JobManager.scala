@@ -3,6 +3,8 @@
 import java.rmi.registry.LocateRegistry
 import java.rmi.Naming
 import java.rmi.server.UnicastRemoteObject
+import java.io.FileReader
+import java.util.Map
 import executionplan._
 import scala.collection.mutable.ArrayBuffer
 // import taskmanager._
@@ -41,56 +43,79 @@ class JobManager extends UnicastRemoteObject with JobManagerInterface {
   new Thread {
     override def run {
       val jsonParser = new JSONParser()
-      var taskMgrCfgs = ArrayBuffer[ArrayBuffer[TaskManagerInfo](taskMgrsCount)]()
-      try (FileReader reader = new FileReader("config.json"))
-      {   
-          //Read JSON file
-          Object obj = jsonParser.parse(reader);
+      var taskMgrCfgs = ArrayBuffer[ArrayBuffer[TaskManagerInfo]]()
+      try {
+        val reader = new FileReader("config.json")
+        //Read JSON file
+        val obj = jsonParser.parse(reader);
 
-          JSONArray configs = (JSONArray) obj;
-            
-          //Iterate over configs array
-          for (config <- configs) {
-            val taskMgrCfg = ArrayBuffer[TaskManagerInfo](taskMgrsCount)
-            for (i <- 0 until taskMgrsCount) {
-              val json_cfg = config.get(i.toString)
-              val latencies = Array[Latency]
-              val bws = Array[BW]
-              val json_latencies = json_cfg.get("latencies")
-              val json_bws = json_cfg.get("bandwidth")
-              for (i <- 0 until taskMgrsCount) {                
-                val latency_key = json_latencies.names().getString(i)             
-                val bw_key = json_bws.names().getString(i)
-                latencies(i) = Latency(latency_key.toInt, json_latencies.get(latency_key))
-                bws(i) = Latency(bw_key.toInt, json_latencies.get(bw_key))
-              }
-              // TODO: Setting value of NumTasksDeployed
-              taskMgrCfg(i) = new TaskManagerInfo(
-                i, json_cfg.get("numSlots"), 0, 
-                latencies, bws,
-                json_cfg.get("ipRate"), json_cfg.get("opRate"))                
+        val configs = obj.asInstanceOf[JSONArray];
+        val it = configs.iterator()
+
+        //Iterate over configs array
+        while (it.hasNext()) {
+          val config = it.next().asInstanceOf[JSONObject]
+          val taskMgrCfg = ArrayBuffer[TaskManagerInfo]()
+          for (i <- 0 until taskMgrsCount) {
+            val json_cfg = config.get(i.toString).asInstanceOf[JSONObject]
+            var latencies = new Array[Latency](0)
+            var bws = new Array[BW](0)
+            val latencies_set =
+              json_cfg.get("latencies").asInstanceOf[JSONObject].entrySet()
+            val bws_set =
+              json_cfg.get("bandwidth").asInstanceOf[JSONObject].entrySet()
+            val json_latencies =
+              json_cfg.get("latencies").asInstanceOf[JSONObject]
+            val json_bws = json_cfg.get("bandwidth").asInstanceOf[JSONObject]
+            val latency_it = latencies_set.iterator()
+            val bw_it = bws_set.iterator()
+            while (latency_it.hasNext()) {
+              val entry =
+                latency_it.next().asInstanceOf[Map.Entry[String, Double]]
+              latencies = latencies :+ new Latency(
+                entry.getKey().toInt,
+                entry.getValue().toFloat
+              )
             }
-            taskMgrCfgs.append(taskMgrCfg)
+            while (bw_it.hasNext()) {
+              val entry =
+                bw_it.next().asInstanceOf[Map.Entry[String, Double]]
+              bws = bws :+ new BW(
+                entry.getKey().toInt,
+                entry.getValue().toFloat
+              )
+            }
+            // TODO: Setting value of NumTasksDeployed
+            taskMgrCfg.append(
+              new TaskManagerInfo(
+                i,
+                json_cfg.get("numSlots").asInstanceOf[Long].asInstanceOf[Int],
+                0,
+                latencies,
+                bws,
+                json_cfg.get("ipRate").asInstanceOf[Double].asInstanceOf[Float],
+                json_cfg.get("opRate").asInstanceOf[Double].asInstanceOf[Float]
+              )
+            )
           }
-          
-      } catch (FileNotFoundException e) {
-          e.printStackTrace();
-      } catch (IOException e) {
-          e.printStackTrace();
-      } catch (ParseException e) {
-          e.printStackTrace();
-      }
+          taskMgrCfgs.append(taskMgrCfg)
+        }
 
-      var i:Int = 0
+      } catch {
+        case e: Throwable => e.printStackTrace()
+      }
+      var i: Int = 0
       while (true) {
-        reconfigurationManager.solveILP(taskMgrCfgs[i], 1.0.toFloat)
-        i = (i+1)%(taskMgrCfgs.length)
+        reconfigurationManager.solveILP(
+          taskMgrCfgs(i).asInstanceOf[ArrayBuffer[TaskManagerInfo]],
+          1.0.toFloat
+        )
+        i = (i + 1) % (taskMgrCfgs.length)
         Thread.sleep(5000)
       }
     }
-  }
+  }.start()
 
-  
   // register the poor taskmanager
   def register(): Int = {
     taskManagerIdCounter += 1
@@ -181,6 +206,8 @@ class JobManager extends UnicastRemoteObject with JobManagerInterface {
       return false
     }
 
+    true
+
     // Create execution plan
     val newPlan = ExecutionPlan.createPlan(
       taskManagers,
@@ -192,56 +219,52 @@ class JobManager extends UnicastRemoteObject with JobManagerInterface {
 
     // Compare it with old plan
 
-    /**
-     * [
-     *   [(0, 0), (1, 0), (1, 1)]
-     *   [(1, 2), (2, 0)]
-     *   [(2, 1)]
-     * ]
-     * 
-     * [
-     *   [(0, 2), (0, 3), (1, 3)]
-     *   [(2, 2), (2, 3)]
-     *   [(3, 0)]
-     * ]
-     * 
-     * r(eschedule)
-     * s(tay)
-     * [
-     *   [s(0, 0), r(0, 3), s(1, 1)]
-     *   [r(2, 2), s(2, 0)]
-     *   [r(3, 0)]
-     * ]
-     *  
-     **/
+    /** [
+      *   [(0, 0), (1, 0), (1, 1)]
+      *   [(1, 2), (2, 0)]
+      *   [(2, 1)]
+      * ]
+      *
+      * [
+      *   [(0, 2), (0, 3), (1, 3)]
+      *   [(2, 2), (2, 3)]
+      *   [(3, 0)]
+      * ]
+      *
+      * r(eschedule)
+      * s(tay)
+      * [
+      *   [s(0, 0), r(0, 3), s(1, 1)]
+      *   [r(2, 2), s(2, 0)]
+      *   [r(3, 0)]
+      * ]
+      */
 
-     /**
-     * [
-     *   [(0, 0), (1, 0), (1, 1)]
-     *   [(1, 2), (2, 0)]
-     *   [(2, 1)]
-     * ]
-     * 
-     * [
-     *   [(1, 3), (2, 2), (2, 3)]
-     *   [(2, 4), (3, 0)]
-     *   [(3, 1)]
-     * ]
-     * 
-     * r(eschedule)
-     * s(tay)
-     * [
-     *   [r(1, 3), r(2, 2), r(2, 3)] incorrect! should be -> [s(1, 0), r(2, 2), r(2, 3)]
-     *   [r(2, 2), s(2, 0)]
-     *   [r(3, 0)]
-     * ]
-     *  
-     **/
+    /** [
+      *   [(0, 0), (1, 0), (1, 1)]
+      *   [(1, 2), (2, 0)]
+      *   [(2, 1)]
+      * ]
+      *
+      * [
+      *   [(1, 3), (2, 2), (2, 3)]
+      *   [(2, 4), (3, 0)]
+      *   [(3, 1)]
+      * ]
+      *
+      * r(eschedule)
+      * s(tay)
+      * [
+      *   [r(1, 3), r(2, 2), r(2, 3)] incorrect! should be -> [s(1, 0), r(2, 2), r(2, 3)]
+      *   [r(2, 2), s(2, 0)]
+      *   [r(3, 0)]
+      * ]
+      */
 
-     // Idea: calculate new plan as combination between old and new plan
-     // Simply assign all tasks in combined plan.
-     // Task manager still running the taskID only update the to, toTaskIDs and from properties.
-     // This means a TaskSlot should remove itself from the TM when it finishes!
+    // Idea: calculate new plan as combination between old and new plan
+    // Simply assign all tasks in combined plan.
+    // Task manager still running the taskID only update the to, toTaskIDs and from properties.
+    // This means a TaskSlot should remove itself from the TM when it finishes!
 
     //  val combinedPlan = Array.fill(plan.length)(ArrayBuffer.empty[(Int, Int)])
     //  val oldPlan = job.plan
@@ -256,7 +279,7 @@ class JobManager extends UnicastRemoteObject with JobManagerInterface {
     //          break
     //        }
     //      }
-    //      if (!usedOld) { // if old assignment didn't use 
+    //      if (!usedOld) { // if old assignment didn't use
     //        combinedPlan(op) += newPlan(op)(j)
     //      }
     //    }
@@ -293,4 +316,8 @@ class JobManager extends UnicastRemoteObject with JobManagerInterface {
 
 case class Latency(var fromID: Int, var time: Float)
 case class BW(var fromID: Int, var rate: Float)
-case class Job(ops: Array[String], parallelisms: Array[Int], plan: Array[ArrayBuuffer[(Int, Int)]])
+case class Job(
+    ops: Array[String],
+    parallelisms: Array[Int],
+    plan: Array[ArrayBuffer[(Int, Int)]]
+)

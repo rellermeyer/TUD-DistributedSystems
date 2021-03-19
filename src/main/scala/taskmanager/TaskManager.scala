@@ -165,6 +165,6 @@ case class TaskManagerInfo(
     var numTasksDeployed: Int,
     var latenciesToSelf: Array[Latency],
     var bandwidthsToSelf: Array[BW],
-    var ipRate: Int,
-    var opRate: Int
+    var ipRate: Float,
+    var opRate: Float
 )
