@@ -17,7 +17,7 @@ object App {
         ctx.spawn(SyncNode(id, 10), s"Node$id")
       }
       if (cluster.selfMember.hasRole("decider")) {
-        ctx.spawn(LargeCoBeRa(), "LargeCoBeRa")
+        ctx.spawn(LargeCoBeRa(10), "LargeCoBeRa")
       }
       Behaviors.empty
     }

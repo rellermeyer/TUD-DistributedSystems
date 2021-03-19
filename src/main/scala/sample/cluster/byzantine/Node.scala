@@ -1,20 +1,13 @@
 package sample.cluster.byzantine
 
 
-import scala.util.Failure
-import scala.util.Success
 import akka.actor.typed.receptionist.{Receptionist, ServiceKey}
-import akka.actor.typed.scaladsl.AskPattern.{Askable, schedulerFromActorSystem}
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorRef, Behavior}
 import akka.cluster.ClusterEvent.{MemberEvent, MemberUp}
 import akka.cluster.Member
 import akka.cluster.typed.{Cluster, Subscribe}
-import akka.util.Timeout
 import sample.cluster.CborSerializable
-
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.duration.DurationInt
 
 
 object Node {
@@ -27,7 +20,7 @@ object Node {
   sealed trait Event
   private final case class MemberChange(event: MemberEvent) extends Event
   private final case class NodesUpdated(newWorkers: Set[ActorRef[Node.Event]]) extends Event
-  private final case class LargeCoBeRaUpdated(largeCoBeRa: Set[ActorRef[LargeCoBeRa.AgreementSelection]]) extends Event
+  private final case class LargeCoBeRaUpdated(largeCoBeRa: Set[ActorRef[LargeCoBeRa.Command]]) extends Event
 
   sealed trait Request extends Event with CborSerializable
   case class PrintMyId(id: Int) extends Request
@@ -59,7 +52,7 @@ object Node {
       Cluster(ctx.system).subscriptions ! Subscribe(memberEventAdapter, classOf[MemberEvent])
 
       val memberRole = Map.empty[String, Member]
-      val largeCoBERa = List.empty[ActorRef[LargeCoBeRa.AgreementSelection]]
+      val largeCoBERa = List.empty[ActorRef[LargeCoBeRa.Command]]
       var nodesReferences = IndexedSeq.empty[ActorRef[Node.Event]]
       var activeNodes = Map.empty[Int, ActorRef[Node.Event]]
       var selectedActiveNodes = Map.empty[Int, ActorRef[Node.Event]]
