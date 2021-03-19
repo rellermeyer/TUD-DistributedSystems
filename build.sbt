@@ -9,6 +9,15 @@ lazy val `akka-sample-cluster-scala` = project
   .settings(
     organization := "com.lightbend.akka.samples",
     scalaVersion := "2.13.4",
+    version := "v1",
+    packageName in Docker := "learned-helper-307114/happ",
+    dockerRepository := Some("gcr.io"),
+    mainClass in assembly := Some("sample.cluster.byzantine.App"),
+    assemblyMergeStrategy in assembly := {
+      case PathList("META-INF", xs @ _*) => MergeStrategy.discard
+      case "reference.conf" => MergeStrategy.concat
+      case x => MergeStrategy.first
+    },
     Compile / scalacOptions ++= Seq("-deprecation", "-feature", "-unchecked", "-Xlog-reflective-calls", "-Xlint"),
     Compile / javacOptions ++= Seq("-Xlint:unchecked", "-Xlint:deprecation"),
     run / javaOptions ++= Seq("-Xms128m", "-Xmx1024m", "-Djava.library.path=./target/native"),
@@ -27,3 +36,7 @@ lazy val `akka-sample-cluster-scala` = project
     licenses := Seq(("CC0", url("http://creativecommons.org/publicdomain/zero/1.0")))
   )
   .configs (MultiJvm)
+
+enablePlugins(JavaAppPackaging)
+enablePlugins(DockerPlugin)
+
