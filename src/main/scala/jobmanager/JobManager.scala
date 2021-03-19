@@ -16,7 +16,13 @@ import org.json.simple.parser.ParseException;
 
 object JobManagerRunner {
   def main(args: Array[String]): Unit = {
-    val registry = LocateRegistry.getRegistry(1099)
+    /*
+     *  Create global registry for the JobManager and TaskManagers to connect to.
+     */
+    val registryPort = 1099
+    val registry = LocateRegistry.createRegistry(registryPort)
+    println("Registry running on port " + registryPort)
+
     val JobManager = new JobManager
     val jobManagerName = "jobmanager"
 
@@ -155,8 +161,16 @@ class JobManager extends UnicastRemoteObject with JobManagerInterface {
     )
 
     // Record job
-    jobs += new Job(ops, parallelisms, pl)
+    jobs += new Job(ops, parallelisms, plan)
 
+    // Communicate tasks to TMs
+    assignTasks(plan, ops)
+    
+    jobIDCounter += 1 // increment job counter
+    true
+  }
+
+  def assignTasks(plan: Array[ArrayBuffer[(Int, Int)]], ops: Array[String]) = {
     // Use plan to assign tasks to TMs
     for (row <- plan.indices) {
       plan(row).foreach {
@@ -189,8 +203,6 @@ class JobManager extends UnicastRemoteObject with JobManagerInterface {
         }
       }
     }
-    jobIDCounter += 1 // increment job counter
-    return true
   }
 
   def replanJob(jobID: Int): Boolean = {
@@ -198,7 +210,6 @@ class JobManager extends UnicastRemoteObject with JobManagerInterface {
 
     val totalParallelism = job.parallelisms.sum
     // Call ILP solver with totalParallelism
-
     val ps = ReconfigurationManager.solveILP(taskManagers, totalParallelism)
 
     if (ps == null) {
@@ -206,112 +217,48 @@ class JobManager extends UnicastRemoteObject with JobManagerInterface {
       return false
     }
 
-    true
-
-    // Create execution plan
+    // Create new execution plan
     val newPlan = ExecutionPlan.createPlan(
       taskManagers,
       ps,
-      ops,
-      parallelisms,
+      job.ops,
+      job.parallelisms,
       taskIDCounters
     )
-
-    // Compare it with old plan
-
-    /** [
-      *   [(0, 0), (1, 0), (1, 1)]
-      *   [(1, 2), (2, 0)]
-      *   [(2, 1)]
-      * ]
-      *
-      * [
-      *   [(0, 2), (0, 3), (1, 3)]
-      *   [(2, 2), (2, 3)]
-      *   [(3, 0)]
-      * ]
-      *
-      * r(eschedule)
-      * s(tay)
-      * [
-      *   [s(0, 0), r(0, 3), s(1, 1)]
-      *   [r(2, 2), s(2, 0)]
-      *   [r(3, 0)]
-      * ]
-      */
-
-    /** [
-      *   [(0, 0), (1, 0), (1, 1)]
-      *   [(1, 2), (2, 0)]
-      *   [(2, 1)]
-      * ]
-      *
-      * [
-      *   [(1, 3), (2, 2), (2, 3)]
-      *   [(2, 4), (3, 0)]
-      *   [(3, 1)]
-      * ]
-      *
-      * r(eschedule)
-      * s(tay)
-      * [
-      *   [r(1, 3), r(2, 2), r(2, 3)] incorrect! should be -> [s(1, 0), r(2, 2), r(2, 3)]
-      *   [r(2, 2), s(2, 0)]
-      *   [r(3, 0)]
-      * ]
-      */
 
     // Idea: calculate new plan as combination between old and new plan
     // Simply assign all tasks in combined plan.
     // Task manager still running the taskID only update the to, toTaskIDs and from properties.
     // This means a TaskSlot should remove itself from the TM when it finishes!
 
-    //  val combinedPlan = Array.fill(plan.length)(ArrayBuffer.empty[(Int, Int)])
-    //  val oldPlan = job.plan
+     val combinedPlan = Array.fill(newPlan.length)(ArrayBuffer.empty[(Int, Int)])
+     val oldPlan = job.plan
 
-    //  for (op <- newPlan.indices) { // for each operator
-    //    for (i <- newPlan(op).indices) { // for each assignment
-    //      var usedOld = false
-    //      for (j <- oldPlan(op).indices) { // search for assignment to same TM in old plan
-    //        if (oldPlan(op)(j)._1) { // if scheduled for same TM
-    //          combinedPlan(op) += oldPlan(op)(j) // use assignment from old plan
-    //          usedOld = true
-    //          break
-    //        }
-    //      }
-    //      if (!usedOld) { // if old assignment didn't use
-    //        combinedPlan(op) += newPlan(op)(j)
-    //      }
-    //    }
-    //  }
+    //oldplan map1: [(0, 0), (0, 1)]
+    //newplan map1: [(0, 2), (1, 0), (1, 1)]
+    //combinedmap1: [(0, 0), (1, 0), (1, 1)]
+
+     for (op <- newPlan.indices) { // for each operator
+       for (i <- newPlan(op).indices) { // for each assignment
+         var matchFound = false
+         var j = 0 // iterator for oldPlan
+         while (j < oldPlan(op).length && !matchFound) { // search for assignment to same TM in old plan
+           if (oldPlan(op)(j)._1 == newPlan(op)(i)._1) { // if scheduled for same TM
+             combinedPlan(op) += oldPlan(op)(j) // use assignment from old plan
+             oldPlan(op).remove(j) // prevent matching with this old assignment again
+             matchFound = true // break the loop, and prevent using assignment from new plan
+           }
+         }
+         if (!matchFound) { // if oldPlan doesn't contain any more assignments for the same TM, add the assignment from new plan
+           combinedPlan(op) += newPlan(op)(i)
+         }
+       }
+     }
+
+     // Re-assign the tasks
+     assignTasks(combinedPlan, job.ops)
+     true
   }
-
-  // update metrics about a taskmanager
-  // def monitorReport(
-  //     id: Int,
-  //     numSlots: Int,
-  //     latenciesToSelf: Array[Latency],
-  //     bandwidthsToSelf: Array[BW],
-  //     ipRate: Int,
-  //     opRate: Int
-  // ) = {
-  //   // counter = counter + 1
-  //   println("Received report from " + id)
-  //   taskManagers(id).numSlots = numSlots
-  //   taskManagers(id).latenciesToSelf = latenciesToSelf
-  //   taskManagers(id).bandwidthsToSelf = bandwidthsToSelf
-  //   taskManagers(id).ipRate = ipRate
-  //   taskManagers(id).opRate = opRate
-
-  //   // TODO: only call it once in a while not all the time new data comes in
-  //   // TODO: implement actual parallelism (need to increase or decrease, scale up or down)
-  //   // if (counter == 3) {
-  //   //   for (i <- taskManagers.indices) {
-  //   //     println(taskManagers(i).bandwidthsToSelf.mkString(", "))
-  //   //   }
-  //   //   reconfigurationManager.solveILP(taskManagers, 1.0.toFloat, alpha)
-  //   // }
-  // }
 }
 
 case class Latency(var fromID: Int, var time: Float)
