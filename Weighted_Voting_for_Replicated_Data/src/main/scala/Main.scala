@@ -123,7 +123,7 @@ object Main {
           val result = manager.read(suiteID)
           result match {
             case Left(f) => println("Could not read file suite:\n" + f.reason)
-            case Right(r) => println("Content of file " + suiteID + " is " + r)
+            case Right(r) => println("Content of file " + suiteID + " is " + r._1 + ". Latency: " + r._2)
           }
         //}
       //}
@@ -139,16 +139,16 @@ object Main {
       val result = manager.write(suiteID, newContent)
       result match {
         case Left(f) => println("Could not write to file suite:\n" + f.reason)
-        case Right(r) => println("Successfully written " + newContent + " to file with id " + suiteID)
+        case Right(r) => println("Successfully written " + newContent + " to file with id " + suiteID + ". Latency: " + r)
       }
     }
 
     // Main menu:
     while ( { exit_boolean }) {
       println("(!) Main menu - Choose an event:")
-      println("(-)  1: Create suite")
-      println("(-)  2: Read suite")
-      println("(-)  3: Write suite")
+      println("(-)  1: Create file")
+      println("(-)  2: Read file")
+      println("(-)  3: Write file")
       println("(-)  0: Quit")
       menu_integer = get_user_choice()
       if (menu_integer == 0){

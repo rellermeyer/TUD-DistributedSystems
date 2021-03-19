@@ -21,45 +21,31 @@ class FileSystemResponse {
     }
   }
 
-  def findReadQuorum(r: Int, versionNumber: Int): Either[FailResult, Int] = {
+  def findReadQuorum(r: Int, versionNumber: Int): Either[FailResult, Seq[ContainerResponse]] = {
     val currentReps: Seq[ContainerResponse] = _containerResponses.sortBy(_.latency)
+    var readCandidates: Seq[ContainerResponse] = Seq.empty[ContainerResponse]
     var totalWeight: Int = 0
-    var readCandidate: Int = -1
-    var foundCandidate: Boolean = false
 
-    breakable { for (c <- currentReps) {
-      totalWeight += c.weight
-      if (c.prefix.versionNumber == versionNumber && !foundCandidate) {
-        readCandidate = c.cid
-        foundCandidate = true
-      }
+    for (rep <- currentReps) {
+      readCandidates = readCandidates :+ rep
+      totalWeight += rep.weight
+      //println("new rep added: cid " + c.cid + ", weight " + c.weight)
       if (totalWeight >= r) {
-        break
-      }
-    } }
-
-    if (totalWeight >= r) {
-      if (foundCandidate) {
-        Right(readCandidate)
-      }
-      else {
-        Left(FailResult("findReadQuorum failed: no up to date candidate in quorum")) //TODO: own error class?
+        return Right(readCandidates)
       }
     }
-    else {
-      Left(FailResult("findReadQuorum failed: no quorum present")) //TODO: own error class?
-    }
+    Left(FailResult("findReadQuorum failed: no quorum present")) //TODO: own error class?
   }
 
   // TODO: does this work as intended w.r.t. up to date copies?
-  def findWriteQuorum(w: Int, versionNumber: Int): Either[FailResult, Seq[Int]] = {
+  def findWriteQuorum(w: Int, versionNumber: Int): Either[FailResult, Seq[ContainerResponse]] = {
     val currentReps: Seq[ContainerResponse] = _containerResponses.filter(_.prefix.versionNumber == versionNumber).sortBy(_.latency)
-    var writeCandidates: Seq[Int] = Seq.empty[Int]
+    var writeCandidates: Seq[ContainerResponse] = Seq.empty[ContainerResponse]
     var totalWeight: Int = 0
 
-    for (c <- currentReps) {
-      writeCandidates = writeCandidates :+ c.cid
-      totalWeight += c.weight
+    for (rep <- currentReps) {
+      writeCandidates = writeCandidates :+ rep
+      totalWeight += rep.weight
       //println("new rep added: cid " + c.cid + ", weight " + c.weight)
       if (totalWeight >= w) {
         return Right(writeCandidates)

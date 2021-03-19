@@ -8,36 +8,33 @@ class FileSuiteManager (newFileSystem: DistributedSystem){
 
   private val _fileSystem = newFileSystem
 
-  def read(fileId: Int): Either[FailResult, Int] = {
+  def read(fileId: Int): Either[FailResult, (Int, Int)] = {
     var newSuite: FileSuite = new FileSuite(_fileSystem, fileId)
-    val result = newSuite.suiteRead()
+    val result = newSuite.readSuite()
 
     result match {
       case Left(f) => Left(FailResult("read failed:\n" + f.reason))
       case Right(r) => Right(r)
-      //newSuite = null //TODO: check if this works
     }
   }
 
-  def write(fileId: Int, newContent: Int): Either[FailResult, Unit] = {
+  def write(fileId: Int, newContent: Int): Either[FailResult, Int] = {
     var newSuite: FileSuite = new FileSuite(_fileSystem, fileId)
-    val result = newSuite.suiteWrite(newContent)
+    val result = newSuite.writeSuite(newContent)
 
     result match {
       case Left(f) => Left(FailResult("write failed:\n" + f.reason))
-      case Right(r) => Right()
-      //newSuite = null //TODO: check if this works
+      case Right(r) => Right(r)
     }
   }
 
   def create(fileId: Int, r: Int, w: Int, weights: Seq[Int]): Either[FailResult, Unit] = {
     var newSuite: FileSuite = new FileSuite(_fileSystem, fileId)
-    val result = newSuite.createFSuite(fileId, r, w, weights)
+    val result = newSuite.createFileSuite(fileId, r, w, weights)
 
     result match {
       case Left(f) => Left(FailResult("create failed:\n" + f.reason))
       case Right(r) => Right()
-      //newSuite = null //TODO: check if this works
     }
   }
 }

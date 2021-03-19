@@ -40,7 +40,7 @@ class DistributedSystem(numContainers: Int, latencies: Seq[Int], newFailProb: Do
    * @param suiteW
    * @param repWeights
    */
-  def createSuite(suiteId: Int, suiteR: Int, suiteW: Int, repWeights: Seq[Int]): Either[FailResult, Unit] = {
+  def createRepresentatives(suiteId: Int, suiteR: Int, suiteW: Int, repWeights: Seq[Int]): Either[FailResult, Unit] = {
     _containers match {
       case Left(f) => Left(FailResult("createSuite failed:\n" + f.reason))
       case Right(c) => {
@@ -67,9 +67,7 @@ class DistributedSystem(numContainers: Int, latencies: Seq[Int], newFailProb: Do
    * @param suiteId
    * @return
    */
-  //TODO: do containers always respond, or only when they have a representative?
-  //TODO: error message if suite doesn't exist
-  def collectSuite(suiteId: Int): Either[FailResult, FileSystemResponse] = {
+  def collectRepresentatives(suiteId: Int): Either[FailResult, FileSystemResponse] = {
     _containers match {
       case Left(f) => Left(FailResult("collectSuite failed:\n" + f.reason))
       case Right(c) => {
@@ -95,7 +93,7 @@ class DistributedSystem(numContainers: Int, latencies: Seq[Int], newFailProb: Do
     }
   }
 
-  def readSuite(containerId: Int, suiteId: Int): Either[FailResult, Int] = {
+  def readRepresentative(containerId: Int, suiteId: Int): Either[FailResult, Int] = {
     _containers match {
       case Left(f) => Left(FailResult("readSuite failed:\n" + f.reason))
       case Right(c) => {
@@ -116,7 +114,7 @@ class DistributedSystem(numContainers: Int, latencies: Seq[Int], newFailProb: Do
     }
   }
 
-  def writeSuite(containerIds: Seq[Int], suiteId: Int, newContent: Int): Either[FailResult, Unit] = {
+  def writeRepresentatives(containerIds: Seq[Int], suiteId: Int, newContent: Int): Either[FailResult, Unit] = {
     _containers match {
       case Left(f) => Left(FailResult("writeSuite failed:\n" + f.reason))
       case Right(c) => {
