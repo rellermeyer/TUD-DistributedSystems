@@ -62,14 +62,14 @@ object TaskManagerRunner {
       }
     }
 
-    // jobManager.monitorReport(
-    //   id,
-    //   1 + rand.nextInt(3), // upper bound exclusive, so max 2 slots
-    //   latencies,
-    //   bws,
-    //   rand.nextInt(1000),
-    //   rand.nextInt(500)
-    // )
+    jobManager.monitorReport(
+      id,
+      2, // upper bound exclusive, so max 2 slots
+      latencies,
+      bws,
+      rand.nextInt(1000),
+      rand.nextInt(500)
+    )
   }
 }
 

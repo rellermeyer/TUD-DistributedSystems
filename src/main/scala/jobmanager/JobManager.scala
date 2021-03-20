@@ -120,7 +120,8 @@ class JobManager extends UnicastRemoteObject with JobManagerInterface {
         Thread.sleep(5000)
       }
     }
-  }.start()
+  }
+  // .start()
 
   // register the poor taskmanager
   def register(): Int = {
@@ -258,6 +259,33 @@ class JobManager extends UnicastRemoteObject with JobManagerInterface {
      // Re-assign the tasks
      assignTasks(combinedPlan, job.ops)
      true
+  }
+
+  // update metrics about a taskmanager
+  def monitorReport(
+      id: Int,
+      numSlots: Int,
+      latenciesToSelf: Array[Latency],
+      bandwidthsToSelf: Array[BW],
+      ipRate: Int,
+      opRate: Int
+  ) = {
+    // counter = counter + 1
+    println("Received report from " + id)
+    taskManagers(id).numSlots = numSlots
+    taskManagers(id).latenciesToSelf = latenciesToSelf
+    taskManagers(id).bandwidthsToSelf = bandwidthsToSelf
+    taskManagers(id).ipRate = ipRate
+    taskManagers(id).opRate = opRate
+
+    // TODO: only call it once in a while not all the time new data comes in
+    // TODO: implement actual parallelism (need to increase or decrease, scale up or down)
+    // if (counter == 3) {
+    //   for (i <- taskManagers.indices) {
+    //     println(taskManagers(i).bandwidthsToSelf.mkString(", "))
+    //   }
+    //   reconfigurationManager.solveILP(taskManagers, 1.0.toFloat, alpha)
+    // }
   }
 }
 
