@@ -19,6 +19,8 @@ class FileSuite (fileSystem: DistributedSystem, newSuiteId: Int){
    * accessor methods
    */
   def suiteId: Int = _suiteId
+
+  //TODO: kan dit weg :P?
   //def suiteR: Int = _fsResp.findLatest().prefix.r
   //def suiteW: Int = _fsResp.findLatest().prefix.w
 
@@ -30,6 +32,7 @@ class FileSuite (fileSystem: DistributedSystem, newSuiteId: Int){
       case Right(r) => Right()
     }
   }
+
 
   def findReadCandidate(readQuorum: Seq[ContainerResponse], versionNumber: Int): Either[FailResult, ContainerResponse] = {
     var foundCandidate: Boolean = false
@@ -48,6 +51,14 @@ class FileSuite (fileSystem: DistributedSystem, newSuiteId: Int){
       Left(FailResult("findReadCandidate failed: no read candidate present in read quorum"))
     }
   }
+
+  /**
+   * Function that finds the most suitable read response by first checking all container responses,
+   * then computing the reading quorum, check if the container responses meet the reading quorum
+   * and thus are suitable read candidates. Lastly pick the candidate with the lowest response time.
+   * @param
+   * @return result
+   */
 
   def readSuite(): Either[FailResult, (Int, Int)] = {
     _fsResp match {
@@ -87,6 +98,15 @@ class FileSuite (fileSystem: DistributedSystem, newSuiteId: Int){
     }
   }
 
+
+
+  /**
+   * Function that finds the most suitable write response by first checking all container responses,
+   * then computing the writing quorum, check if the container responses meet the writing quorum
+   * and thus are suitable write candidates. Lastly pick the candidate with the lowest response time.
+   * @param
+   * @return result
+   */
   def writeSuite(newContent: Int): Either[FailResult, Int] = {
     _fsResp match {
       case Left(f) => Left(FailResult("suiteWrite failed:\n" + f.reason))

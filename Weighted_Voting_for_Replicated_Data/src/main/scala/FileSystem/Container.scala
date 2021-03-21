@@ -14,11 +14,30 @@ class Container(newLatency: Int) {
    * accessor methods
    */
   def latency: Int = _latency
+
+
   def representatives: Seq[Representative] = _representatives
+
+
+  /**
+   * Looks for representatives within a suite
+   * @param suiteId
+   * @return representative ID
+   */
 
   def findRepresentative(suiteId: Int): Option[Representative] = {
     _representatives.find(element => element.repId == suiteId)
   }
+
+
+  /**
+   * Initialize a single representative
+   * @param suiteId
+   * @param suiteR
+   * @param suiteW
+   * @param repWeight
+   * @return
+   */
 
   def createRepresentative(suiteId: Int, suiteR: Int, suiteW: Int, repWeight: Int): Either[FailResult, Unit] = {
     if (findRepresentative(suiteId).isEmpty) {
@@ -31,6 +50,14 @@ class Container(newLatency: Int) {
     }
   }
 
+
+
+  /**
+   * Returns the contents of a representative
+   * @param suiteId
+   * @return content
+   */
+
   def readRepresentative(suiteId: Int): Either[FailResult, Int] = {
     val rep = findRepresentative(suiteId)
     if (rep.isDefined) {
@@ -41,13 +68,20 @@ class Container(newLatency: Int) {
     }
   }
 
+
+
+  /**
+   * Write content to a representative
+   * @param suiteId
+   * @param newContent
+   * @return
+   */
+
   def writeRepresentative(suiteId: Int, newContent: Int): Either[FailResult, Unit] = {
     val rep = findRepresentative(suiteId)
     if (rep.isDefined) {
-      //println("write rep: " + rep.get.content + " overwritten by " + newContent)
       rep.get.content = newContent
       rep.get.prefix.versionNumber += 1
-      //println("new version number: " + rep.get.prefix.versionNumber)
       Right()
     }
     else {

@@ -5,7 +5,7 @@ import scala.util.Random
 class DistributedSystem(numContainers: Int, latencies: Seq[Int], newFailProb: Double) {
 
   /**
-   * constructor
+   * Constructor
    */
   case class FailResult(reason:String)
 
@@ -15,6 +15,7 @@ class DistributedSystem(numContainers: Int, latencies: Seq[Int], newFailProb: Do
   /**
    * Initialize a number of new containers
    * New containers can be added to existing set
+   * @param numContainers
    * @param latencies
    */
 
@@ -93,6 +94,13 @@ class DistributedSystem(numContainers: Int, latencies: Seq[Int], newFailProb: Do
     }
   }
 
+
+  /**
+   * Reading the content of the representative
+   * @param containerId
+   * @param suiteId
+   * @return content
+   */
   def readRepresentative(containerId: Int, suiteId: Int): Either[FailResult, Int] = {
     _containers match {
       case Left(f) => Left(FailResult("readSuite failed:\n" + f.reason))
@@ -113,6 +121,14 @@ class DistributedSystem(numContainers: Int, latencies: Seq[Int], newFailProb: Do
       }
     }
   }
+
+  /**
+   * Writing content to the representative
+   * @param containerIds
+   * @param suiteId
+   * @param newContent
+   * @return
+   */
 
   def writeRepresentatives(containerIds: Seq[Int], suiteId: Int, newContent: Int): Either[FailResult, Unit] = {
     _containers match {

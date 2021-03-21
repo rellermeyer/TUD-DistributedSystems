@@ -11,13 +11,13 @@ object Main {
     val fileSystem = DistributedSystem(numContainers, latencies, failureProb)
     val manager = FileSuiteManager(fileSystem)
 
-    //    UI:
+    //    UI (user interface):
     var exit_boolean = true
     var user_input_tutorial = true
     var menu_integer = -1
     var input_integer = -1
 
-
+    // Retrieving input from the user
     def get_user_choice () : Int = {
       if (user_input_tutorial == true) {
         println("(!) Your input: (Keep in mind that for all user inputs integers are required, else the system will crash!)")
@@ -58,13 +58,12 @@ object Main {
         } else if (menu_integer == 1){
           println("(!) Latency of container:")
           latencies = latencies :+ get_user_choice()
-
         }
       }
     }
 
 
-    // Create suite menu
+    // Create a suite menu:
     def createSuiteUI() : Unit = {
       println("(!) What is the ID of the created suite?")
       var suiteID = get_user_choice()
@@ -87,37 +86,9 @@ object Main {
     }
 
 
-    //    println(fileSystem.collectSuite(1))
-    //    println(fileSystem.readSuite(0,1))
-
-    // Collect suite
-    /*def collectSuiteUI() : Unit = {
-      var suiteID = -1
-      println("(!) What is the ID of the suite you want to collect?")
-      suiteID = get_user_choice()
-      if (suiteID == -1){
-        println("(E) No ID was taken as input for collectSuiteUI!")
-        exitUI()
-      } else {
-        println("(!) Collected suite "+suiteID+":")
-        println(fileSystem.collectSuite(suiteID))
-      }
-    }*/
-
-    // Read suite
+    // Read suite menu
     def readSuiteUI() : Unit = {
-      /*var containerID = -1
-      println("(!) What is the ID of the container you want to read?")
-      containerID = get_user_choice()
-      if (containerID == -1){
-        println("(E) No container ID was taken as input for readSuiteUI!")
-        exitUI()
-      } else {*/
         var suiteID = -1
-        /*if (containerID == -1){
-          println("(E) No suite ID was taken as input for readSuiteUI!")
-          exitUI()
-        } else {*/
           println("(!) What is the ID of the file you want to read?")
           suiteID = get_user_choice()
           val result = manager.read(suiteID)
@@ -125,10 +96,9 @@ object Main {
             case Left(f) => println("Could not read file suite:\n" + f.reason)
             case Right(r) => println("Content of file " + suiteID + " is " + r._1 + ". Latency: " + r._2)
           }
-        //}
-      //}
     }
 
+    // Write a suite menu
     def writeSuiteUI(): Unit = {
       var suiteID = -1
       var newContent = -1
