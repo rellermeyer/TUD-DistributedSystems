@@ -1,40 +1,17 @@
-// package jobmanager
+package jobmanager
 
 import java.rmi.registry.LocateRegistry
 import java.rmi.Naming
 import java.rmi.server.UnicastRemoteObject
 import java.io.FileReader
 import java.util.Map
-import executionplan._
 import scala.collection.mutable.ArrayBuffer
-// import taskmanager._
+import taskmanager._
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
-
-object JobManagerRunner {
-  def main(args: Array[String]): Unit = {
-    /*
-     *  Create global registry for the JobManager and TaskManagers to connect to.
-     */
-    val registryPort = 1099
-    val registry = LocateRegistry.createRegistry(registryPort)
-    println("Registry running on port " + registryPort)
-
-    val JobManager = new JobManager
-    val jobManagerName = "jobmanager"
-
-    registry.bind(jobManagerName, JobManager)
-    println("JobManager bound!")
-
-    sys.ShutdownHookThread {
-      println("Unregistering JobManager")
-      registry.unbind(jobManagerName)
-    }
-  }
-}
 
 class JobManager extends UnicastRemoteObject with JobManagerInterface {
   var taskManagerIdCounter = -1
@@ -123,7 +100,9 @@ class JobManager extends UnicastRemoteObject with JobManagerInterface {
   }
   // .start()
 
-  // register the poor taskmanager
+  /**
+    * Assign a TaskManager an unique id an return it to him. 
+    */
   def register(): Int = {
     taskManagerIdCounter += 1
     taskManagers.append(
@@ -206,6 +185,11 @@ class JobManager extends UnicastRemoteObject with JobManagerInterface {
     }
   }
 
+  
+  // Idea: calculate new plan as combination between old and new plan
+  // Simply assign all tasks in combined plan.
+  // Task manager still running the taskID only update the to, toTaskIDs and from properties.
+  // This means a TaskSlot should remove itself from the TM when it finishes!
   def replanJob(jobID: Int): Boolean = {
     val job: Job = jobs(jobID)
 
@@ -227,11 +211,6 @@ class JobManager extends UnicastRemoteObject with JobManagerInterface {
       taskIDCounters
     )
 
-    // Idea: calculate new plan as combination between old and new plan
-    // Simply assign all tasks in combined plan.
-    // Task manager still running the taskID only update the to, toTaskIDs and from properties.
-    // This means a TaskSlot should remove itself from the TM when it finishes!
-
      val combinedPlan = Array.fill(newPlan.length)(ArrayBuffer.empty[(Int, Int)])
      val oldPlan = job.plan
 
@@ -239,15 +218,15 @@ class JobManager extends UnicastRemoteObject with JobManagerInterface {
     //newplan map1: [(0, 2), (1, 0), (1, 1)]
     //combinedmap1: [(0, 0), (1, 0), (1, 1)]
 
-     for (op <- newPlan.indices) { // for each operator
-       for (i <- newPlan(op).indices) { // for each assignment
+     for (op <- newPlan.indices) { // for each operator in new plan
+       for (i <- newPlan(op).indices) { // for each assignment in new plan
          var matchFound = false
          var j = 0 // iterator for oldPlan
          while (j < oldPlan(op).length && !matchFound) { // search for assignment to same TM in old plan
            if (oldPlan(op)(j)._1 == newPlan(op)(i)._1) { // if scheduled for same TM
              combinedPlan(op) += oldPlan(op)(j) // use assignment from old plan
              oldPlan(op).remove(j) // prevent matching with this old assignment again
-             matchFound = true // break the loop, and prevent using assignment from new plan
+             matchFound = true // break the loop
            }
          }
          if (!matchFound) { // if oldPlan doesn't contain any more assignments for the same TM, add the assignment from new plan
@@ -270,22 +249,12 @@ class JobManager extends UnicastRemoteObject with JobManagerInterface {
       ipRate: Int,
       opRate: Int
   ) = {
-    // counter = counter + 1
     println("Received report from " + id)
     taskManagers(id).numSlots = numSlots
     taskManagers(id).latenciesToSelf = latenciesToSelf
     taskManagers(id).bandwidthsToSelf = bandwidthsToSelf
     taskManagers(id).ipRate = ipRate
     taskManagers(id).opRate = opRate
-
-    // TODO: only call it once in a while not all the time new data comes in
-    // TODO: implement actual parallelism (need to increase or decrease, scale up or down)
-    // if (counter == 3) {
-    //   for (i <- taskManagers.indices) {
-    //     println(taskManagers(i).bandwidthsToSelf.mkString(", "))
-    //   }
-    //   reconfigurationManager.solveILP(taskManagers, 1.0.toFloat, alpha)
-    // }
   }
 }
 

@@ -1,4 +1,4 @@
-// package jobmanager
+package jobmanager
 
 import scala.collection.mutable.ArrayBuffer
 import optimus.optimization._
@@ -10,6 +10,7 @@ import optimus.optimization.model.MPConstraint
 import optimus.algebra.Expression
 import optimus.algebra.ConstraintRelation
 import optimus.algebra.Zero
+import taskmanager.TaskManagerInfo
 
 // import jobmanager.TaskManagerInfo
 

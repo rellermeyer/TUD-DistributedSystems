@@ -2,6 +2,7 @@
 
 import java.rmi.Naming
 import scala.collection.mutable.ArrayBuffer
+import jobmanager.JobManagerInterface
 
 object SampleQueryRunner {
     def main(args: Array[String]): Unit = {

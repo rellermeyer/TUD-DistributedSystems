@@ -5,7 +5,7 @@ import java.io.DataInputStream
 import java.io.DataOutputStream
 import java.io.EOFException
 import scala.collection.mutable.ArrayBuffer
-import executionplan.Task
+import jobmanager.Task
 
 class TaskSlot(val key: String) extends Runnable {
 
