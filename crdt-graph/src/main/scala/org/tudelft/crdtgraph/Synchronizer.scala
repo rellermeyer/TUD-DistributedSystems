@@ -2,56 +2,22 @@ package org.tudelft.crdtgraph
 
 import spray.json._
 import DefaultJsonProtocol._
-import org.tudelft.crdtgraph.DataStore._
-import org.tudelft.crdtgraph.OperationLogs._
-
-import akka.actor.ActorSystem
-import akka.http.scaladsl.Http
-import akka.stream.ActorMaterializer
 import akka.http.scaladsl.model._
-
 import org.tudelft.crdtgraph.WebServer.OperationLogFormat
-
-import org.tudelft.crdtgraph.DataStore
-import org.tudelft.crdtgraph.OperationLogs._
-
 import scala.collection.mutable.ArrayBuffer
-import scala.io.StdIn
-import scala.concurrent.Future
-import akka.http.scaladsl.client.RequestBuilding.Post
-import scala.concurrent.ExecutionContext.Implicits.global
-
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
-import akka.stream.ActorMaterializer
-import akka.Done
-import akka.http.scaladsl.server.Route
-import akka.http.scaladsl.model.StatusCodes
-import DataStore._
-import spray.json._
-
-import scala.io.StdIn
-import scala.concurrent.Future
-import spray.json.DefaultJsonProtocol
-import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
-import akka.http.scaladsl.server.Directives
-import org.tudelft.crdtgraph.OperationLogs._
-
-import scala.concurrent.Future
 import scala.util.{ Failure, Success }
 
-
 object Synchronizer {
-
   implicit val system = ActorSystem()
-  implicit val materializer = ActorMaterializer()
   import system.dispatcher
 
   var hard_coded_targets = ArrayBuffer[String]()
   var sleepTime = 10000
   var maxFailCount = 100
 
-  def configureCounters(counters: ArrayBuffer[Int], targets: ArrayBuffer[String]): Unit = {
+  def addMissingCounter(counters: ArrayBuffer[Int], targets: ArrayBuffer[String]): Unit = {
     if(targets.length > counters.length) {
       var diff = targets.length - counters.length
       for(i <- 1 to diff) {
@@ -66,19 +32,14 @@ object Synchronizer {
         var counters = ArrayBuffer[Int]()
         var failCount = ArrayBuffer[Int]()
         while(true) {
-          configureCounters(counters, targets)
-          configureCounters(failCount, targets)
+          addMissingCounter(counters, targets)
+          addMissingCounter(failCount, targets)
 
-          print("Test")
-            
           // Send updates to all targets. Decide on what framework to use
           for(i <- 0 to targets.length - 1) {
             var data = DataStore.ChangesQueue.drop(counters(i))
             var count = data.length
             var json = data.map(log => log.toJson(OperationLogFormat)).toVector.toJson(spray.json.DefaultJsonProtocol.vectorFormat)
-            println(targets(i))
-            println(counters(i))
-            println(json)
             val responseFuture = Http().singleRequest(
               HttpRequest(
                 method = HttpMethods.POST,
