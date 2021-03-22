@@ -36,30 +36,31 @@ object Synchronizer {
           addMissingCounter(failCount, targets)
 
           // Send updates to all targets. Decide on what framework to use
-          for(i <- 0 to targets.length - 1) {
-            var data = DataStore.ChangesQueue.drop(counters(i))
-            var count = data.length
-            var json = data.map(log => log.toJson(OperationLogFormat)).toVector.toJson(spray.json.DefaultJsonProtocol.vectorFormat)
-            val responseFuture = Http().singleRequest(
-              HttpRequest(
-                method = HttpMethods.POST,
-                uri = targets(i) + "/applychanges",
-                entity = HttpEntity(
-                  ContentTypes.`application/json`, json.toString()
+          for(i <- targets.indices) {
+            var data = DataStore.getLastChanges(counters(i))
+            if(data.nonEmpty) {
+              var json = data.map(log => log.toJson(OperationLogFormat)).toVector.toJson(spray.json.DefaultJsonProtocol.vectorFormat)
+              val responseFuture = Http().singleRequest(
+                HttpRequest(
+                  method = HttpMethods.POST,
+                  uri = targets(i) + "/applychanges",
+                  entity = HttpEntity(
+                    ContentTypes.`application/json`, json.toString()
+                  )
                 )
               )
-            )
 
-            responseFuture
-              .onComplete {
-                      case Success(res) => if(json != "[]") counters(i) += count else failCount(i) +=1
-                      case Failure(_)   => failCount(i) += 1
+              responseFuture
+                .onComplete {
+                  case Success(res) => counters(i) += data.length
+                  case Failure(_)   => failCount(i) += 1
 
-              }
-            Thread.sleep(10)
+                }
+              Thread.sleep(10)
+            }
           }
 
-          for(i <- 0 to targets.length - 1) {
+          for(i <- targets.indices) {
             if(failCount(i) > maxFailCount) {
               print("Target " + targets(i) + " has failed " + failCount(i) + " times to respond. Consider removing this target")
               // Might add code to drop the target
