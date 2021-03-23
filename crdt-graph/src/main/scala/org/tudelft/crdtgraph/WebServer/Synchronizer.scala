@@ -43,9 +43,9 @@ import scala.util.{ Failure, Success }
 
 object Synchronizer {
 
-  implicit val system = ActorSystem()
-  implicit val materializer = ActorMaterializer()
-  import system.dispatcher
+//  implicit val system = ActorSystem()
+////  implicit val materializer = ActorMaterializer()
+//  import system.dispatcher
 
   var hard_coded_targets = ArrayBuffer[String]()
   var sleepTime = 10000
@@ -60,7 +60,8 @@ object Synchronizer {
     }
   }
 
-  def synchronize(targets: ArrayBuffer[String]) = {
+  def synchronize(targets: ArrayBuffer[String], mainSystem: ActorSystem, mainMaterializer: ActorMaterializer) = {
+    import mainSystem.dispatcher
     new Thread(new Runnable {
       def run: Unit = {
         var counters = ArrayBuffer[Int]()
@@ -70,7 +71,7 @@ object Synchronizer {
           configureCounters(failCount, targets)
 
           print("Test")
-            
+
           // Send updates to all targets. Decide on what framework to use
           for(i <- 0 to targets.length - 1) {
             var data = DataStore.ChangesQueue.drop(counters(i))

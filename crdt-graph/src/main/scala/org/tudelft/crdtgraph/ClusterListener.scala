@@ -47,13 +47,13 @@ object ClusterListener {
     allAvailabeMembers -= cluster.selfMember
     // Create new string buffer
     val broadcastAddresses = ArrayBuffer[String]()
-    allAvailabeMembers.foreach(broadcastAddresses += "http://" + _.address.toString.substring(18,29) + "8080")
+    allAvailabeMembers.foreach(broadcastAddresses += "http://" + _.address.host.getOrElse("") + ":8080")
     broadcastAddresses
   }
 
   def waitForUp(mainSystem: ActorSystem): Unit = {
     implicit val cluster = Cluster(mainSystem)
-    while(cluster.state.members.filter(_.status == MemberStatus.Up).size == 0){
+    while(cluster.state.members.filter(_.status == MemberStatus.Up).size < 5){
       Thread.sleep(1000)
     }
   }

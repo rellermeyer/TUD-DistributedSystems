@@ -67,6 +67,7 @@ trait JsonSupport extends SprayJsonSupport with DefaultJsonProtocol {
 }
 
 object WebServer extends Directives with JsonSupport {
+  var normalMessage = "Synchronizer not running"
   // needed to run the route
   implicit val system = ActorSystem("crdt-graph")
   implicit val materializer = ActorMaterializer()
@@ -205,7 +206,8 @@ object WebServer extends Directives with JsonSupport {
               var message = "This is my address! \n"
               message += ClusterListener.getSelfAddress(system)
               message += "\nAnd these are the addresses I am broadcasting to: \n"
-              message += ClusterListener.getBroadcastAddresses(system)
+              message += ClusterListener.getBroadcastAddresses(system) + "\n"
+              message += normalMessage
 
               complete(message)
             }
@@ -219,7 +221,11 @@ object WebServer extends Directives with JsonSupport {
 
     ClusterListener.waitForUp(system)
 
-    Synchronizer.synchronize(ClusterListener.getBroadcastAddresses(system))
 
+    val addresses = ClusterListener.getBroadcastAddresses(system)
+    Synchronizer.synchronize(addresses, system, materializer)
+
+
+    normalMessage = "Synchronizer running \n" + addresses
   }
 }
