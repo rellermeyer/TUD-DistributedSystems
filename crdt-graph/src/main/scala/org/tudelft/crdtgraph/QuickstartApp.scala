@@ -197,7 +197,7 @@ object WebServer extends Directives with JsonSupport {
        //Route for debug purposes
         get {
           pathPrefix("debug-get-changes")  {
-            var changes = DataStore.ChangesQueue.toVector
+            var changes = DataStore.getLastChanges(0).toVector
             complete(changes.map( log => log.toJson))
           }
         } ~

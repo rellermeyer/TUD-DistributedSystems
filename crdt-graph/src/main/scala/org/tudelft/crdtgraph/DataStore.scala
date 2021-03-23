@@ -11,10 +11,13 @@ object DataStore {
   private val lock = new ReentrantLock()
 
   //Dictionary of vertices indexed by vertex name
-  val Vertices = new HashMap[String, Vertex]()
+  private val Vertices = new HashMap[String, Vertex]()
 
   //Collection of changes used to synchronize the state between instances.
-  val ChangesQueue = ArrayBuffer[OperationLog]()
+  private val ChangesQueue = ArrayBuffer[OperationLog]()
+
+  //Collection of ids of changes already applied to the dataset. Used in lookup in applyChanges.
+  private val ChangesQueueIds = HashSet[String]()
 
   //Adds the specified vertex to the directed graph. Adding the same vertex multiple times will generate new UUIDs for it.
   def addVertex(vertexName: String): Boolean = {
@@ -44,7 +47,7 @@ object DataStore {
     else {
       Vertices(cmd.vertexName).addId(cmd.vertexUuid)
     }
-    ChangesQueue += cmd
+    addChange(cmd)
   }
 
   //Adds the specified arc to the graph. Adding the same arc multiple times will generate new UUIDs for it.
@@ -73,12 +76,12 @@ object DataStore {
       throw new IllegalArgumentException //coding error, should always receive addArc
     }
     if (!doLookUpVertex(cmd.sourceVertex)) {
-      ChangesQueue += cmd
+      addChange(cmd)
       return //no source vertex, this is already check in addArc. If this is executed from synchronization removeVertex takes precedence
     }
 
     Vertices(cmd.sourceVertex).addArc(cmd.targetVertex, cmd.arcUuid)
-    ChangesQueue += cmd
+    addChange(cmd)
   }
 
   //Removes the vertex form the graph. It will also remove all arcs starting in that vertex.
@@ -109,7 +112,7 @@ object DataStore {
     }
 
     if (!doLookUpVertex(cmd.vertexName)) {
-      ChangesQueue += cmd
+      addChange(cmd)
       return //Already removed / nothing to remove
     }
 
@@ -124,7 +127,7 @@ object DataStore {
     if (Vertices(cmd.vertexName).toBeRemoved()) {
       Vertices.remove(cmd.vertexName)
     }
-    ChangesQueue += cmd
+    addChange(cmd)
   }
 
   //Removes an arc from the graph.
@@ -132,7 +135,7 @@ object DataStore {
   def removeArc(arcSourceVertex: String, arcTargetVertex: String): Boolean = {
     lock.lock()
     try {
-      if (!doLookUpVertex(arcSourceVertex) && Vertices(arcSourceVertex).isConnectedTo(arcTargetVertex)) {
+      if (!(doLookUpVertex(arcSourceVertex) && Vertices(arcSourceVertex).isConnectedTo(arcTargetVertex))) {
         return false //Already removed - return false to the API
       }
 
@@ -153,13 +156,13 @@ object DataStore {
     if (cmd.opType != OperationType.removeArc) {
       throw new IllegalArgumentException //coding error, should always receive removeVertex
     }
-    if (!doLookUpVertex(cmd.sourceVertex) && Vertices(cmd.sourceVertex).isConnectedTo(cmd.targetVertex)) {
-      ChangesQueue += cmd
+    if (!(doLookUpVertex(cmd.sourceVertex) && Vertices(cmd.sourceVertex).isConnectedTo(cmd.targetVertex))) {
+      addChange(cmd)
       return //Already removed / nothing to remove
     }
 
     Vertices(cmd.sourceVertex).removeArcs(cmd.targetVertex, cmd.arcUuids)
-    ChangesQueue += cmd
+    addChange(cmd)
   }
 
   //Executes the collection of changes received for another instance.
@@ -167,7 +170,7 @@ object DataStore {
     lock.lock()
     try {
       changes.foreach((changeLog: OperationLog) => {
-        if (!ChangesQueue.exists((x: OperationLog) => x.operationUuid == changeLog.operationUuid)) {
+        if (!ChangesQueueIds.contains(changeLog.operationUuid)) {
           changeLog.opType match {
             case OperationType.addVertex => {
               applyAddVertex(changeLog)
@@ -222,4 +225,23 @@ object DataStore {
   private def doLookupArc(arcSourceVertex: String, arcTargetVertex: String): Boolean = {
     return doLookUpVertex(arcSourceVertex) && doLookUpVertex(arcTargetVertex) && Vertices(arcSourceVertex).isConnectedTo(arcTargetVertex)
   }
+
+  //Returns a collection of changes contained in ChangesQueue. You can skip the first n changes.
+  def getLastChanges(skip: Int): Seq[OperationLog] = {
+    lock.lock()
+    try {
+      return ChangesQueue.drop(skip).clone()
+    }
+    finally {
+      lock.unlock()
+    }
+
+  }
+
+  //Internal. Adds a change to both collections.
+  private def addChange(operation: OperationLog): Unit = {
+    ChangesQueue += operation
+    ChangesQueueIds += operation.operationUuid
+  }
+
 }
