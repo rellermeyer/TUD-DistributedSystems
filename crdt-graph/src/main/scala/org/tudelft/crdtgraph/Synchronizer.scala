@@ -3,15 +3,18 @@ package org.tudelft.crdtgraph
 import spray.json._
 import DefaultJsonProtocol._
 import akka.http.scaladsl.model._
-import org.tudelft.crdtgraph.WebServer.OperationLogFormat
+import org.tudelft.crdtgraph.WebServer.{OperationLogFormat}
+
 import scala.collection.mutable.ArrayBuffer
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
-import scala.util.{ Failure, Success }
+
+import scala.util.{Failure, Success}
+import akka.stream.ActorMaterializer
 
 object Synchronizer {
-  implicit val system = ActorSystem()
-  import system.dispatcher
+//  implicit val system = ActorSystem()
+//  import system.dispatcher
 
   var hard_coded_targets = ArrayBuffer[String]()
   var sleepTime = 10000
@@ -26,7 +29,9 @@ object Synchronizer {
     }
   }
 
-  def synchronize(targets: ArrayBuffer[String]) = {
+  def synchronize(targets: ArrayBuffer[String], mainSystem: ActorSystem, mainMaterializer: ActorMaterializer) = {
+    import mainSystem.dispatcher
+    implicit var system = mainSystem
     new Thread(new Runnable {
       def run: Unit = {
         var counters = ArrayBuffer[Int]()
@@ -35,10 +40,13 @@ object Synchronizer {
           addMissingCounter(counters, targets)
           addMissingCounter(failCount, targets)
 
+          println("Begin synchronization")
           // Send updates to all targets. Decide on what framework to use
           for(i <- targets.indices) {
             var data = DataStore.getLastChanges(counters(i))
+            println("Synchronizing with: " + targets(i))
             if(data.nonEmpty) {
+              println("Exchanging "+ data.length.toString + "operations")
               var json = data.map(log => log.toJson(OperationLogFormat)).toVector.toJson(spray.json.DefaultJsonProtocol.vectorFormat)
               val responseFuture = Http().singleRequest(
                 HttpRequest(
@@ -57,12 +65,14 @@ object Synchronizer {
 
                 }
               Thread.sleep(10)
+            } else {
+              println("No new changes")
             }
           }
 
           for(i <- targets.indices) {
             if(failCount(i) > maxFailCount) {
-              print("Target " + targets(i) + " has failed " + failCount(i) + " times to respond. Consider removing this target")
+              println("Target " + targets(i) + " has failed " + failCount(i) + " times to respond. Consider removing this target")
               // Might add code to drop the target
             }
           }
