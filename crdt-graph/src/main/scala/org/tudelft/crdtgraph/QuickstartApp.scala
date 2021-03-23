@@ -207,7 +207,6 @@ object WebServer extends Directives with JsonSupport {
               message += ClusterListener.getSelfAddress(system)
               message += "\nAnd these are the addresses I am broadcasting to: \n"
               message += ClusterListener.getBroadcastAddresses(system) + "\n"
-              message += normalMessage
 
               complete(message)
             }
@@ -219,13 +218,11 @@ object WebServer extends Directives with JsonSupport {
     val bindingFuture = Http().bindAndHandle(route, "0.0.0.0", port)
     println(s"Server online at http://localhost:" + port)
 
-    ClusterListener.waitForUp(system)
+//    ClusterListener.waitForUp(system)
 
 
-    val addresses = ClusterListener.getBroadcastAddresses(system)
-    Synchronizer.synchronize(addresses, system, materializer)
+    Synchronizer.synchronize(system, materializer)
 
 
-    normalMessage = "Synchronizer running \n" + addresses
   }
 }
