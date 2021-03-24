@@ -27,7 +27,6 @@ class DistributedSystem(numContainers: Int, latencies: Seq[Int], newFailProb: Do
       var newContainers: Seq[Container] = Seq.empty[Container]
       for (l <- latencies) {
         newContainers = newContainers :+ Container(l)
-        println("Created container with latency " + l)
       }
       Right(newContainers)
     }
