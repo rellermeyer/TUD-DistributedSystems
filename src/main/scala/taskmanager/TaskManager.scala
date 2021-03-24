@@ -105,6 +105,16 @@ class TaskManager(val id: Int)
     }
     return taskSlot
   }
+
+  def terminateTask(jobID: Int, taskID: Int): Int = {
+    val taskSlot = getTaskSlot(jobID, taskID)
+    taskSlot.terminateFlag = true
+    return taskSlot.state
+  }
+
+  def suspendTask(jobID: Int, taskID: Int) = {
+    // TODO: implement
+  }
 }
 
 case class TaskManagerInfo(
@@ -114,5 +124,6 @@ case class TaskManagerInfo(
     var latenciesToSelf: Array[Latency],
     var bandwidthsToSelf: Array[BW],
     var ipRate: Float,
-    var opRate: Float
+    var opRate: Float,
+    var prRate: Float
 )

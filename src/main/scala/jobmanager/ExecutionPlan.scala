@@ -41,10 +41,9 @@ object ExecutionPlan {
                    parallelisms: Array[Int],
                    taskIDCounters: ArrayBuffer[Int]): Array[ArrayBuffer[(Int, Int)]] = {
         // Plan holds for each operator the tuple (TM, TaskID)
-        // length of ops + 1 row for data sources
-        val plan = Array.fill(ops.length + 1)(ArrayBuffer.empty[(Int, Int)])
+        val plan = Array.fill(ops.length + 1)(ArrayBuffer.empty[(Int, Int)]) // 1 extra row for data sources
 
-        val dataSources = Array(0) // indices of taskManagers who will provide data
+        val dataSources = Array(3) // indices of taskManagers who will provide data
 
         // Add data sources to plan
         dataSources.foreach(x => {
@@ -53,26 +52,27 @@ object ExecutionPlan {
         })
 
         // Add operators to plan
-        for (op <- ops.indices) {            // for each operator
-            for (tm <- taskManagers.indices) { // for each task manager
+        for (op <- ops.indices) {                             // for each operator
+            var par = parallelisms(op)
+            for (tm <- taskManagers.indices) {                // for each task manager
 
                 // While current operator still needs tasks assigned
                 //  AND current task manager still has available slots
-                while (parallelisms(op) > 0 && ps(tm) > 0) {
+                while (par > 0 && ps(tm) > 0) {
                     plan(op + 1) += ((tm, taskIDCounters(tm))) // add to plan
-                    taskIDCounters(tm) += 1      // increment task counter for current TM
-                    ps(tm) -= 1                  // decrement number of available slots for current TM
-                    parallelisms(op) -= 1        // decrement number of times current operator still needs to be assigned
+                    taskIDCounters(tm) += 1                    // increment task counter for current TM
+                    ps(tm) -= 1                                // decrement number of available slots for current TM
+                    par -= 1                                   // decrement number of times current operator still needs to be assigned
                 }
             }
         }
-
-        // Print plan
-        for (i <- plan.indices) {
-            println("plan(i).mkString(", ")")
-        }
-
         return plan
+    }
+
+    def printPlan(plan: Array[ArrayBuffer[(Int, Int)]]) = {
+        for (i <- plan.indices) {
+            println(plan(i).mkString(" "))
+        }
     }
 }
 

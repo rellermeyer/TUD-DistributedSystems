@@ -38,8 +38,8 @@ def main(argv):
                     latencies[str(j)] = random.uniform(1, 3)
                     bws[str(j)] = random.uniform(500, 3000)
                 else:
-                    latencies[str(j)] = 0
-                    bws[str(j)] = 0
+                    latencies[str(j)] = float(0)
+                    bws[str(j)] = 999999.0 # something bigger than the random prRate we generate
 
             data[str(i)]['latencies'] = latencies
             data[str(i)]['bandwidth'] = bws

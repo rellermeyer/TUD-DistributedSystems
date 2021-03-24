@@ -13,6 +13,9 @@ class TaskSlot(val key: String) extends Runnable {
   var from: ArrayBuffer[DataInputStream] = ArrayBuffer.empty[DataInputStream]
   var to: ArrayBuffer[DataOutputStream] = ArrayBuffer.empty[DataOutputStream]
 
+  var terminateFlag: Boolean = false
+  var state: Int = 0
+
   def run(): Unit = {
     println("Running Taskslot for (jobID, taskID): (" + task.jobID + ", " + task.taskID + ")")
 
@@ -48,7 +51,7 @@ class TaskSlot(val key: String) extends Runnable {
     println("Map...")
     var inputIndex = 0
     var outputIndex = 0
-    while (from.length > 0) {
+    while (from.length > 0 && !terminateFlag) {
       try {
         outputIndex = (outputIndex + 1) % to.length
         inputIndex = (inputIndex + 1) % from.length
@@ -70,14 +73,13 @@ class TaskSlot(val key: String) extends Runnable {
 
   def reduce() = {
     println("Reduce...")
-    var sum = 0
     var inputIndex = 0
-    while (from.length > 0) {
+    while (from.length > 0 && !terminateFlag) {
       try {
         inputIndex = (inputIndex + 1) % from.length // try next inputstream
 
         var value: Int = from(inputIndex).readInt()
-        sum += value
+        state += value
         // apply all bottlenecks here
       }
       catch {
@@ -88,13 +90,13 @@ class TaskSlot(val key: String) extends Runnable {
       }
     }
     // Reduce should have at most 1 outputstream!!!!! Write correct execution plans!!!!
-    if (to.length > 0) {
-      to(0).writeInt(sum)
+    if (to.length == 1) {
+      to(0).writeInt(state)
       to(0).flush()
       to(0).close()
     }
     else { // sink
-      println("Result: " + sum)
+      println("Result: " + state)
     }
   }
 

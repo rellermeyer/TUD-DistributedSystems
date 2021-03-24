@@ -27,6 +27,7 @@ object ILPTester {
           Array.empty[Latency],
           Array.empty[BW],
           0,
+          0,
           0
         )
       )
