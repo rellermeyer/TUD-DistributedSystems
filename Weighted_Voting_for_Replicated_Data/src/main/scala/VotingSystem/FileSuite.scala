@@ -6,12 +6,11 @@ import scala.util.control.Breaks.{break, breakable}
 
 class FileSuite (fileSystem: DistributedSystem, newSuiteId: Int){
 
+  case class FailResult(reason:String)
+
   /**
    * constructor
    */
-  case class FailResult(reason:String)
-
-  //private val _fileSystem: DistributedSystem = newFileSystem
   private val _suiteId: Int = newSuiteId
   private val _fsResp:  Either[fileSystem.FailResult, FileSystemResponse] = fileSystem.collectRepresentatives(_suiteId)
 
@@ -20,9 +19,63 @@ class FileSuite (fileSystem: DistributedSystem, newSuiteId: Int){
    */
   def suiteId: Int = _suiteId
 
-  //TODO: kan dit weg :P?
-  //def suiteR: Int = _fsResp.findLatest().prefix.r
-  //def suiteW: Int = _fsResp.findLatest().prefix.w
+  /**
+   * Returning the latest container response, and checks if there are responses at all
+   * @return latest containerResponse
+   */
+  def inquiry(fsResp: FileSystemResponse): Either[FailResult, ContainerResponse] = {
+    if (fsResp.containerResponses.nonEmpty) {
+      Right(fsResp.containerResponses.maxBy(_.prefix.versionNumber))
+    }
+    else {
+      Left(FailResult("findLatest failed: no container responses present in file system response"))
+    }
+  }
+
+
+  /**
+   * Distinguishes the containers that meet the read quorum and are therefore readCandidates
+   * @param r
+   * @param versionNumber
+   * @return readCandidates
+   */
+  def findReadQuorum(fsResp: FileSystemResponse, r: Int, versionNumber: Int): Either[FailResult, Seq[ContainerResponse]] = {
+    val currentReps: Seq[ContainerResponse] = fsResp.containerResponses.sortBy(_.latency)
+    var readCandidates: Seq[ContainerResponse] = Seq.empty[ContainerResponse]
+    var totalWeight: Int = 0
+
+    for (rep <- currentReps) {
+      readCandidates = readCandidates :+ rep
+      totalWeight += rep.weight
+      if (totalWeight >= r) {
+        return Right(readCandidates)
+      }
+    }
+    Left(FailResult("findReadQuorum failed: no quorum present"))
+  }
+
+  // TODO: does this work as intended w.r.t. up to date copies?
+  /**
+   * Distinguishes the containers that meet the write quorum and are therefore writeCandidates
+   * @param w
+   * @param versionNumber
+   * @return writeCandidates
+   */
+  def findWriteQuorum(fsResp: FileSystemResponse, w: Int, versionNumber: Int): Either[FailResult, Seq[ContainerResponse]] = {
+    val currentReps: Seq[ContainerResponse] = fsResp.containerResponses.filter(_.prefix.versionNumber == versionNumber).sortBy(_.latency)
+    var writeCandidates: Seq[ContainerResponse] = Seq.empty[ContainerResponse]
+    var totalWeight: Int = 0
+
+    for (rep <- currentReps) {
+      writeCandidates = writeCandidates :+ rep
+      totalWeight += rep.weight
+      if (totalWeight >= w) {
+        return Right(writeCandidates)
+      }
+    }
+    Left(FailResult("findWriteQuorum failed: no quorum present")) //TODO: own error class?
+  }
+
 
   def createFileSuite(suiteId: Int, suiteR: Int, suiteW: Int, repWeights: Seq[Int]): Either[FailResult, Unit] = {
     val result = fileSystem.createRepresentatives(suiteId, suiteR, suiteW, repWeights)
@@ -52,6 +105,7 @@ class FileSuite (fileSystem: DistributedSystem, newSuiteId: Int){
     }
   }
 
+
   /**
    * Function that finds the most suitable read response by first checking all container responses,
    * then computing the reading quorum, check if the container responses meet the reading quorum
@@ -59,17 +113,16 @@ class FileSuite (fileSystem: DistributedSystem, newSuiteId: Int){
    * @param
    * @return result
    */
-
   def readSuite(): Either[FailResult, (Int, Int)] = {
     _fsResp match {
       case Left(f) => Left(FailResult("suiteRead failed:\n" + f.reason))
       case Right(responses) => {
-        val current = responses.findLatest()
+        val current = inquiry(responses)
 
         current match {
           case Left(f) => Left(FailResult("suiteRead failed:\n" + f.reason))
           case Right(current) => {
-            val quorum = responses.findReadQuorum(current.prefix.r, current.prefix.versionNumber)
+            val quorum = findReadQuorum(responses, current.prefix.r, current.prefix.versionNumber)
 
             quorum match {
               case Left(f) => Left(FailResult("suiteRead failed:\n" + f.reason))
@@ -99,7 +152,6 @@ class FileSuite (fileSystem: DistributedSystem, newSuiteId: Int){
   }
 
 
-
   /**
    * Function that finds the most suitable write response by first checking all container responses,
    * then computing the writing quorum, check if the container responses meet the writing quorum
@@ -111,12 +163,12 @@ class FileSuite (fileSystem: DistributedSystem, newSuiteId: Int){
     _fsResp match {
       case Left(f) => Left(FailResult("suiteWrite failed:\n" + f.reason))
       case Right(responses) => {
-        val current = responses.findLatest()
+        val current = inquiry(responses)
 
         current match {
           case Left(f) => Left(FailResult("suiteWrite failed:\n" + f.reason))
           case Right(current) => {
-            val quorum = responses.findWriteQuorum(current.prefix.w, current.prefix.versionNumber)
+            val quorum = findWriteQuorum(responses, current.prefix.w, current.prefix.versionNumber)
 
             quorum match {
               case Left(f) => Left(FailResult("suiteWrite failed:\n" + f.reason))

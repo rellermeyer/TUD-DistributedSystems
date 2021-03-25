@@ -29,7 +29,8 @@ object Experiment {
     val file = new BufferedWriter(new FileWriter("C:\\Users\\blok_\\Desktop\\Results.csv"))
     val csvWriter = new CSVWriter(file)
     val records = new ListBuffer[Array[String]]()
-    val csvColumns = Array("container failure probability", "read proportion", "r", "w", "successful calls", "failed calls", "average latency")
+    val csvColumns = Array("container failure probability", "read proportion", "r", "w", "successful call percentage",
+      "failed call percentage", "average latency")
     records += csvColumns
 
     for (fProb <- failureProbs; readProp <- readProportions; rw <- suiteRWPairs) {
@@ -73,9 +74,13 @@ object Experiment {
       }
       val avgLatency: Double = totalLatency.toDouble/successCount.toDouble
       println("failure probability: " + fProb + ", read proportion: " + readProp + ", r: " + rw._1 + ", w: " + rw._2 +
-        ", successes: " + successCount + ", failures: " + failCount + ", avg latency: " + avgLatency)
+        ", successes: " + (successCount.toDouble/numCalls.toDouble)*100.0 + ", failures: "
+        + (failCount.toDouble/numCalls.toDouble)*100.0 + ", avg latency: " + avgLatency)
+
+      val successPercentage = (successCount.toDouble / numCalls.toDouble) * 100.0
+      val failPercentage = (failCount.toDouble / numCalls.toDouble) * 100.0
       records += Array(fProb.toString, readProp.toString, rw._1.toString, rw._2.toString,
-        successCount.toString , failCount.toString , avgLatency.toString)
+        successPercentage.toString , failPercentage.toString , avgLatency.toString)
     }
     try {
       csvWriter.writeAll(records.toList.asJava)
