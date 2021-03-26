@@ -69,6 +69,19 @@ object ExecutionPlan {
         return plan
     }
 
+    def comparePlans(plan1: Array[ArrayBuffer[(Int, Int)]], plan2: Array[ArrayBuffer[(Int, Int)]]):Boolean = {
+        for (opIndex <- 0 until plan1.size) {
+            for (asIndex <- 0 until plan1(opIndex).size) {
+                var operator1: (Int, Int) = plan1(opIndex)(asIndex)
+                var operator2: (Int, Int) = plan2(opIndex)(asIndex)
+                if (operator1._1 != operator2._1) {
+                    return false
+                }
+            }
+        }
+        true
+    }
+
     def printPlan(plan: Array[ArrayBuffer[(Int, Int)]]) = {
         for (i <- plan.indices) {
             println(plan(i).mkString(" "))

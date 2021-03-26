@@ -13,9 +13,10 @@ import random
 def main(argv):
     numTaskManagers = 1
     numConfigs = 1
+    numSlots = 2
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'n:c:', ['n=', 'c='])
+        opts, args = getopt.getopt(sys.argv[1:], 'n:c:s:', ['n=', 'c=', 's='])
     except getopt.GetoptError:
         sys.exit(2)
 
@@ -24,8 +25,11 @@ def main(argv):
             numTaskManagers = int(arg)
         if opt == '-c':
             numConfigs = int(arg)
+        if opt == '-s':
+            numSlots = int(arg)
 
     configs = []
+    assignedSlots = 0
     for i in range(0, numConfigs):
         data = {}
         # Simulate some random bandwidth and latency
@@ -45,7 +49,11 @@ def main(argv):
             data[str(i)]['bandwidth'] = bws
             data[str(i)]['ipRate'] = random.uniform(0, 1000)
             data[str(i)]['opRate'] = random.uniform(0, 500)
-            data[str(i)]['numSlots'] = random.randint(1, 10)
+            if (i != numConfigs-1):
+                data[str(i)]['numSlots'] = random.randint(0, numSlots)
+                assignedSlots += data[str(i)]['numSlots']
+            else:
+                data[str(i)]['numSlots'] = random.randint(max(0, numSlots - assignedSlots), numSlots)
 
         configs.append(data)
 
@@ -55,3 +63,4 @@ def main(argv):
 
 if __name__ == "__main__":
     main(sys.argv[1:])
+ 

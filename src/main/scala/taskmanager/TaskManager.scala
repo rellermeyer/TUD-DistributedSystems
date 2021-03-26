@@ -36,9 +36,9 @@ class TaskManager(val id: Int)
         val inputStream = new DataInputStream(inputSocket.getInputStream())
         val jobID = inputStream.readInt() // jobID communicated through socket
         val taskID = inputStream.readInt() // taskID communicated through socket
-        println(
-          "Connected inputsocket for (jobID, taskID): (" + jobID + ", " + taskID + ")"
-        )
+        // println(
+        //   "Connected inputsocket for (jobID, taskID): (" + jobID + ", " + taskID + ")"
+        // )
         var taskSlot = getTaskSlot(jobID, taskID)
         // add the inputstream to the taskslot
         taskSlot.from += new DataInputStream(inputSocket.getInputStream())
@@ -53,9 +53,8 @@ class TaskManager(val id: Int)
     */
   def assignTask(task: Task): Unit = {
     println(
-      "Received task for (jobID, taskID): (" + task.jobID + ", " + task.taskID + ")"
+      "Received task for (tm, taskID): (" + id + ", " + task.taskID + ")"
     )
-
     var taskSlot = getTaskSlot(task.jobID, task.taskID)
     taskSlot.task = task
 
@@ -70,15 +69,20 @@ class TaskManager(val id: Int)
       )
       taskSlot.to += dos // add the outputstream to the taskslot
     }
-    // Try to run the task slot.
-    runTaskSlot(task.jobID, task.taskID)
+    if (taskSlot.terminateFlag) { // if the task is a suspended data operator
+      taskSlot.resume() // resume data output
+    }
+    else {
+      // Try to run the task slot.
+      runTaskSlot(task.jobID, task.taskID)
+    }
   }
 
   /**
     * Runs the TaskSlot if all inputs and outputs are connected.
     */
   def runTaskSlot(jobID: Int, taskID: Int) = synchronized {
-    val slot = getTaskSlot(jobID, taskID)
+    var slot = getTaskSlot(jobID, taskID)
 
     if (
       slot.task != null &&
@@ -98,7 +102,7 @@ class TaskManager(val id: Int)
 
     if (taskSlot == null) {
       println(
-        "Creating new taskslot for (jobID, taskID): (" + jobID + ", " + taskID + ")"
+        id + ": Creating new taskslot for (jobID, taskID): (" + jobID + ", " + taskID + ")"
       )
       taskSlot = new TaskSlot(key)
       taskSlots.put(key, taskSlot)
@@ -106,14 +110,10 @@ class TaskManager(val id: Int)
     return taskSlot
   }
 
-  def terminateTask(jobID: Int, taskID: Int): Int = {
+  def terminateTask(jobID: Int, taskID: Int): Unit = {
+    println(id + ": Terminating (jobID, taskID) = (" + jobID + ", " + taskID + ")")
     val taskSlot = getTaskSlot(jobID, taskID)
-    taskSlot.terminateFlag = true
-    return taskSlot.state
-  }
-
-  def suspendTask(jobID: Int, taskID: Int) = {
-    // TODO: implement
+    taskSlot.stop()
   }
 }
 

@@ -3,7 +3,6 @@ package jobmanager
 import scala.collection.mutable.ArrayBuffer
 import optimus.optimization._
 import optimus.optimization.enums.SolverLib
-import optimus.optimization.model.MPFloatVar
 import optimus.algebra.Constraint
 import optimus.optimization.model.MPIntVar
 import optimus.optimization.model.MPConstraint
@@ -27,17 +26,6 @@ object ReconfigurationManager {
       prl: Float // Desired parallelism : The desired sum of all slots of all data centers
   ): Array[Int] = {
 
-    for (i <- taskManagers.indices) {
-      println("(id) " + taskManagers(i).id)
-      println("input rate : " + taskManagers(i).ipRate)
-      println("output rate : " + taskManagers(i).opRate)
-      println("Available slots : " + taskManagers(i).numSlots)
-      println("Number of tasks deployed : " + taskManagers(i).numTasksDeployed)
-      println(taskManagers(i).bandwidthsToSelf.mkString(", "))
-      println(taskManagers(i).latenciesToSelf.mkString(", "))
-      print("\n\n\n")
-    }
-
     implicit val solver = MPModel(SolverLib.oJSolver)
     println("ILP Solver started")
     val m = taskManagers.length
@@ -49,9 +37,9 @@ object ReconfigurationManager {
     var LHS_constr4: Expression = Zero
     var constr = Vector.empty[MPConstraint]
 
-    var numTasks = new Array[MPFloatVar](taskManagers.length)
+    var numTasks = new Array[MPIntVar](taskManagers.length)
     for (i <- 0 until m) {
-      val currP = MPFloatVar.positive("p" + i.toString())
+      val currP = MPIntVar("p" + i.toString(), 0 to infinity)
       numTasks(i) = currP
       var coef: Float = 0
 
@@ -126,7 +114,6 @@ object ReconfigurationManager {
     val RHS_constr4: Expression = prl
     constr = constr :+ add(LHS_constr4 := RHS_constr4)
 
-    println("Before MINIMIZATION")
     // Minimize objective function
     minimize(pVals)
 

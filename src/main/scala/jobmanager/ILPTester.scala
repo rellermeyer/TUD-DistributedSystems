@@ -1,8 +1,8 @@
-package taskmanager
+package jobmanager
 
 import scala.collection.mutable.ArrayBuffer
 import scala.util.Random
-import jobmanager._
+import taskmanager._
 
 object ILPTester {
 
