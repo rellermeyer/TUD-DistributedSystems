@@ -17,33 +17,30 @@ class TaskManager(val id: Int)
     extends UnicastRemoteObject
     with TaskManagerInterface {
 
-  val taskSlots = scala.collection.mutable.Map[String, TaskSlot]()
+  val taskSlots = scala.collection.mutable.Map[Int, TaskSlot]() // key = taskID
+  val bws = scala.collection.mutable.Map[Int, Array[Int]]()
 
   // ServerSocket used for INCOMING data
   val portOffset = 9000
   val port = 9000 + id
   val serverSocket = new ServerSocket(port)
-  println("Server socket started on port: " + port)
+  printWithID("Server socket started on port: " + port)
 
   /**
     * Listens for socket connections from upstream TaskSlots.
-    * First reads jobID and taskID to match with task received in assignTask() 
+    * First reads taskID to match with task received in assignTask() 
     */
   new Thread {
     override def run {
       while (true) {
         val inputSocket = serverSocket.accept()
         val inputStream = new DataInputStream(inputSocket.getInputStream())
-        val jobID = inputStream.readInt() // jobID communicated through socket
         val taskID = inputStream.readInt() // taskID communicated through socket
-        // println(
-        //   "Connected inputsocket for (jobID, taskID): (" + jobID + ", " + taskID + ")"
-        // )
-        var taskSlot = getTaskSlot(jobID, taskID)
+        var taskSlot = getTaskSlot(taskID)
         // add the inputstream to the taskslot
         taskSlot.from += new DataInputStream(inputSocket.getInputStream())
         // try to run the task slot
-        runTaskSlot(jobID, taskID)
+        runTaskSlot(taskID)
       }
     }
   }.start()
@@ -51,38 +48,36 @@ class TaskManager(val id: Int)
   /**
     * rmi call from JobManager. Creates socket connections to downstream TaskSlots.
     */
-  def assignTask(task: Task): Unit = {
-    println(
-      "Received task for (tm, taskID): (" + id + ", " + task.taskID + ")"
-    )
-    var taskSlot = getTaskSlot(task.jobID, task.taskID)
+  def assignTask(task: Task, initialState: Int, bws: Array[Int]): Unit = {
+    printWithID("Received task " + task.taskID)
+    // printWithID("from: " + task.from.mkString(" "))
+    // printWithID("to :" + task.to.mkString(" "))
+    var taskSlot = getTaskSlot(task.taskID)
     taskSlot.task = task
+    if (initialState != -1) { // special value to indicate using the old state
+      taskSlot.state = initialState
+    }
+    taskSlot.bws = bws
+    this.bws.put(task.taskID, bws)
+    
+    printWithID("BW SIZE (task " + task.taskID + "): " + bws.size)
 
     // Set output streams (If any. Could also be sink)
     for (i <- task.to.indices) {
       val outputSocket = new Socket("localhost", portOffset + task.to(i))
       val dos = new DataOutputStream(outputSocket.getOutputStream())
-      // let receiver know the jobID and HIS corresponding taskID
-      dos.writeInt(task.jobID)
-      dos.writeInt(
-        task.toTaskIDs(i)
-      )
-      taskSlot.to += dos // add the outputstream to the taskslot
+      dos.writeInt(task.toTaskIDs(i))                                   // let receiver know his corresponding taskID
+      taskSlot.to += dos                                                // add the outputstream to the taskslot
     }
-    if (taskSlot.terminateFlag) { // if the task is a suspended data operator
-      taskSlot.resume() // resume data output
-    }
-    else {
-      // Try to run the task slot.
-      runTaskSlot(task.jobID, task.taskID)
-    }
+
+    runTaskSlot(task.taskID)                                            // Try to run the task slot.
   }
 
   /**
     * Runs the TaskSlot if all inputs and outputs are connected.
     */
-  def runTaskSlot(jobID: Int, taskID: Int) = synchronized {
-    var slot = getTaskSlot(jobID, taskID)
+  def runTaskSlot(taskID: Int) = synchronized {
+    var slot = getTaskSlot(taskID)
 
     if (
       slot.task != null &&
@@ -96,31 +91,37 @@ class TaskManager(val id: Int)
   /**
     * Creates a new TaskSlot and returns it, or returns an existing TaskSlot.
     */
-  def getTaskSlot(jobID: Int, taskID: Int): TaskSlot = synchronized {
-    val key = jobID + "" + taskID
-    var taskSlot = taskSlots.getOrElse(key, null)
+  def getTaskSlot(taskID: Int): TaskSlot = synchronized {
+    var taskSlot = taskSlots.getOrElse(taskID, null)
 
     if (taskSlot == null) {
-      println(
-        id + ": Creating new taskslot for (jobID, taskID): (" + jobID + ", " + taskID + ")"
-      )
-      taskSlot = new TaskSlot(key)
-      taskSlots.put(key, taskSlot)
+      // printWithID("Creating new taskslot for taskID: " + taskID)
+      taskSlot = new TaskSlot(id)
+      taskSlots.put(taskID, taskSlot)
     }
     return taskSlot
   }
 
-  def terminateTask(jobID: Int, taskID: Int): Unit = {
-    println(id + ": Terminating (jobID, taskID) = (" + jobID + ", " + taskID + ")")
-    val taskSlot = getTaskSlot(jobID, taskID)
+  def terminateTask(taskID: Int): Unit = {
+    printWithID("Terminating task " + taskID)
+    val taskSlot = taskSlots.get(taskID).get                            // should always exist
     taskSlot.stop()
   }
+
+  def migrate(taskID: Int, to: (Int, Int), task: Task, bws: Array[Int]): Unit = {
+    val tm = Naming.lookup("taskmanager" + to._1).asInstanceOf[TaskManagerInterface]
+    tm.assignTask(task, getTaskSlot(taskID).state, bws) // TODO: transmit getTaskSlot(taskID).state
+  }
+
+  def printWithID(msg: String) = {
+    println("TM_" + id + ": " + msg)
+  }
+
 }
 
 case class TaskManagerInfo(
     id: Int,
     var numSlots: Int,
-    var numTasksDeployed: Int,
     var latenciesToSelf: Array[Latency],
     var bandwidthsToSelf: Array[BW],
     var ipRate: Float,

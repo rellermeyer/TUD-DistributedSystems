@@ -23,7 +23,6 @@ object ILPTester {
         new TaskManagerInfo(
           id = i,
           0,
-          0,
           Array.empty[Latency],
           Array.empty[BW],
           0,
