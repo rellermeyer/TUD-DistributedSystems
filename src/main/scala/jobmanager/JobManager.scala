@@ -147,7 +147,7 @@ class JobManager extends UnicastRemoteObject with JobManagerInterface {
     // Assign input and output rates for each taskManager based on the execution plan
     assignRates(taskManagers, plan, tasks)
 
-    jobIDCounter += 1 // increment job counter
+    // jobIDCounter += 1 // increment job counter
     true
   }
 

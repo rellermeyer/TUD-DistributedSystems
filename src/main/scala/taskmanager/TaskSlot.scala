@@ -40,7 +40,7 @@ class TaskSlot(val key: String) extends Runnable {
     // write one value for each outputstream in a loop
     var outputIndex = 0
     for (i <- data.indices) {
-      to(outputIndex).writeInt(data(i))
+      to(outputIndex).writeInt(data(i)) // socket exception here
       if (this.terminateFlag) {
         println("SUSPENDED")
         cleanup() // but only once
