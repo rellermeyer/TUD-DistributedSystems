@@ -255,23 +255,23 @@ class JobManager extends UnicastRemoteObject with JobManagerInterface {
       }
       job.plan = combinedPlan // Update the job's plan for future replanning
 
-      println("same")
-      ExecutionPlan.printPlan(same)
+      // println("same")
+      // ExecutionPlan.printPlan(same)
 
-      println("migrateFrom")
-      ExecutionPlan.printPlan(oldPlan)
+      // println("migrateFrom")
+      // ExecutionPlan.printPlan(oldPlan)
 
-      println("migrateTo")
-      ExecutionPlan.printPlan(newPlan)
+      // println("migrateTo")
+      // ExecutionPlan.printPlan(newPlan)
 
-      println("combined")
-      ExecutionPlan.printPlan(combinedPlan)
+      // println("combined")
+      // ExecutionPlan.printPlan(combinedPlan)
 
       // Re-assign the tasks
       reassignTasks(same, oldPlan, newPlan, combinedPlan, job.ops)
     }
     else {
-      println("---- Equal plans ----")
+      println("---- Equal plans, no rescheduling! ----")
     }
     true
   }

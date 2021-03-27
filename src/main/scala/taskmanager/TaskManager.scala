@@ -18,7 +18,6 @@ class TaskManager(val id: Int)
     with TaskManagerInterface {
 
   val taskSlots = scala.collection.mutable.Map[Int, TaskSlot]() // key = taskID
-  val bws = scala.collection.mutable.Map[Int, Array[Int]]()
 
   // ServerSocket used for INCOMING data
   val portOffset = 9000
@@ -49,18 +48,13 @@ class TaskManager(val id: Int)
     * rmi call from JobManager. Creates socket connections to downstream TaskSlots.
     */
   def assignTask(task: Task, initialState: Int, bws: Array[Int]): Unit = {
-    printWithID("Received task " + task.taskID)
-    // printWithID("from: " + task.from.mkString(" "))
-    // printWithID("to :" + task.to.mkString(" "))
+    // printWithID("Received task " + task.taskID + ", is: " + initialState)
     var taskSlot = getTaskSlot(task.taskID)
     taskSlot.task = task
     if (initialState != -1) { // special value to indicate using the old state
       taskSlot.state = initialState
     }
     taskSlot.bws = bws
-    this.bws.put(task.taskID, bws)
-    
-    printWithID("BW SIZE (task " + task.taskID + "): " + bws.size)
 
     // Set output streams (If any. Could also be sink)
     for (i <- task.to.indices) {

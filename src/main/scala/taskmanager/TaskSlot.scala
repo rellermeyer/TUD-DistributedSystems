@@ -16,7 +16,7 @@ class TaskSlot(val tmID: Int) extends Runnable {
   var task: Task = null
   var from: ArrayBuffer[DataInputStream] = ArrayBuffer.empty[DataInputStream]
   var to: ArrayBuffer[DataOutputStream] = ArrayBuffer.empty[DataOutputStream]
-  val bottleneckSimVal = 1000
+  val bottleneckSimVal = 9000
   var bws: Array[Int] = null
 
   @volatile var terminateFlag: Boolean = false // used to terminate the sink task
@@ -24,9 +24,6 @@ class TaskSlot(val tmID: Int) extends Runnable {
   var state: Int = 0
 
   def run(): Unit = {
-    printWithID("Running Taskslot " + task.taskID)
-    printWithID("BW SIZE: " + bws.size)
-
     if (task.operator.equals("data")) {
       data()
     }
@@ -36,14 +33,13 @@ class TaskSlot(val tmID: Int) extends Runnable {
     else if (task.operator.equals("reduce")) {
       reduce()
     }
-    printWithID("Task finished")
   }
 
   def data(): Unit = {
     printWithID("Data...")
     // Generate data
-    val amountOfData = 1000000 - state // remove data that has already been sent
-    printWithID("amount of data: " + amountOfData)
+    val amountOfData = 10000 - state // remove data that has already been sent
+    printWithID("Amount of data left: " + amountOfData)
     val data = Array.fill[Int](amountOfData)(2) // 2 2 2 ... -> 3 3 3 ... -> 4 4 4  ... -> 4+4+4 ... -> 4000000
 
     // write one value for each outputstream in a loop
@@ -51,7 +47,7 @@ class TaskSlot(val tmID: Int) extends Runnable {
     for (i <- data.indices) {
       try {
         // Simulate actual bandwidth
-        Thread.sleep(bottleneckSimVal / bws(outputIndex))
+        Thread.sleep((bottleneckSimVal / bws(outputIndex)).max(1)) // sleep at least 1ms
         to(outputIndex).writeInt(data(i))
         state += 1 // record how many elements have been sent so far
         outputIndex = (outputIndex + 1) % to.length
@@ -68,6 +64,7 @@ class TaskSlot(val tmID: Int) extends Runnable {
 
   def map(): Unit = {
     printWithID("Map...")
+    var counter = 0
     var inputIndex = 0
     var outputIndex = 0
     while (from.length > 0) {
@@ -77,8 +74,12 @@ class TaskSlot(val tmID: Int) extends Runnable {
 
         var value: Int = from(inputIndex).readInt()
         value += 1
+        counter += 1
         // Simulate actual bandwidth
-        Thread.sleep(bottleneckSimVal / bws(outputIndex))
+        Thread.sleep((bottleneckSimVal / bws(outputIndex)).max(1)) // sleep at least 1ms
+        if ((counter % 1000) == 0) {
+          printWithID("read: " + counter)
+        }
         to(outputIndex).writeInt(value)
       }
       catch {
@@ -93,6 +94,7 @@ class TaskSlot(val tmID: Int) extends Runnable {
       }
     }
     // All inputstreams have reached EOF
+    printWithID("Finished Map")
     cleanup()
   }
 
@@ -125,6 +127,7 @@ class TaskSlot(val tmID: Int) extends Runnable {
       }
     }
     // No more input streams
+    printWithID("Finished Reduce")
 
     // If this is the sink
     if (to.length == 0) {
@@ -134,7 +137,7 @@ class TaskSlot(val tmID: Int) extends Runnable {
       var index: Int = 0
       for (out <- to) {
         // Simulate actual bandwidth
-        Thread.sleep(bottleneckSimVal / bws(index)) 
+        Thread.sleep((bottleneckSimVal / bws(index)).max(1)) // sleep at least 1ms
         index += 1
         out.writeInt(state)
         out.flush()
@@ -145,12 +148,12 @@ class TaskSlot(val tmID: Int) extends Runnable {
 
   // Close all socket connections
   def cleanup() = {
-    for (i <- to.indices) {
-      to(i).flush()
-      to(i).close()
+    for (out <- to) {
+      out.flush()
+      out.close()
     }
-    for (i <- from.indices) {
-      from(i).close()
+    for (in <- from) {
+      in.close()
     }
     from.clear()
     to.clear()
