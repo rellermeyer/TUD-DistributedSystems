@@ -33,4 +33,9 @@ read POD2
 kubectl port-forward $POD2 7001:8080 &
 sleep 2
 
+echo "Port 7002:"
+read POD3
+kubectl port-forward $POD3 7002:8080 &
+sleep 2
+
 minikube dashboard &
