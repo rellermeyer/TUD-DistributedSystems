@@ -100,14 +100,14 @@ class DistributedSystem(numContainers: Int, latencies: Seq[Int], newFailProb: Do
    * @param suiteId
    * @return content
    */
-  def readRepresentative(containerId: Int, suiteId: Int): Either[FailResult, Int] = {
+  def readRepresentative(containerId: Int, suiteId: Int): Either[FailResult, (Int, Int)] = {
     _containers match {
       case Left(f) => Left(FailResult("readSuite failed:\n" + f.reason))
       case Right(c) => {
         if (containerId >= 0 && containerId < c.length) {
           val rep = c(containerId).findRepresentative(suiteId)
           if (rep.isDefined) {
-            Right(rep.get.content)
+            Right(rep.get.content, c(containerId).latency)
           }
           else {
             Left(FailResult("readSuite failed: representative of file " + suiteId +
@@ -129,20 +129,25 @@ class DistributedSystem(numContainers: Int, latencies: Seq[Int], newFailProb: Do
    * @return
    */
 
-  def writeRepresentatives(containerIds: Seq[Int], suiteId: Int, newContent: Int): Either[FailResult, Unit] = {
+  def writeRepresentatives(containerIds: Seq[Int], suiteId: Int, newContent: Int): Either[FailResult, Int] = {
     _containers match {
       case Left(f) => Left(FailResult("writeSuite failed:\n" + f.reason))
       case Right(c) => {
+        var latency: Int = 0
         for (cid <- containerIds) {
           var result = c(cid).writeRepresentative(suiteId, newContent)
           result match {
             case Left(f) => return Left(FailResult("writeSuite failed:\n" + f.reason))
-            case Right(r) => {}
+            case Right(r) => {
+              if (c(cid).latency > latency) {
+                latency = c(cid).latency
+              }
+            }
           }
         }
+        Right(latency)
       }
     }
-    Right()
   }
 }
 

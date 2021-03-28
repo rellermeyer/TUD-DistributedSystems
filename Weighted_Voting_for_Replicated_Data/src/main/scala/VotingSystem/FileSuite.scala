@@ -39,7 +39,7 @@ class FileSuite (fileSystem: DistributedSystem, newSuiteId: Int){
    * @param versionNumber
    * @return readCandidates
    */
-  def findReadQuorum(fsResp: FileSystemResponse, r: Int, versionNumber: Int): Either[FailResult, Seq[ContainerResponse]] = {
+  def findReadQuorum(fsResp: FileSystemResponse, r: Int, versionNumber: Int): Either[FailResult, (Seq[ContainerResponse], Int)] = {
     val currentReps: Seq[ContainerResponse] = fsResp.containerResponses.sortBy(_.latency)
     var readCandidates: Seq[ContainerResponse] = Seq.empty[ContainerResponse]
     var totalWeight: Int = 0
@@ -48,11 +48,16 @@ class FileSuite (fileSystem: DistributedSystem, newSuiteId: Int){
       readCandidates = readCandidates :+ rep
       totalWeight += rep.weight
       if (totalWeight >= r) {
-        return Right(readCandidates)
+        return Right((readCandidates, readCandidates.last.latency))
       }
     }
     Left(FailResult("findReadQuorum failed: no quorum present"))
   }
+
+
+  //def copyRepresentative(source: Representative): Either[FailResult, (Representative, Int)] = {
+  //  val newCopy: Representative = Representative()
+  //}
 
   // TODO: does this work as intended w.r.t. up to date copies?
   /**
@@ -61,16 +66,15 @@ class FileSuite (fileSystem: DistributedSystem, newSuiteId: Int){
    * @param versionNumber
    * @return writeCandidates
    */
-  def findWriteQuorum(fsResp: FileSystemResponse, w: Int, versionNumber: Int): Either[FailResult, Seq[ContainerResponse]] = {
+  def findWriteQuorum(fsResp: FileSystemResponse, w: Int, versionNumber: Int): Either[FailResult, (Seq[ContainerResponse], Int)] = {
     val currentReps: Seq[ContainerResponse] = fsResp.containerResponses.filter(_.prefix.versionNumber == versionNumber).sortBy(_.latency)
     var writeCandidates: Seq[ContainerResponse] = Seq.empty[ContainerResponse]
     var totalWeight: Int = 0
-
     for (rep <- currentReps) {
       writeCandidates = writeCandidates :+ rep
       totalWeight += rep.weight
       if (totalWeight >= w) {
-        return Right(writeCandidates)
+        return Right(writeCandidates, writeCandidates.last.latency)
       }
     }
     Left(FailResult("findWriteQuorum failed: no quorum present")) //TODO: own error class?
@@ -127,7 +131,7 @@ class FileSuite (fileSystem: DistributedSystem, newSuiteId: Int){
             quorum match {
               case Left(f) => Left(FailResult("suiteRead failed:\n" + f.reason))
               case Right(quorum) => {
-                val readCandidate = findReadCandidate(quorum, current.prefix.versionNumber)
+                val readCandidate = findReadCandidate(quorum._1, current.prefix.versionNumber)
 
                 readCandidate match {
                   case Left(f) => Left(FailResult("suiteRead failed:\n" + f.reason))
@@ -137,8 +141,8 @@ class FileSuite (fileSystem: DistributedSystem, newSuiteId: Int){
                     result match {
                       case Left(f) => Left(FailResult("suiteRead failed:\n" + f.reason))
                       case Right(result) => {
-                        val latency: Int = quorum.last.latency + readCandidate.latency
-                        Right(result, latency)
+                        val latency: Int = quorum._2 + result._2
+                        Right(result._1, latency)
                       }
                     }
                   }
@@ -174,15 +178,15 @@ class FileSuite (fileSystem: DistributedSystem, newSuiteId: Int){
               case Left(f) => Left(FailResult("suiteWrite failed:\n" + f.reason))
               case Right(quorum) => {
                 var cids: Seq[Int] = Seq.empty[Int]
-                for (r <- quorum) {
+                for (r <- quorum._1) {
                   cids = cids :+ r.cid
                 }
                 val result = fileSystem.writeRepresentatives(cids, _suiteId, newContent)
 
                 result match {
                   case Left(f) => Left(FailResult("suiteWrite failed:\n" + f.reason))
-                  case Right(r) => {
-                    val latency: Int = quorum.last.latency + quorum.last.latency
+                  case Right(result) => {
+                    val latency: Int = quorum._2 + result
                     Right(latency)
                   }
                 }
