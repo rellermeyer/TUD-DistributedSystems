@@ -1,5 +1,6 @@
 package sample.cluster.byzantine
 
+import akka.actor.TypedActor.self
 import akka.actor.typed.receptionist.{Receptionist, ServiceKey}
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorRef, Behavior}
@@ -298,15 +299,18 @@ object SyncNode {
                   readyOut = 1
                   if (readyOut == 1) {
                     value = promiseResponses.groupBy(entry => entry._2).maxBy(_._2.size)._1
-                  } else if (p < (1 / C * math.log(numberOfNodes))) {
-
+                    println(s"I am node $nodeId my readyout is: $readyOut my value is $value")
+                    // terminate
+//                    ctx.stop(self)
+                  } else if (p < (1 / (C * math.log(numberOfNodes)))) {
+                    // reset and perform with double p
                   } else {
                     // perform Byzantine Agreement
                   }
                 } else {
                   readyOut = 0
                 }
-                println(s"I am node $nodeId my readyout is: $readyOut my value is $value")
+
 
               case _ => println("I have not been implemented")
             }

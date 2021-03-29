@@ -1,7 +1,7 @@
 package sample.cluster.byzantine
 
 import akka.actor.typed.scaladsl.Behaviors
-import akka.actor.typed.{ActorSystem, Behavior}
+import akka.actor.typed.{ActorSystem, Behavior, PostStop}
 import akka.cluster.typed.Cluster
 import com.typesafe.config.ConfigFactory
 
@@ -19,7 +19,11 @@ object App {
       if (cluster.selfMember.hasRole("decider")) {
         ctx.spawn(LargeCoBeRa(10), "LargeCoBeRa")
       }
-      Behaviors.empty
+      Behaviors.receiveSignal[Nothing] {
+        case (ctx, PostStop) =>
+          ctx.log.info("Some node has stopped")
+          Behaviors.same
+      }
     }
   }
 
