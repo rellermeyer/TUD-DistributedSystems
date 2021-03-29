@@ -11,7 +11,7 @@ trait TaskManagerInterface extends Remote {
     @throws(classOf[MalformedURLException])
     @throws(classOf[NotBoundException])
     @throws(classOf[RemoteException])
-    def assignTask(task: Task, initialState: Int, bws: Array[Int]): Unit
+    def assignTask(task: Task, initialState: Int): Unit
 
     @throws(classOf[MalformedURLException])
     @throws(classOf[NotBoundException])
@@ -21,5 +21,10 @@ trait TaskManagerInterface extends Remote {
     @throws(classOf[MalformedURLException])
     @throws(classOf[NotBoundException])
     @throws(classOf[RemoteException])
-    def migrate(taskID: Int, to: (Int, Int), task: Task, bws: Array[Int]): Unit
+    def migrate(taskID: Int, to: (Int, Int), task: Task): Unit
+
+    @throws(classOf[MalformedURLException])
+    @throws(classOf[NotBoundException])
+    @throws(classOf[RemoteException])
+    def receiveMetadata(taskID: Int, bws: Array[Int], prRate: Float): Unit
 }

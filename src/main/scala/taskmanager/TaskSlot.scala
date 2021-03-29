@@ -16,8 +16,9 @@ class TaskSlot(val tmID: Int) extends Runnable {
   var task: Task = null
   var from: ArrayBuffer[DataInputStream] = ArrayBuffer.empty[DataInputStream]
   var to: ArrayBuffer[DataOutputStream] = ArrayBuffer.empty[DataOutputStream]
-  val bottleneckSimVal = 9000
+  val bottleneckSimVal = 9000000
   var bws: Array[Int] = null
+  var prRate: Float = 0.0.toFloat
 
   @volatile var terminateFlag: Boolean = false // used to terminate the sink task
 
@@ -46,8 +47,9 @@ class TaskSlot(val tmID: Int) extends Runnable {
     var outputIndex = 0
     for (i <- data.indices) {
       try {
-        // Simulate actual bandwidth
-        Thread.sleep((bottleneckSimVal / bws(outputIndex)).max(1)) // sleep at least 1ms
+        // Simulate actual processing rate and bandwidth
+        // printWithID("Data sleep: " + (bottleneckSimVal / (bws(outputIndex) * (prRate).ceil.toInt)).max(1))
+        Thread.sleep((bottleneckSimVal / (bws(outputIndex) * (prRate).ceil.toInt)).max(1)) // sleep at least 1ms
         to(outputIndex).writeInt(data(i))
         state += 1 // record how many elements have been sent so far
         outputIndex = (outputIndex + 1) % to.length
@@ -76,7 +78,8 @@ class TaskSlot(val tmID: Int) extends Runnable {
         value += 1
         counter += 1
         // Simulate actual bandwidth
-        Thread.sleep((bottleneckSimVal / bws(outputIndex)).max(1)) // sleep at least 1ms
+        // printWithID("Map sleep: " + (bottleneckSimVal / (bws(outputIndex) * (prRate).ceil.toInt)).max(1))
+        Thread.sleep((bottleneckSimVal / (bws(outputIndex) * (prRate).ceil.toInt)).max(1)) // sleep at least 1ms
         if ((counter % 1000) == 0) {
           printWithID("read: " + counter)
         }
@@ -137,7 +140,8 @@ class TaskSlot(val tmID: Int) extends Runnable {
       var index: Int = 0
       for (out <- to) {
         // Simulate actual bandwidth
-        Thread.sleep((bottleneckSimVal / bws(index)).max(1)) // sleep at least 1ms
+        // printWithID("Reduce sleep: " + (bottleneckSimVal / (bws(index) * (prRate).ceil.toInt)).max(1))
+        Thread.sleep((bottleneckSimVal / (bws(index) * (prRate).ceil.toInt)).max(1)) // sleep at least 1msast 1ms
         index += 1
         out.writeInt(state)
         out.flush()

@@ -34,6 +34,8 @@ import taskmanager.TaskManagerInfo
      **/
 
 object ExecutionPlan {
+
+    val dataSource = 3 // Some statically defined TM for outputting data
     
     // Create an execution plan with the specified taskManagers and parallelism
     def createPlan(taskManagers: ArrayBuffer[TaskManagerInfo], 
@@ -43,7 +45,7 @@ object ExecutionPlan {
         // Plan holds for each operator the tuple (TM, TaskID)
         val plan = Array.fill(ops.length + 1)(ArrayBuffer.empty[(Int, Int)]) // 1 extra row for data sources
 
-        val dataSources = Array(3) // indices of taskManagers who will provide data
+        val dataSources = Array(dataSource) // indices of taskManagers who will provide data
 
         // Add data sources to plan
         dataSources.foreach(x => {
@@ -89,4 +91,4 @@ object ExecutionPlan {
     }
 }
 
-case class Task(taskID: Int, from: Array[Int], to: Array[Int], toTaskIDs: Array[Int], operator: String)
+case class Task(var taskID: Int, from: Array[Int], to: Array[Int], toTaskIDs: Array[Int], operator: String)

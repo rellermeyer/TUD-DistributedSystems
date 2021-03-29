@@ -47,14 +47,12 @@ class TaskManager(val id: Int)
   /**
     * rmi call from JobManager. Creates socket connections to downstream TaskSlots.
     */
-  def assignTask(task: Task, initialState: Int, bws: Array[Int]): Unit = {
-    // printWithID("Received task " + task.taskID + ", is: " + initialState)
+  def assignTask(task: Task, initialState: Int): Unit = {
     var taskSlot = getTaskSlot(task.taskID)
     taskSlot.task = task
-    if (initialState != -1) { // special value to indicate using the old state
+    if (initialState != -1) { // only assign the initial state if this is a migrated task
       taskSlot.state = initialState
     }
-    taskSlot.bws = bws
 
     // Set output streams (If any. Could also be sink)
     for (i <- task.to.indices) {
@@ -89,7 +87,6 @@ class TaskManager(val id: Int)
     var taskSlot = taskSlots.getOrElse(taskID, null)
 
     if (taskSlot == null) {
-      // printWithID("Creating new taskslot for taskID: " + taskID)
       taskSlot = new TaskSlot(id)
       taskSlots.put(taskID, taskSlot)
     }
@@ -102,9 +99,14 @@ class TaskManager(val id: Int)
     taskSlot.stop()
   }
 
-  def migrate(taskID: Int, to: (Int, Int), task: Task, bws: Array[Int]): Unit = {
+  def migrate(taskID: Int, to: (Int, Int), task: Task): Unit = {
     val tm = Naming.lookup("taskmanager" + to._1).asInstanceOf[TaskManagerInterface]
-    tm.assignTask(task, getTaskSlot(taskID).state, bws) // TODO: transmit getTaskSlot(taskID).state
+    tm.assignTask(task, getTaskSlot(taskID).state)
+  }
+
+  def receiveMetadata(taskID: Int, bws: Array[Int], prRate: Float): Unit = {
+    getTaskSlot(taskID).bws = bws
+    getTaskSlot(taskID).prRate = prRate
   }
 
   def printWithID(msg: String) = {

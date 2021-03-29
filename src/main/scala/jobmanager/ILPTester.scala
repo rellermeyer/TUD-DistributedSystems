@@ -4,6 +4,7 @@ import scala.collection.mutable.ArrayBuffer
 import scala.util.Random
 import taskmanager._
 
+// Object for testing the ILP
 object ILPTester {
 
   def main(args: Array[String]): Unit = {
@@ -35,7 +36,7 @@ object ILPTester {
           j,
           Random.nextFloat() * 3 // max 3 seconds latency
         )  
-        if (i != j) {                                              // TODO: check minimum, maximum value of bws (currently 500 - 3000)
+        if (i != j) {
           bws(j) = new BW(j, 500 + Random.nextFloat() * 3000)     // Be careful, bandwidth should be large enough or ILP might be infeasible
         } else {
           bws(j) = new BW(j, 0)

@@ -2,6 +2,7 @@ package jobmanager
 
 import java.rmi.registry.LocateRegistry;
 import taskmanager.TaskManager
+import scala.annotation.switch
 
 object JobManagerRunner {
   def main(args: Array[String]): Unit = {
@@ -12,14 +13,22 @@ object JobManagerRunner {
     val registry = LocateRegistry.createRegistry(registryPort)
     println("Registry running on port " + registryPort)
 
-    val jobManager = new JobManager
+    // Second cmd line arguement indicates if replanning or not (-noreplan for no replanning, -replan for repalanning; default replanning)
+    var replan: Boolean = true
+    args(1) match {
+      case "-replan" => replan = true
+      case "-noreplan" => replan = false
+      case _ => replan = true
+    }
+
+    val jobManager = new JobManager(replan)
     val jobManagerName = "jobmanager"
 
     registry.bind(jobManagerName, jobManager)
     println("JobManager bound!")
 
     // Launch some Task Managers if specified in args
-    if (args.length == 1) {
+    if (args.length > 1) {
       val no_tms = Integer.parseInt(args(0))
       for (i <- 0 until no_tms) {
         val id = jobManager.register() // get id from JobManager

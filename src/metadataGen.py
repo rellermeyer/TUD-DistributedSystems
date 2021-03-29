@@ -8,6 +8,7 @@ import random
 # Generate all the metadata on performance for the taskmanager to be used as configs with WASP,
 # -n INT: number of task managers
 # -c INT: number of configurations
+# -s INT: number of slots per task manager
 
 
 def main(argv):
@@ -47,9 +48,15 @@ def main(argv):
 
             data[str(i)]['latencies'] = latencies
             data[str(i)]['bandwidth'] = bws
-            data[str(i)]['ipRate'] = random.uniform(0, 1000)
-            data[str(i)]['opRate'] = random.uniform(0, 500)
-            data[str(i)]['numSlots'] = 3
+
+            # opRate cannot be larger than ipRate
+            val1 = random.uniform(1, 1000); val2 = random.uniform(1,500)
+            ipRate = max(val1, val2); opRate = min(val1, val2)
+            
+            data[str(i)]['ipRate'] = ipRate
+            data[str(i)]['numSlots'] = numSlots
+            prRate = data[str(i)]['prRate'] = min(ipRate, random.uniform(1, 1000))
+            data[str(i)]['opRate'] = min(prRate, opRate)
             # if (i != numConfigs-1):
             #     data[str(i)]['numSlots'] = random.randint(0, numSlots)
             #     assignedSlots += data[str(i)]['numSlots']
