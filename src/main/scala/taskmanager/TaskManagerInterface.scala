@@ -8,23 +8,23 @@ import jobmanager.Task
 import jobmanager.BW
 
 trait TaskManagerInterface extends Remote {
-    @throws(classOf[MalformedURLException])
-    @throws(classOf[NotBoundException])
-    @throws(classOf[RemoteException])
-    def assignTask(task: Task, initialState: Int): Unit
+  @throws(classOf[MalformedURLException])
+  @throws(classOf[NotBoundException])
+  @throws(classOf[RemoteException])
+  def assignTask(task: Task, initialState: Int): Unit
 
-    @throws(classOf[MalformedURLException])
-    @throws(classOf[NotBoundException])
-    @throws(classOf[RemoteException])
-    def terminateTask(taskID: Int): Unit
+  @throws(classOf[MalformedURLException])
+  @throws(classOf[NotBoundException])
+  @throws(classOf[RemoteException])
+  def terminateTask(taskID: Int): Unit
 
-    @throws(classOf[MalformedURLException])
-    @throws(classOf[NotBoundException])
-    @throws(classOf[RemoteException])
-    def migrate(taskID: Int, to: (Int, Int), task: Task): Unit
+  @throws(classOf[MalformedURLException])
+  @throws(classOf[NotBoundException])
+  @throws(classOf[RemoteException])
+  def migrate(taskID: Int, to: (Int, Int), task: Task): Unit
 
-    @throws(classOf[MalformedURLException])
-    @throws(classOf[NotBoundException])
-    @throws(classOf[RemoteException])
-    def receiveMetadata(taskID: Int, bws: Array[Int], prRate: Float): Unit
+  @throws(classOf[MalformedURLException])
+  @throws(classOf[NotBoundException])
+  @throws(classOf[RemoteException])
+  def receiveMetadata(taskID: Int, bws: Array[Int], prRate: Float): Unit
 }

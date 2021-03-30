@@ -21,7 +21,7 @@ object TaskManagerRunner {
     val id = jobManager.register() // get id from JobManager
     val taskManager = new TaskManager(id)
     val taskManagerName = "taskmanager" + id
-    
+
     registry.bind(taskManagerName, taskManager)
     println("TaskManager " + id + " bound!")
 

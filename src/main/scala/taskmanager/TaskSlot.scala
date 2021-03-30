@@ -20,18 +20,17 @@ class TaskSlot(val tmID: Int) extends Runnable {
   var bws: Array[Int] = null
   var prRate: Float = 0.0.toFloat
 
-  @volatile var terminateFlag: Boolean = false // used to terminate the sink task
+  @volatile var terminateFlag: Boolean =
+    false // used to terminate the sink task
 
   var state: Int = 0
 
   def run(): Unit = {
     if (task.operator.equals("data")) {
       data()
-    }
-    else if (task.operator.equals("map")) {
+    } else if (task.operator.equals("map")) {
       map()
-    }
-    else if (task.operator.equals("reduce")) {
+    } else if (task.operator.equals("reduce")) {
       reduce()
     }
   }
@@ -39,22 +38,30 @@ class TaskSlot(val tmID: Int) extends Runnable {
   def data(): Unit = {
     printWithID("Data...")
     // Generate data
-    val amountOfData = 10000 - state // remove data that has already been sent
-    printWithID("Amount of data left: " + amountOfData)
-    val data = Array.fill[Int](amountOfData)(2) // 2 2 2 ... -> 3 3 3 ... -> 4 4 4  ... -> 4+4+4 ... -> 4000000
+    printWithID("Amount of data left: " + state)
+    val data = Array.fill[Int](state)(
+      2
+    ) // 2 2 2 ... -> 3 3 3 ... -> 4 4 4  ... -> 4+4+4 ... -> 4000000
 
     // write one value for each outputstream in a loop
     var outputIndex = 0
     for (i <- data.indices) {
+      if (this.terminateFlag) {
+        printWithID("TERMINATED")
+        cleanup()
+        return
+      }
+
       try {
         // Simulate actual processing rate and bandwidth
         // printWithID("Data sleep: " + (bottleneckSimVal / (bws(outputIndex) * (prRate).ceil.toInt)).max(1))
-        Thread.sleep((bottleneckSimVal / (bws(outputIndex) * (prRate).ceil.toInt)).max(1)) // sleep at least 1ms
+        Thread.sleep(
+          (bottleneckSimVal / (bws(outputIndex) * (prRate).ceil.toInt)).max(1)
+        ) // sleep at least 1ms
         to(outputIndex).writeInt(data(i))
-        state += 1 // record how many elements have been sent so far
+        state -= 1 // record how many elements have been sent so far
         outputIndex = (outputIndex + 1) % to.length
-      }
-      catch {
+      } catch {
         case se: SocketException => {
           cleanup()
           return
@@ -70,6 +77,12 @@ class TaskSlot(val tmID: Int) extends Runnable {
     var inputIndex = 0
     var outputIndex = 0
     while (from.length > 0) {
+      if (this.terminateFlag) {
+        printWithID("TERMINATED")
+        cleanup()
+        return
+      }
+
       try {
         outputIndex = (outputIndex + 1) % to.length
         inputIndex = (inputIndex + 1) % from.length
@@ -79,13 +92,14 @@ class TaskSlot(val tmID: Int) extends Runnable {
         counter += 1
         // Simulate actual bandwidth
         // printWithID("Map sleep: " + (bottleneckSimVal / (bws(outputIndex) * (prRate).ceil.toInt)).max(1))
-        Thread.sleep((bottleneckSimVal / (bws(outputIndex) * (prRate).ceil.toInt)).max(1)) // sleep at least 1ms
+        Thread.sleep(
+          (bottleneckSimVal / (bws(outputIndex) * (prRate).ceil.toInt)).max(1)
+        ) // sleep at least 1ms
         if ((counter % 1000) == 0) {
           printWithID("read: " + counter)
         }
         to(outputIndex).writeInt(value)
-      }
-      catch {
+      } catch {
         case eof: EOFException => { // expected, end of stream reached
           from(inputIndex).close() // close the stream
           from.remove(inputIndex) // remove inputstream from consideration
@@ -117,8 +131,7 @@ class TaskSlot(val tmID: Int) extends Runnable {
 
         var value: Int = from(inputIndex).readInt()
         state += value
-      }
-      catch {
+      } catch {
         case eof: EOFException => { // expected, end of stream reached
           from(inputIndex).close() // close the stream
           from.remove(inputIndex) // remove inputstream from consideration
@@ -134,14 +147,18 @@ class TaskSlot(val tmID: Int) extends Runnable {
 
     // If this is the sink
     if (to.length == 0) {
-      Naming.lookup("jobmanager").asInstanceOf[JobManagerInterface].reportResult(state)
-    }
-    else {
+      Naming
+        .lookup("jobmanager")
+        .asInstanceOf[JobManagerInterface]
+        .reportResult(state)
+    } else {
       var index: Int = 0
       for (out <- to) {
         // Simulate actual bandwidth
         // printWithID("Reduce sleep: " + (bottleneckSimVal / (bws(index) * (prRate).ceil.toInt)).max(1))
-        Thread.sleep((bottleneckSimVal / (bws(index) * (prRate).ceil.toInt)).max(1)) // sleep at least 1msast 1ms
+        Thread.sleep(
+          (bottleneckSimVal / (bws(index) * (prRate).ceil.toInt)).max(1)
+        ) // sleep at least 1msast 1ms
         index += 1
         out.writeInt(state)
         out.flush()
@@ -171,9 +188,10 @@ class TaskSlot(val tmID: Int) extends Runnable {
 
   def printWithID(msg: String) = {
     if (task != null) {
-      println("(TM_" + tmID + ", task " + task.taskID + ", op " + task.operator + "): " + msg)
-    }
-    else {
+      println(
+        "(TM_" + tmID + ", task " + task.taskID + ", op " + task.operator + "): " + msg
+      )
+    } else {
       println("(TM_" + tmID + "): " + msg)
     }
   }

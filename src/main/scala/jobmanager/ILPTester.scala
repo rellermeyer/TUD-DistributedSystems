@@ -35,15 +35,20 @@ object ILPTester {
         latencies(j) = new Latency(
           j,
           Random.nextFloat() * 3 // max 3 seconds latency
-        )  
+        )
         if (i != j) {
-          bws(j) = new BW(j, 500 + Random.nextFloat() * 3000)     // Be careful, bandwidth should be large enough or ILP might be infeasible
+          bws(j) = new BW(
+            j,
+            500 + Random.nextFloat() * 3000
+          ) // Be careful, bandwidth should be large enough or ILP might be infeasible
         } else {
           bws(j) = new BW(j, 0)
         }
       }
 
-      taskManagers(i).numSlots = rand.nextInt(10) // Be careful, if every site gets a small num of slots, ILP might be infeasible
+      taskManagers(i).numSlots = rand.nextInt(
+        10
+      ) // Be careful, if every site gets a small num of slots, ILP might be infeasible
       taskManagers(i).latenciesToSelf = latencies
       taskManagers(i).bandwidthsToSelf = bws
       taskManagers(i).ipRate = rand.nextInt(1000)

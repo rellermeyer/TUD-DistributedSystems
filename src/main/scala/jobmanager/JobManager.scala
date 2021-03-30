@@ -13,11 +13,12 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
-class JobManager(replan: Boolean) extends UnicastRemoteObject with JobManagerInterface {
+class JobManager(taskMgrsCount: Int, replan: Boolean)
+    extends UnicastRemoteObject
+    with JobManagerInterface {
   var taskManagerIdCounter = -1
   var taskManagers = ArrayBuffer[TaskManagerInfo]()
   val reconfigurationManager = ReconfigurationManager
-  val taskMgrsCount = 4
 
   val taskIDCounters = ArrayBuffer.empty[Int] // for each TM a task counter
 
@@ -75,9 +76,18 @@ class JobManager(replan: Boolean) extends UnicastRemoteObject with JobManagerInt
                 json_cfg.get("numSlots").asInstanceOf[Long].asInstanceOf[Int],
                 latencies,
                 bws,
-                json_cfg.get("ipRate").asInstanceOf[Double].asInstanceOf[Float],
-                json_cfg.get("opRate").asInstanceOf[Double].asInstanceOf[Float],
-                json_cfg.get("prRate").asInstanceOf[Double].asInstanceOf[Float]
+                json_cfg
+                  .get("ipRate")
+                  .asInstanceOf[Double]
+                  .asInstanceOf[Float],
+                json_cfg
+                  .get("opRate")
+                  .asInstanceOf[Double]
+                  .asInstanceOf[Float],
+                json_cfg
+                  .get("prRate")
+                  .asInstanceOf[Double]
+                  .asInstanceOf[Float]
               )
             )
           }
@@ -89,22 +99,29 @@ class JobManager(replan: Boolean) extends UnicastRemoteObject with JobManagerInt
       }
       var i: Int = 0
       while (true) {
+        // Overwrite rate values from config file with current rates
+        for (j <- 0 until taskManagers.length) {
+          taskMgrCfgs(i)(j).ipRate = taskManagers(j).ipRate
+          taskMgrCfgs(i)(j).opRate = taskManagers(j).opRate
+          taskMgrCfgs(i)(j).prRate = taskManagers(j).prRate
+        }
         taskManagers = taskMgrCfgs(i)
         if (job != null) {
-          broadcastMetadata(job.plan)
           if (replan) {
             replanJob()
+          } else {
+            // In case there is no replanning still assign new rates to the task managers
+            assignRates(job.plan)
+            broadcastMetadata(job.plan)
           }
         }
         i = (i + 1) % (taskMgrCfgs.length) // go to next config
         Thread.sleep(10000)
       }
     }
-  }
-  .start()
+  }.start()
 
-  /**
-    * Assign a TaskManager an unique id an return it to him. 
+  /** Assign a TaskManager an unique id an return it to him.
     */
   def register(): Int = {
     taskManagerIdCounter += 1
@@ -116,15 +133,33 @@ class JobManager(replan: Boolean) extends UnicastRemoteObject with JobManagerInt
   def broadcastMetadata(plan: Array[ArrayBuffer[(Int, Int)]]): Unit = {
     for (op <- plan.indices) {
       for ((tm, taskID) <- plan(op)) {
-        val to = if (op != plan.length - 1) plan(op + 1).map(_._1).toArray else Array.empty[Int]
+        val to =
+          if (op != plan.length - 1) plan(op + 1).map(_._1).toArray
+          else Array.empty[Int]
         val bws = to.map(taskManagers(_).bandwidthsToSelf(tm).rate.toInt)
-        val tmi = Naming.lookup("taskmanager" + tm).asInstanceOf[TaskManagerInterface]
+        val tmi =
+          Naming.lookup("taskmanager" + tm).asInstanceOf[TaskManagerInterface]
         tmi.receiveMetadata(taskID, bws, taskManagers(tm).prRate)
       }
     }
   }
 
-  def runJob(ops: Array[String], parallelisms: Array[Int]): Boolean = {
+  def runJob(
+      ops: Array[String],
+      parallelisms: Array[Int],
+      dataSize: Int
+  ): Boolean = {
+    // Create some initial plan so that the rates for all task managers can be calculated and used for created the actual plan
+    val initialPS = Array(2, 2, 2, 0) // random solution [2, 2, 2, 0]
+    val initialPlan = ExecutionPlan.createPlan(
+      taskManagers,
+      initialPS,
+      ops,
+      parallelisms,
+      taskIDCounters
+    )
+    assignRates(initialPlan)
+
     // Call ILP solver with sum of parallelisms
     val ps = ReconfigurationManager.solveILP(taskManagers, parallelisms.sum)
 
@@ -134,61 +169,87 @@ class JobManager(replan: Boolean) extends UnicastRemoteObject with JobManagerInt
     }
 
     // Create execution plan
-    val plan = ExecutionPlan.createPlan(taskManagers, ps, ops, parallelisms, taskIDCounters)
+    val plan = ExecutionPlan.createPlan(
+      taskManagers,
+      ps,
+      ops,
+      parallelisms,
+      taskIDCounters
+    )
 
     println("original plan")
     ExecutionPlan.printPlan(plan)
-    
-    // Record job
-    job = new Job(ops, parallelisms, plan)
 
-    // Tell TMs their bandwidth to simulate it.
-    broadcastMetadata(plan)
-    
-    // Communicate tasks to TMs
-    assignTasks(plan, ops)
-    
+    // Record job
+    job = new Job(ops, parallelisms, plan, System.currentTimeMillis(), -1)
+
     // Assign input and output rates for each taskManager based on the execution plan
     assignRates(plan)
+    broadcastMetadata(plan)
 
-    true
+    // Communicate tasks to TMs
+    assignTasks(plan, ops, dataSize)
+
+    // Record timestamp here !!!!!!!!!!!!!
+    job.queryStartTime = System.currentTimeMillis()
+
+    return true
   }
 
-  /**
-    * Assigns the tasks from a plan object to the TMs. 
+  /** Assigns the tasks from a plan object to the TMs.
     */
-  def assignTasks(plan: Array[ArrayBuffer[(Int, Int)]], ops: Array[String]) = {
+  def assignTasks(
+      plan: Array[ArrayBuffer[(Int, Int)]],
+      ops: Array[String],
+      dataSize: Int
+  ) = {
     for (op <- plan.indices) {
       val task: Task = generateTask(plan, ops, op)
       for ((tm, taskID) <- plan(op)) {
         task.taskID = taskID
-        val tmi = Naming.lookup("taskmanager" + tm).asInstanceOf[TaskManagerInterface]
-        tmi.assignTask(task, 0) // initialState is 0, because this is the first assignment of this job
+        val tmi =
+          Naming.lookup("taskmanager" + tm).asInstanceOf[TaskManagerInterface]
+        tmi.assignTask(
+          task,
+          if (op == 0) dataSize
+          else
+            0 // For the data operator, give it the initial data size as specified in the Query. Else 0.
+        )
       }
     }
   }
 
-  /**
-    * Helper function for assignTasks() and reassignTasks()
+  /** Helper function for assignTasks() and reassignTasks()
     */
-  def generateTask(plan: Array[ArrayBuffer[(Int, Int)]], ops: Array[String], row: Int): Task = {
-      var from = Array.empty[Int]
-      var to = Array.empty[Int]
-      var toTaskIDs = Array.empty[Int]
-                                                                            
-      if (row != 0) {                                                        // Set "from" if this is not the first operator (data)
-        from = plan(row - 1).map(x => taskManagers(x._1).id).toArray     // Use tmIDs of previous operator
-      }
-      if (row != plan.length - 1) {                                      // Set "to" and "toTaskIDs" if this is not the last operator (sink)
-        to = plan(row + 1).map(x => taskManagers(x._1).id).toArray       // Use tmIDs of next operator
-        toTaskIDs = plan(row + 1).map(_._2).toArray                      // Use taskIDs of next operator
-      }
-      val operator = if (row > 0) ops(row - 1) else "data"                    // ops (from the user query) does not contain the "data" op, so we need to add it here
-      return new Task(-1, from, to, toTaskIDs, operator)
+  def generateTask(
+      plan: Array[ArrayBuffer[(Int, Int)]],
+      ops: Array[String],
+      row: Int
+  ): Task = {
+    var from = Array.empty[Int]
+    var to = Array.empty[Int]
+    var toTaskIDs = Array.empty[Int]
+
+    if (row != 0) { // Set "from" if this is not the first operator (data)
+      from = plan(row - 1)
+        .map(x => taskManagers(x._1).id)
+        .toArray // Use tmIDs of previous operator
+    }
+    if (row != plan.length - 1) { // Set "to" and "toTaskIDs" if this is not the last operator (sink)
+      to = plan(row + 1)
+        .map(x => taskManagers(x._1).id)
+        .toArray // Use tmIDs of next operator
+      toTaskIDs =
+        plan(row + 1).map(_._2).toArray // Use taskIDs of next operator
+    }
+    val operator =
+      if (row > 0) ops(row - 1)
+      else
+        "data" // ops (from the user query) does not contain the "data" op, so we need to add it here
+    return new Task(-1, from, to, toTaskIDs, operator)
   }
 
-  /**
-    * Called periodically after the bandwidth and processing rate of the system has changed.
+  /** Called periodically after the bandwidth and processing rate of the system has changed.
     */
   def replanJob(): Boolean = {
     if (job == null) {
@@ -202,25 +263,47 @@ class JobManager(replan: Boolean) extends UnicastRemoteObject with JobManagerInt
     }
 
     // Create new execution plan
-    val newPlan = ExecutionPlan.createPlan(taskManagers, ps, job.ops, job.parallelisms, taskIDCounters) // will be transformed into migrateTo
-    val oldPlan = job.plan                                                                              // will be transformed into migrateFrom
-    val same = Array.fill(newPlan.length)(ArrayBuffer.empty[(Int, Int)])                                // subset of oldPlan that does not need to be migrated
-    val combinedPlan = Array.fill(newPlan.length)(ArrayBuffer.empty[(Int, Int)])                        // concatenation of same and migrateTo
+    val newPlan = ExecutionPlan.createPlan(
+      taskManagers,
+      ps,
+      job.ops,
+      job.parallelisms,
+      taskIDCounters
+    ) // will be transformed into migrateTo
+    val oldPlan = job.plan // will be transformed into migrateFrom
+    val same = Array.fill(newPlan.length)(
+      ArrayBuffer.empty[(Int, Int)]
+    ) // subset of oldPlan that does not need to be migrated
+    val combinedPlan = Array.fill(newPlan.length)(
+      ArrayBuffer.empty[(Int, Int)]
+    ) // concatenation of same and migrateTo
 
     println("old plan")
     ExecutionPlan.printPlan(oldPlan)
     println("new plan")
     ExecutionPlan.printPlan(newPlan)
-        
+
     // Only re-assign if execution plans are different
-    if (!ExecutionPlan.comparePlans(oldPlan, newPlan)) {
+    if (!ExecutionPlan.equalPlans(oldPlan, newPlan)) {
 
+      // Halt all current executions
+      for (op <- oldPlan) {
+        for ((tm, taskID) <- op) {
+          val tmi = Naming
+            .lookup("taskmanager" + tm)
+            .asInstanceOf[TaskManagerInterface]
+          tmi.terminateTask(taskID)
+        }
+      }
+      Thread.sleep(100) // allow the system to terminate completely
       // Halt all current executions by stopping the sink, and letting the upstream neighbors react to the emerging SocketExceptions
-      val sink = oldPlan(oldPlan.length - 1)(0)
-      val tm = Naming.lookup("taskmanager" + sink._1).asInstanceOf[TaskManagerInterface]
-      tm.terminateTask(taskID = sink._2)
+      // val sink = oldPlan(oldPlan.length - 1)(0)
+      // val tm = Naming
+      //   .lookup("taskmanager" + sink._1)
+      //   .asInstanceOf[TaskManagerInterface]
+      // tm.terminateTask(taskID = sink._2)
 
-      Thread.sleep(1000) // allow the system to terminate completely
+      // Thread.sleep(1000) // allow the system to terminate completely
 
       // Construct <migrateFrom> and <migrateTo>, by removing assignments that are present in both old and new plans.
       // Add these duplicates to <same>
@@ -249,8 +332,6 @@ class JobManager(replan: Boolean) extends UnicastRemoteObject with JobManagerInt
       }
       job.plan = combinedPlan // Update the job's plan for future replanning
 
-      broadcastMetadata(combinedPlan)
-
       // println("same")
       // ExecutionPlan.printPlan(same)
 
@@ -263,27 +344,41 @@ class JobManager(replan: Boolean) extends UnicastRemoteObject with JobManagerInt
       // println("combined")
       // ExecutionPlan.printPlan(combinedPlan)
 
+      // Assign input and output rates for each taskManager based on the new execution plan
+      assignRates(combinedPlan)
+      broadcastMetadata(combinedPlan)
+
       // Re-assign the tasks
       reassignTasks(same, oldPlan, newPlan, combinedPlan, job.ops)
-    }
-    else {
+
+    } else {
       println("---- Equal plans, no rescheduling! ----")
     }
+
     return true
   }
 
-  /**
-    * Same as assignTasks(), but calls TaskManager.migrate() instead of TaskManager.assignTask() for some of the assignments.
+  /** Same as assignTasks(), but calls TaskManager.migrate() instead of TaskManager.assignTask() for some of the assignments.
     */
-  def reassignTasks(same: Array[ArrayBuffer[(Int, Int)]], migrateFrom: Array[ArrayBuffer[(Int, Int)]], migrateTo: Array[ArrayBuffer[(Int, Int)]], combined: Array[ArrayBuffer[(Int, Int)]], ops: Array[String]): Unit = {
+  def reassignTasks(
+      same: Array[ArrayBuffer[(Int, Int)]],
+      migrateFrom: Array[ArrayBuffer[(Int, Int)]],
+      migrateTo: Array[ArrayBuffer[(Int, Int)]],
+      combined: Array[ArrayBuffer[(Int, Int)]],
+      ops: Array[String]
+  ): Unit = {
     for (op <- combined.indices) {
       val task = generateTask(combined, ops, op)
 
       // Assign all the <same> assignments (they will be resumed)
       for ((tm, taskID) <- same(op)) {
         task.taskID = taskID
-        val tmi = Naming.lookup("taskmanager" + tm).asInstanceOf[TaskManagerInterface]
-        tmi.assignTask(task, -1) // initial state -1 indicates the TS should use the old state
+        val tmi =
+          Naming.lookup("taskmanager" + tm).asInstanceOf[TaskManagerInterface]
+        tmi.assignTask(
+          task,
+          -1
+        ) // initial state -1 indicates the TS should use the old state
       }
 
       // Communicate to all taskslots in <migrateFrom> to migrate their task to the corresponding task in <migrateTo>
@@ -292,18 +387,20 @@ class JobManager(replan: Boolean) extends UnicastRemoteObject with JobManagerInt
         val (tmTo, taskIDTo) = migrateTo(op)(as)
 
         task.taskID = taskIDTo
-        val tmi = Naming.lookup("taskmanager" + tmFrom).asInstanceOf[TaskManagerInterface]
-        tmi.migrate(taskIDFrom,(tmTo, taskIDTo), task)
+        val tmi = Naming
+          .lookup("taskmanager" + tmFrom)
+          .asInstanceOf[TaskManagerInterface]
+        tmi.migrate(taskIDFrom, (tmTo, taskIDTo), task)
       }
     }
   }
 
-  /**
-    * Assign the input and output rates to the tms based on the execution plan and metrics
-    */ 
+  /** Assign the input and output rates to the tms based on the execution plan and metrics
+    */
   def assignRates(plan: Array[ArrayBuffer[(Int, Int)]]) = {
     val dataSource = ExecutionPlan.dataSource
-    val tasks = scala.collection.mutable.Map[(Int, Int), (Int, Array[Int], Array[Int])]()
+    val tasks =
+      scala.collection.mutable.Map[(Int, Int), (Int, Array[Int], Array[Int])]()
 
     // genereate hashmap of to/from lists for all tms
     for (op <- plan.indices) {
@@ -311,8 +408,8 @@ class JobManager(replan: Boolean) extends UnicastRemoteObject with JobManagerInt
         var from = Array.empty[Int]
         var to = Array.empty[Int]
 
-        if (op != 0) { 
-          from = plan(op - 1).map(x => taskManagers(x._1).id).toArray 
+        if (op != 0) {
+          from = plan(op - 1).map(x => taskManagers(x._1).id).toArray
         }
 
         if (op != plan.length - 1) {
@@ -325,34 +422,45 @@ class JobManager(replan: Boolean) extends UnicastRemoteObject with JobManagerInt
     // Data source λ_O is equal to the bandwidths
     for (assignment <- plan(0)) {
       // sum of all bandwidths from data source to outgoing tms
-      val taskLists = tasks.get(assignment._1, assignment._2)   
+      val taskLists = tasks.get(assignment._1, assignment._2)
       for (i <- taskLists.get._3) {
-        taskManagers(dataSource).opRate += taskManagers(i).bandwidthsToSelf(dataSource).rate
+        taskManagers(dataSource).opRate += taskManagers(i)
+          .bandwidthsToSelf(dataSource)
+          .rate
         taskManagers(dataSource).ipRate = 0
       }
-      taskManagers(dataSource).opRate /= taskLists.get._3.length // divide by the amount of parallelism in next operator
+      taskManagers(
+        dataSource
+      ).opRate /= taskLists.get._3.length // divide by the amount of parallelism in next operator
     }
 
     // Next operators excluding the sink
     for (i <- 1 to plan.size - 1) {
       plan(i).foreach(assignment => {
-        val taskLists: Option[(Int, Array[Int], Array[Int])] = tasks.get(assignment._1, assignment._2)
-       
-        // Minimum of the sum of bandwidths of the From-list and the sum of opRate of the From-list
-        var bwSum : Float = 0
-        var opSum : Float = 0
-        taskLists.get._2.foreach(tm => {bwSum += taskManagers(assignment._1).bandwidthsToSelf(tm).rate
-          opSum += taskManagers(tm).opRate})
+        val taskLists: Option[(Int, Array[Int], Array[Int])] =
+          tasks.get(assignment._1, assignment._2)
 
-        taskManagers(assignment._1).ipRate = bwSum.min(opSum) 
+        // Minimum of the sum of bandwidths of the From-list and the sum of opRate of the From-list
+        var bwSum: Float = 0
+        var opSum: Float = 0
+        taskLists.get._2.foreach(tm => {
+          bwSum += taskManagers(assignment._1).bandwidthsToSelf(tm).rate
+          opSum += taskManagers(tm).opRate
+        })
+
+        taskManagers(assignment._1).ipRate = bwSum.min(opSum)
 
         // Assign the min of the ipRate and a randomly generated number to the processing rate
-        taskManagers(assignment._1).prRate = taskManagers(assignment._1).ipRate.min(Random.nextInt(1000))
-        
+        taskManagers(assignment._1).prRate =
+          taskManagers(assignment._1).ipRate.min(Random.nextInt(1000))
+
         // Assign min of prRate and sum of outgoing bandwidths to the opRate
-        var sum : Float = 0
-        taskLists.get._3.foreach(tm => sum += taskManagers(tm).bandwidthsToSelf(assignment._1).rate)
-        taskManagers(assignment._1).opRate = taskManagers(assignment._1).prRate.min(sum)
+        var sum: Float = 0
+        taskLists.get._3.foreach(tm =>
+          sum += taskManagers(tm).bandwidthsToSelf(assignment._1).rate
+        )
+        taskManagers(assignment._1).opRate =
+          taskManagers(assignment._1).prRate.min(sum)
         if (taskLists.get._3.length > 0) {
           taskManagers(assignment._1).opRate /= taskLists.get._3.length
         }
@@ -362,17 +470,20 @@ class JobManager(replan: Boolean) extends UnicastRemoteObject with JobManagerInt
     // Rates of the sink
     val assignment = plan(plan.size - 1)(0)
     val taskLists = tasks.get(assignment._1, assignment._2)
-    var bwSum : Float = 0
-    var opSum : Float = 0
-    taskLists.get._2.foreach(tm => {bwSum += taskManagers(assignment._1).bandwidthsToSelf(tm).rate
-      opSum += taskManagers(tm).opRate})
+    var bwSum: Float = 0
+    var opSum: Float = 0
+    taskLists.get._2.foreach(tm => {
+      bwSum += taskManagers(assignment._1).bandwidthsToSelf(tm).rate
+      opSum += taskManagers(tm).opRate
+    })
   }
 
-  /**
-    * Called by a sink TaskSlot to report the result of the query.
+  /** Called by a sink TaskSlot to report the result of the query.
     */
   def reportResult(result: Int): Unit = {
-    println ("FINISHED JOB: " + result)
+    job.totalTime = System.currentTimeMillis() - job.queryStartTime
+    println("FINISHED JOB: " + result)
+    println("Total RunTime: " + job.totalTime + " ms")
     job = null // prevent replanning
   }
 }
@@ -382,5 +493,7 @@ case class BW(var fromID: Int, var rate: Float)
 case class Job(
     ops: Array[String],
     parallelisms: Array[Int],
-    var plan: Array[ArrayBuffer[(Int, Int)]]
+    var plan: Array[ArrayBuffer[(Int, Int)]],
+    var queryStartTime: Long,
+    var totalTime: Long
 )

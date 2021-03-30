@@ -25,9 +25,8 @@ class TaskManager(val id: Int)
   val serverSocket = new ServerSocket(port)
   printWithID("Server socket started on port: " + port)
 
-  /**
-    * Listens for socket connections from upstream TaskSlots.
-    * First reads taskID to match with task received in assignTask() 
+  /** Listens for socket connections from upstream TaskSlots.
+    * First reads taskID to match with task received in assignTask()
     */
   new Thread {
     override def run {
@@ -44,8 +43,7 @@ class TaskManager(val id: Int)
     }
   }.start()
 
-  /**
-    * rmi call from JobManager. Creates socket connections to downstream TaskSlots.
+  /** rmi call from JobManager. Creates socket connections to downstream TaskSlots.
     */
   def assignTask(task: Task, initialState: Int): Unit = {
     var taskSlot = getTaskSlot(task.taskID)
@@ -58,15 +56,16 @@ class TaskManager(val id: Int)
     for (i <- task.to.indices) {
       val outputSocket = new Socket("localhost", portOffset + task.to(i))
       val dos = new DataOutputStream(outputSocket.getOutputStream())
-      dos.writeInt(task.toTaskIDs(i))                                   // let receiver know his corresponding taskID
-      taskSlot.to += dos                                                // add the outputstream to the taskslot
+      dos.writeInt(
+        task.toTaskIDs(i)
+      ) // let receiver know his corresponding taskID
+      taskSlot.to += dos // add the outputstream to the taskslot
     }
 
-    runTaskSlot(task.taskID)                                            // Try to run the task slot.
+    runTaskSlot(task.taskID) // Try to run the task slot.
   }
 
-  /**
-    * Runs the TaskSlot if all inputs and outputs are connected.
+  /** Runs the TaskSlot if all inputs and outputs are connected.
     */
   def runTaskSlot(taskID: Int) = synchronized {
     var slot = getTaskSlot(taskID)
@@ -80,8 +79,7 @@ class TaskManager(val id: Int)
     }
   }
 
-  /**
-    * Creates a new TaskSlot and returns it, or returns an existing TaskSlot.
+  /** Creates a new TaskSlot and returns it, or returns an existing TaskSlot.
     */
   def getTaskSlot(taskID: Int): TaskSlot = synchronized {
     var taskSlot = taskSlots.getOrElse(taskID, null)
@@ -95,12 +93,13 @@ class TaskManager(val id: Int)
 
   def terminateTask(taskID: Int): Unit = {
     printWithID("Terminating task " + taskID)
-    val taskSlot = taskSlots.get(taskID).get                            // should always exist
+    val taskSlot = taskSlots.get(taskID).get // should always exist
     taskSlot.stop()
   }
 
   def migrate(taskID: Int, to: (Int, Int), task: Task): Unit = {
-    val tm = Naming.lookup("taskmanager" + to._1).asInstanceOf[TaskManagerInterface]
+    val tm =
+      Naming.lookup("taskmanager" + to._1).asInstanceOf[TaskManagerInterface]
     tm.assignTask(task, getTaskSlot(taskID).state)
   }
 
