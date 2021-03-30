@@ -14,18 +14,24 @@ import akka.stream.ActorMaterializer
 
 
 object Synchronizer {
-  var sleepTime = 10000
+  var sleepTime = 500
   var maxFailCount = 20
   var instancesCheckTime = 5
+  var hardcodedTargets = ArrayBuffer[String]("http://localhost:8080", "http://localhost:8081", "http://localhost:8082")
+
 
   private var targets = ArrayBuffer[String]()
   private var counters = HashMap[String, Int]()
   private var failCounts = HashMap[String, Int]()
 
-  def synchronize(mainSystem: ActorSystem, mainMaterializer: ActorMaterializer) = {
+  def synchronize(kubernetesActive: Boolean, mainSystem: ActorSystem, mainMaterializer: ActorMaterializer) = {
     import mainSystem.dispatcher
     implicit var system = mainSystem
-    checkForNewInstances(mainSystem)
+    if (kubernetesActive) {
+      checkForNewInstances(mainSystem)
+    } else {
+      targets = hardcodedTargets
+    }
     addMissingCounters()
 
     new Thread(new Runnable {
@@ -33,7 +39,9 @@ object Synchronizer {
         var instancesCheckCounter = 0
         while (true) {
           if (instancesCheckCounter >= instancesCheckTime) {
-            checkForNewInstances(mainSystem)
+            if(kubernetesActive) {
+              checkForNewInstances(mainSystem)
+            }
             addMissingCounters()
             removeFailingInstances()
             instancesCheckCounter = 0

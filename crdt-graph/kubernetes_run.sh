@@ -1,4 +1,6 @@
-#!/usr/bin/env bash
+#!/bin/bash
+
+cp src/main/resources/application.kubernetes.conf src/main/resources/application.conf
 
 minikube stop
 minikube start

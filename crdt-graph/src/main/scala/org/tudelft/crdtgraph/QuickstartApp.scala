@@ -18,7 +18,6 @@ import akka.http.scaladsl.server.Directives
 import com.typesafe.config.ConfigFactory
 import org.tudelft.crdtgraph.OperationLogs._
 
-import scala.collection.mutable.ArrayBuffer
 
 //Custom case classes to parse vertices and arcs in post requests containing JSON
 final case class VertexCaseClass(vertexName: String)
@@ -80,11 +79,16 @@ object WebServer extends Directives with JsonSupport {
 
   // Configloader
   lazy val config = ConfigFactory.load()
+  var kubernetesActive = config.getBoolean("my-app.kubernetesActive")
 
 
   def main(args: Array[String]) {
-    ClusterListener.startManager(system)
-//
+    if (kubernetesActive) {
+        ClusterListener.startManager(system)
+    }
+
+    Synchronizer.synchronize(kubernetesActive, system, materializer)
+
     val route: Route = {
         //Route to add a vertex to the datastore. Returns true on success, false otherwise
         //HTTP Post request in the following form: {"vertexName": "abc"}
@@ -203,12 +207,16 @@ object WebServer extends Directives with JsonSupport {
         } ~
           get {
             pathPrefix("address") {
-              var message = "This is my address! \n"
-              message += ClusterListener.getSelfAddress(system)
-              message += "\nAnd these are the addresses I am broadcasting to: \n"
-              message += ClusterListener.getBroadcastAddresses(system) + "\n"
+              if (kubernetesActive) {
+                var message = "This is my address! \n"
+                message += ClusterListener.getSelfAddress(system)
+                message += "\nAnd these are the addresses I am broadcasting to: \n"
+                message += ClusterListener.getBroadcastAddresses(system) + "\n"
 
-              complete(message)
+                complete(message)
+              } else {
+                complete("Not a kubernetes run")
+              }
             }
           }
 
@@ -217,11 +225,6 @@ object WebServer extends Directives with JsonSupport {
     val port = if (args.length > 0) args(0).toInt else 8080
     val bindingFuture = Http().bindAndHandle(route, "0.0.0.0", port)
     println(s"Server online at http://localhost:" + port)
-
-//    ClusterListener.waitForUp(system)
-
-
-    Synchronizer.synchronize(system, materializer)
 
 
   }
