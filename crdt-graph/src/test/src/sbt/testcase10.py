@@ -30,8 +30,8 @@ r2 = requests.post(url + node2_port + addvertex_endpoint, json=vertex1)
 print(r2.text)
 
 
-print("waiting for 10 seconds")
-time.sleep(10)
+print("waiting for 2 seconds")
+time.sleep(2)
 
 print("removing v1 on node with port " + node1_port)
 r1 = requests.delete(url + node1_port + removevertex_endpoint, json=vertex1)
@@ -41,8 +41,8 @@ print("removing v1 on node with port " + node2_port)
 r2 = requests.delete(url + node2_port + removevertex_endpoint, json=vertex1)
 print(r2.text)
 
-print("waiting for 10 seconds")
-time.sleep(10)
+print("waiting for 2 seconds")
+time.sleep(2)
 
 print("looking up v1 on node with port " + node3_port)
 r3 = requests.get(url + node3_port + lookupvertex_endpoint + "?vertexName=" + vertex1['vertexName'])

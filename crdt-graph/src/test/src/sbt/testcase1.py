@@ -20,8 +20,8 @@ print(r1.text)
 
 if (r1.text == "true"):
     print("succesfully added vertex " + newVertex['vertexName'] + " to node on port " + node1_port)
-    print("waiting 10 seconds for synchronization")
-    time.sleep(10)
+    print("waiting 2 seconds for synchronization")
+    time.sleep(2)
 
     print("looking up vertex " + newVertex['vertexName'] + " on nodes on ports " + node2_port + " and " + node3_port)
     r2 = requests.get(url + node2_port + lookupvertex_endpoint + "?vertexName=" + newVertex['vertexName'])

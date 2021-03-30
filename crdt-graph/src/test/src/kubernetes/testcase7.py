@@ -11,9 +11,9 @@ vertex2 = {"vertexName": "v2"}
 arcv1_v2 = {"sourceVertex": "v1", "targetVertex": "v2"}
 
 url = "http://localhost:"
-node1_port = "8080"
-node2_port = "8081"
-node3_port = "8082"
+node1_port = "7000"
+node2_port = "7001"
+node3_port = "7002"
 addvertex_endpoint = "/addvertex"
 lookupvertex_endpoint = "/lookupvertex"
 addarc_endpoint = "/addarc"
@@ -31,8 +31,8 @@ print(r1_2.text)
 if (r1_1.text == "true" and r1_2.text == "true"):
     print("succesfully added vertex " + vertex1['vertexName'] + " to node on port " + node1_port)
     print("succesfully added vertex " + vertex2['vertexName'] + " to node on port " + node1_port)
-    print("waiting 10 seconds for synchronization")
-    time.sleep(10)
+    print("waiting 2 seconds for synchronization")
+    time.sleep(2)
 
     print("adding arc between v1 and v2 on node " + node2_port)
     r2 = requests.post(url + node2_port + addarc_endpoint, json=arcv1_v2)
@@ -40,8 +40,8 @@ if (r1_1.text == "true" and r1_2.text == "true"):
 
     if (r2.text == "true"):
         print("succesfully addded arc between v1 and v2")
-        print("waiting 10 seconds for synchronization")
-        time.sleep(10)
+        print("waiting 2 seconds for synchronization")
+        time.sleep(2)
 
         print("adding arc between v1 and v2 on node " + node3_port)
         r3 = requests.post(url + node3_port + addarc_endpoint, json=arcv1_v2)

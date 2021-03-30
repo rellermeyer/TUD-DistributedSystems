@@ -1,7 +1,7 @@
 import os, subprocess, time, requests, threading
 
 #move to /crdt-graph
-os.chdir("../../../")
+os.chdir("../../../../")
 
 subprocess.Popen("fuser -k 8080/tcp".split())
 subprocess.Popen("fuser -k 8081/tcp".split())
