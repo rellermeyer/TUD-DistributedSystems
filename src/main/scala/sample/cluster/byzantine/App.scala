@@ -1,20 +1,27 @@
 package sample.cluster.byzantine
 
+import akka.actor.Address
 import akka.actor.typed.scaladsl.Behaviors
-import akka.actor.typed.{ActorSystem, Behavior, PostStop}
-import akka.cluster.typed.Cluster
+import akka.actor.typed.{ActorRef, ActorSystem, Behavior, PostStop}
+import akka.cluster.typed.{Cluster, Leave}
 import com.typesafe.config.ConfigFactory
+import sample.cluster.CborSerializable
 
 object App {
+  sealed trait Event extends CborSerializable
+  case class cycleOutcome(nodeId: Int, valueX: Int) extends Event
+  case class respawnNode(nodeId: Int, p: Double) extends Event
+
   object RootBehavior {
     val r = scala.util.Random
 
-    def apply(id: Int): Behavior[Nothing] = Behaviors.setup[Nothing] { ctx =>
+    def apply(id: Int): Behavior[App.Event] = Behaviors.setup[App.Event] { ctx =>
       val cluster = Cluster(ctx.system)
+      println(cluster.subscriptions)
 
       if (cluster.selfMember.hasRole("node")) {
 //        ctx.spawn(Node(r.nextInt(100), 2), s"Node$id")
-        ctx.spawn(SyncNode(id, 10), s"Node$id")
+        ctx.spawn(SyncNode(id, 10, ctx.self), s"Node$id")
       }
       if (cluster.selfMember.hasRole("decider")) {
         ctx.spawn(LargeCoBeRa(10), "LargeCoBeRa")
@@ -22,6 +29,18 @@ object App {
       Behaviors.receiveSignal[Nothing] {
         case (ctx, PostStop) =>
           ctx.log.info("Some node has stopped")
+          Behaviors.same
+      }
+
+      Behaviors.receiveMessage {
+        case cycleOutcome(nodeId, valueX) =>
+          println(s"Node $nodeId is removed from the network with $valueX")
+          cluster.manager ! Leave(cluster.selfMember.address)
+          Behaviors.same
+        case respawnNode(nodeId, p) =>
+          println(s"Node $nodeId is going to respawn")
+          cluster.manager ! Leave(cluster.selfMember.address)
+          ctx.spawn(SyncNode(nodeId, 10, ctx.self), s"Node$nodeId")
           Behaviors.same
       }
     }
@@ -48,6 +67,6 @@ object App {
         """)
       .withFallback(ConfigFactory.load("byzantine"))
 
-    ActorSystem[Nothing](RootBehavior(id), "ClusterSystem", config)
+    ActorSystem[App.Event](RootBehavior(id), "ClusterSystem", config)
   }
 }
