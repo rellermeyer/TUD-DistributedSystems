@@ -8,8 +8,8 @@ object SampleQueryRunner {
   def main(args: Array[String]): Unit = {
     // (map, 3), (map, 2), (reduce, 1)
     val ops = Array("map", "map", "reduce")
-    val parallelisms = Array(3, 2, 1)
-    val dataSize = 8000
+    val parallelisms = Array(7, 5, 1)
+    val dataSize = 4000
 
     val jobManager =
       Naming.lookup("jobmanager").asInstanceOf[JobManagerInterface]

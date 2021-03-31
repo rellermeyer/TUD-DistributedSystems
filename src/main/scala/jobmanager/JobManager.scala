@@ -24,89 +24,20 @@ class JobManager(taskMgrsCount: Int, replan: Boolean)
 
   var job: Job = null // gets initialized in runJob()
 
-  new Thread {
-    override def run {
-      val jsonParser = new JSONParser()
-      var taskMgrCfgs = ArrayBuffer[ArrayBuffer[TaskManagerInfo]]()
-      try {
-        val reader = new FileReader("config.json")
-        //Read JSON file
-        val obj = jsonParser.parse(reader);
+  val taskMgrCfgs = parseConfigs()
 
-        val configs = obj.asInstanceOf[JSONArray];
-        val it = configs.iterator()
-
-        //Iterate over configs array
-        var x = true
-        while (it.hasNext()) {
-          val config = it.next().asInstanceOf[JSONObject]
-          val taskMgrCfg = ArrayBuffer[TaskManagerInfo]()
-          for (i <- 0 until taskMgrsCount) {
-            val json_cfg = config.get(i.toString).asInstanceOf[JSONObject]
-            var latencies = new Array[Latency](0)
-            var bws = new Array[BW](0)
-            val latencies_set =
-              json_cfg.get("latencies").asInstanceOf[JSONObject].entrySet()
-            val bws_set =
-              json_cfg.get("bandwidth").asInstanceOf[JSONObject].entrySet()
-            val json_latencies =
-              json_cfg.get("latencies").asInstanceOf[JSONObject]
-            val json_bws = json_cfg.get("bandwidth").asInstanceOf[JSONObject]
-            val latency_it = latencies_set.iterator()
-            val bw_it = bws_set.iterator()
-            while (latency_it.hasNext()) {
-              val entry =
-                latency_it.next().asInstanceOf[Map.Entry[String, Double]]
-              latencies = latencies :+ new Latency(
-                entry.getKey().toInt,
-                entry.getValue().toFloat
-              )
-            }
-            while (bw_it.hasNext()) {
-              val entry =
-                bw_it.next().asInstanceOf[Map.Entry[String, Double]]
-              bws = bws :+ new BW(
-                entry.getKey().toInt,
-                entry.getValue().toFloat
-              )
-            }
-            taskMgrCfg.append(
-              new TaskManagerInfo(
-                i,
-                json_cfg.get("numSlots").asInstanceOf[Long].asInstanceOf[Int],
-                latencies,
-                bws,
-                json_cfg
-                  .get("ipRate")
-                  .asInstanceOf[Double]
-                  .asInstanceOf[Float],
-                json_cfg
-                  .get("opRate")
-                  .asInstanceOf[Double]
-                  .asInstanceOf[Float],
-                json_cfg
-                  .get("prRate")
-                  .asInstanceOf[Double]
-                  .asInstanceOf[Float]
-              )
-            )
+  def startConfigThread() = {
+    new Thread {
+      override def run {
+        var i: Int = 0
+        while (job != null) {
+          // Overwrite rate values from config file with current rates
+          for (j <- 0 until taskManagers.length) {
+            taskMgrCfgs(i)(j).ipRate = taskManagers(j).ipRate
+            taskMgrCfgs(i)(j).opRate = taskManagers(j).opRate
+            taskMgrCfgs(i)(j).prRate = taskManagers(j).prRate
           }
-          taskMgrCfgs.append(taskMgrCfg)
-        }
-
-      } catch {
-        case e: Throwable => e.printStackTrace()
-      }
-      var i: Int = 0
-      while (true) {
-        // Overwrite rate values from config file with current rates
-        for (j <- 0 until taskManagers.length) {
-          taskMgrCfgs(i)(j).ipRate = taskManagers(j).ipRate
-          taskMgrCfgs(i)(j).opRate = taskManagers(j).opRate
-          taskMgrCfgs(i)(j).prRate = taskManagers(j).prRate
-        }
-        taskManagers = taskMgrCfgs(i)
-        if (job != null) {
+          taskManagers = taskMgrCfgs(i)
           if (replan) {
             replanJob()
           } else {
@@ -114,12 +45,12 @@ class JobManager(taskMgrsCount: Int, replan: Boolean)
             assignRates(job.plan)
             broadcastMetadata(job.plan)
           }
+          i = (i + 1) % (taskMgrCfgs.length) // go to next config
+          Thread.sleep(10000)
         }
-        i = (i + 1) % (taskMgrCfgs.length) // go to next config
-        Thread.sleep(10000)
       }
-    }
-  }.start()
+    }.start()
+  }
 
   /** Assign a TaskManager an unique id an return it to him.
     */
@@ -150,7 +81,16 @@ class JobManager(taskMgrsCount: Int, replan: Boolean)
       dataSize: Int
   ): Boolean = {
     // Create some initial plan so that the rates for all task managers can be calculated and used for created the actual plan
-    val initialPS = Array(2, 2, 2, 0) // random solution [2, 2, 2, 0]
+    var remaining = parallelisms.sum
+    var index = 0
+    val initialPS: Array[Int] = new Array(taskManagers.length)
+    for (index <- 0 until initialPS.length) {
+      if (index == initialPS.length - 1) { // if last element, assign it all remaining tasks
+        initialPS(index) = remaining
+      } else {
+        initialPS(index) = Random.nextInt(remaining)
+      }
+    }
     val initialPlan = ExecutionPlan.createPlan(
       taskManagers,
       initialPS,
@@ -190,8 +130,10 @@ class JobManager(taskMgrsCount: Int, replan: Boolean)
     // Communicate tasks to TMs
     assignTasks(plan, ops, dataSize)
 
-    // Record timestamp here !!!!!!!!!!!!!
+    // Record timestamp here
     job.queryStartTime = System.currentTimeMillis()
+
+    startConfigThread()
 
     return true
   }
@@ -287,23 +229,24 @@ class JobManager(taskMgrsCount: Int, replan: Boolean)
     if (!ExecutionPlan.equalPlans(oldPlan, newPlan)) {
 
       // Halt all current executions
-      for (op <- oldPlan) {
-        for ((tm, taskID) <- op) {
-          val tmi = Naming
-            .lookup("taskmanager" + tm)
-            .asInstanceOf[TaskManagerInterface]
-          tmi.terminateTask(taskID)
-        }
-      }
-      Thread.sleep(100) // allow the system to terminate completely
-      // Halt all current executions by stopping the sink, and letting the upstream neighbors react to the emerging SocketExceptions
-      // val sink = oldPlan(oldPlan.length - 1)(0)
-      // val tm = Naming
-      //   .lookup("taskmanager" + sink._1)
-      //   .asInstanceOf[TaskManagerInterface]
-      // tm.terminateTask(taskID = sink._2)
+      // for (op <- oldPlan) {
+      //   for ((tm, taskID) <- op) {
+      //     val tmi = Naming
+      //       .lookup("taskmanager" + tm)
+      //       .asInstanceOf[TaskManagerInterface]
+      //     tmi.terminateTask(taskID)
+      //   }
+      // }
+      // Thread.sleep(300) // allow the system to terminate completely
 
-      // Thread.sleep(1000) // allow the system to terminate completely
+      // Halt all current executions by stopping the sink, and letting the upstream neighbors react to the emerging SocketExceptions
+      val sink = oldPlan(oldPlan.length - 1)(0)
+      val tm = Naming
+        .lookup("taskmanager" + sink._1)
+        .asInstanceOf[TaskManagerInterface]
+      tm.terminateTask(taskID = sink._2)
+
+      Thread.sleep(1000) // allow the system to terminate completely
 
       // Construct <migrateFrom> and <migrateTo>, by removing assignments that are present in both old and new plans.
       // Add these duplicates to <same>
@@ -485,6 +428,81 @@ class JobManager(taskMgrsCount: Int, replan: Boolean)
     println("FINISHED JOB: " + result)
     println("Total RunTime: " + job.totalTime + " ms")
     job = null // prevent replanning
+  }
+
+  def parseConfigs(): ArrayBuffer[ArrayBuffer[TaskManagerInfo]] = {
+    val jsonParser = new JSONParser()
+    var taskMgrCfgs = ArrayBuffer[ArrayBuffer[TaskManagerInfo]]()
+    try {
+      val reader = new FileReader("config.json")
+      //Read JSON file
+      val obj = jsonParser.parse(reader);
+
+      val configs = obj.asInstanceOf[JSONArray];
+      val it = configs.iterator()
+
+      //Iterate over configs array
+      var x = true
+      while (it.hasNext()) {
+        val config = it.next().asInstanceOf[JSONObject]
+        val taskMgrCfg = ArrayBuffer[TaskManagerInfo]()
+        for (i <- 0 until taskMgrsCount) {
+          val json_cfg = config.get(i.toString).asInstanceOf[JSONObject]
+          var latencies = new Array[Latency](0)
+          var bws = new Array[BW](0)
+          val latencies_set =
+            json_cfg.get("latencies").asInstanceOf[JSONObject].entrySet()
+          val bws_set =
+            json_cfg.get("bandwidth").asInstanceOf[JSONObject].entrySet()
+          val json_latencies =
+            json_cfg.get("latencies").asInstanceOf[JSONObject]
+          val json_bws = json_cfg.get("bandwidth").asInstanceOf[JSONObject]
+          val latency_it = latencies_set.iterator()
+          val bw_it = bws_set.iterator()
+          while (latency_it.hasNext()) {
+            val entry =
+              latency_it.next().asInstanceOf[Map.Entry[String, Double]]
+            latencies = latencies :+ new Latency(
+              entry.getKey().toInt,
+              entry.getValue().toFloat
+            )
+          }
+          while (bw_it.hasNext()) {
+            val entry =
+              bw_it.next().asInstanceOf[Map.Entry[String, Double]]
+            bws = bws :+ new BW(
+              entry.getKey().toInt,
+              entry.getValue().toFloat
+            )
+          }
+          taskMgrCfg.append(
+            new TaskManagerInfo(
+              i,
+              json_cfg.get("numSlots").asInstanceOf[Long].asInstanceOf[Int],
+              latencies,
+              bws,
+              json_cfg
+                .get("ipRate")
+                .asInstanceOf[Double]
+                .asInstanceOf[Float],
+              json_cfg
+                .get("opRate")
+                .asInstanceOf[Double]
+                .asInstanceOf[Float],
+              json_cfg
+                .get("prRate")
+                .asInstanceOf[Double]
+                .asInstanceOf[Float]
+            )
+          )
+        }
+        taskMgrCfgs.append(taskMgrCfg)
+      }
+      taskManagers = taskMgrCfgs(0)
+      return taskMgrCfgs
+    } catch {
+      case e: Throwable => { e.printStackTrace(); return null }
+    }
   }
 }
 

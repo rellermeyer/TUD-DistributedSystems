@@ -37,6 +37,11 @@ class TaskSlot(val tmID: Int) extends Runnable {
 
   def data(): Unit = {
     printWithID("Data...")
+    printWithID(
+      bws
+        .map((x: Int) => (bottleneckSimVal / (x * (prRate).ceil.toInt)).max(1))
+        .mkString(" ")
+    )
     // Generate data
     printWithID("Amount of data left: " + state)
     val data = Array.fill[Int](state)(
@@ -63,6 +68,7 @@ class TaskSlot(val tmID: Int) extends Runnable {
         outputIndex = (outputIndex + 1) % to.length
       } catch {
         case se: SocketException => {
+          printWithID("Terminated implicitly")
           cleanup()
           return
         }
@@ -76,6 +82,11 @@ class TaskSlot(val tmID: Int) extends Runnable {
     var counter = 0
     var inputIndex = 0
     var outputIndex = 0
+    printWithID(
+      bws
+        .map((x: Int) => (bottleneckSimVal / (x * (prRate).ceil.toInt)).max(1))
+        .mkString(" ")
+    )
     while (from.length > 0) {
       if (this.terminateFlag) {
         printWithID("TERMINATED")
@@ -105,6 +116,7 @@ class TaskSlot(val tmID: Int) extends Runnable {
           from.remove(inputIndex) // remove inputstream from consideration
         }
         case se: SocketException => {
+          printWithID("Terminated implicitly")
           cleanup()
           return
         }
@@ -117,6 +129,11 @@ class TaskSlot(val tmID: Int) extends Runnable {
 
   def reduce(): Unit = {
     printWithID("Reduce...")
+    printWithID(
+      bws
+        .map((x: Int) => (bottleneckSimVal / (x * (prRate).ceil.toInt)).max(1))
+        .mkString(" ")
+    )
     var inputIndex = 0
     while (from.length > 0) {
 

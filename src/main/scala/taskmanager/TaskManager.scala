@@ -46,6 +46,7 @@ class TaskManager(val id: Int)
   /** rmi call from JobManager. Creates socket connections to downstream TaskSlots.
     */
   def assignTask(task: Task, initialState: Int): Unit = {
+    printWithID("Received task " + task.operator)
     var taskSlot = getTaskSlot(task.taskID)
     taskSlot.task = task
     if (initialState != -1) { // only assign the initial state if this is a migrated task
