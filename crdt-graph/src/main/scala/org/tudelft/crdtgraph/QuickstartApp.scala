@@ -215,7 +215,7 @@ object WebServer extends Directives with JsonSupport {
 
                 complete(message)
               } else {
-                complete("Not a kubernetes run")
+                complete(StatusCodes.BadRequest, falseString)
               }
             }
           }
