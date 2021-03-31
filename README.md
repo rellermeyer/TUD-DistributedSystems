@@ -151,7 +151,7 @@ sh ./kubernetes_run.sh
 
 Then after the script has finished running, and you gave all container IDs, open up a new terminal, move to the kubernetes test directory `crdt-graph/src/test/src/kubernetes`, and call one of the scripts, e.g. testcase1.py as follows:
 
-```aidl
+```
 python testcase1.py
 ```
 
@@ -160,13 +160,13 @@ Read the comments in testcase1.py, and look at the terminal output if it matches
 
 To run tests without kubernetes, but just with sbt instances, change your directory to `crdt-graph/src/test/src/sbt`, and run the following command:
 
-```aidl
+```
 python run_servers.py
 ```
 
 This will start up three nodes, running on localhost with the following ports: 8080, 8081 and 8082. Then similar to the kubernetes test, run the following command to run testcase1.py:
 
-```aidl
+```
 python testcase1.py
 ```
 Read the comments in testcase1.py, and look at the terminal output if it matches what the comment in the file says.
