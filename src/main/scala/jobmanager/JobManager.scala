@@ -53,8 +53,7 @@ class JobManager(taskMgrsCount: Int, replan: Boolean)
     }.start()
   }
 
-  /** 
-   * Assign a TaskManager an unique id an return it to him.
+  /** Assign a TaskManager an unique id an return it to him.
     */
   def register(): Int = {
     taskManagerIdCounter += 1
@@ -135,8 +134,7 @@ class JobManager(taskMgrsCount: Int, replan: Boolean)
     return true
   }
 
-  /** 
-   * Assigns the tasks from a plan object to the TMs.
+  /** Assigns the tasks from a plan object to the TMs.
     */
   def assignTasks(
       plan: Array[ArrayBuffer[(Int, Int)]],
@@ -159,8 +157,7 @@ class JobManager(taskMgrsCount: Int, replan: Boolean)
     }
   }
 
-  /** 
-   * Helper function for assignTasks() and reassignTasks()
+  /** Helper function for assignTasks() and reassignTasks()
     */
   def generateTask(
       plan: Array[ArrayBuffer[(Int, Int)]],
@@ -190,8 +187,7 @@ class JobManager(taskMgrsCount: Int, replan: Boolean)
     return new Task(-1, from, to, toTaskIDs, operator)
   }
 
-  /** 
-   * Called periodically after the bandwidth and processing rate of the system has changed.
+  /** Called periodically after the bandwidth and processing rate of the system has changed.
     */
   def replanJob(): Boolean = {
     if (job == null) {
@@ -301,8 +297,7 @@ class JobManager(taskMgrsCount: Int, replan: Boolean)
     return true
   }
 
-  /** 
-   * Same as assignTasks(), but calls TaskManager.migrate() instead of TaskManager.assignTask() for some of the assignments.
+  /** Same as assignTasks(), but calls TaskManager.migrate() instead of TaskManager.assignTask() for some of the assignments.
     */
   def reassignTasks(
       same: Array[ArrayBuffer[(Int, Int)]],
@@ -339,8 +334,7 @@ class JobManager(taskMgrsCount: Int, replan: Boolean)
     }
   }
 
-  /** 
-   * Assign the input and output rates to the tms based on the execution plan and metrics
+  /** Assign the input and output rates to the tms based on the execution plan and metrics
     */
   def assignRates(plan: Array[ArrayBuffer[(Int, Int)]]) = {
     val dataSource = ExecutionPlan.dataSource
@@ -425,8 +419,7 @@ class JobManager(taskMgrsCount: Int, replan: Boolean)
     })
   }
 
-  /** 
-   * Called by a sink TaskSlot to report the result of the query.
+  /** Called by a sink TaskSlot to report the result of the query.
     */
   def reportResult(result: Int): Unit = {
     job.totalTime = System.currentTimeMillis() - job.queryStartTime
@@ -441,7 +434,7 @@ class JobManager(taskMgrsCount: Int, replan: Boolean)
     val jsonParser = new JSONParser()
     var taskMgrCfgs = ArrayBuffer[ArrayBuffer[TaskManagerInfo]]()
     try {
-      val reader = new FileReader("config-12.json")
+      val reader = new FileReader("src/configs/config-12.json")
       //Read JSON file
       val obj = jsonParser.parse(reader);
 

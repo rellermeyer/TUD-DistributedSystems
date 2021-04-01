@@ -65,8 +65,7 @@ class TaskSlot(val tmID: Int) extends Runnable {
         to(outputIndex).writeInt(data(i))
         state -= 1 // record how many elements have been sent so far
         outputIndex = (outputIndex + 1) % to.length
-      } 
-      catch {
+      } catch {
         case _: Throwable => {
           printWithID("Terminated implicitly")
           cleanup()
@@ -101,8 +100,7 @@ class TaskSlot(val tmID: Int) extends Runnable {
         if (value == -1) { // upstream neighbor indicates end of stream
           from(inputIndex).close() // close the stream
           from.remove(inputIndex) // remove inputstream from consideration
-        }
-        else {
+        } else {
           value += 1 // transform value
           counter += 1
           // Simulate actual bandwidth
@@ -114,7 +112,7 @@ class TaskSlot(val tmID: Int) extends Runnable {
           }
           to(outputIndex).writeInt(value)
         }
-        
+
       } catch {
         // EOFException if upstream neighbor closes stream
         // SocketException if downstream neighbor closes stream
@@ -148,8 +146,7 @@ class TaskSlot(val tmID: Int) extends Runnable {
         if (value == -1) { // upstream neighbor indicates end of stream
           from(inputIndex).close() // close the stream
           from.remove(inputIndex) // remove inputstream from consideration
-        }
-        else {
+        } else {
           state += value
         }
       } catch {
