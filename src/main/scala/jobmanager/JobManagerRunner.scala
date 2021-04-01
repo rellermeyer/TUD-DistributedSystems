@@ -16,7 +16,6 @@ object JobManagerRunner {
     val registry = LocateRegistry.createRegistry(registryPort)
     println("Registry running on port " + registryPort)
 
-    // TODO: Maybe parse in a nicer way
     var replan: Boolean = true
     var numTms = 1
     if (args.length > 1) {

@@ -2,6 +2,10 @@
 
 ## Design
 
+Our [original design](#Original-Design) is explained below, and was meant to be built with Apache Flink, however we soon realized that there was no easy way to replace the default scheduler inside of Flink. Therefore, we decided to implmenet our own scheduler, which resulted in a slightly [adapted design](#Adapted-Design) explained below.
+
+### Original Design
+
 The design is based on expanding Apache Flink [[1]](#1) with parts of the optimizations presented in WASP [[2]](#2). A visual representation of the full WASP implementation is depicted in [Figure 1](#FigDesign), with components that we are implementing in green, components that we are simulating in yellow, and components that we are not implementing as red.
 
 The main component of our implementation is the Scheduler. The WASP paper does not describe a method to distribute the tasks among the nodes, but it does provide an instance of an Integer Linear Program problem. Solving said problem gives a result of how many tasks to run on every data center (node), depending on the current state of the system (bandwidths, latencies, available computation slots). Our Scheduler will schedule the tasks based on this result. We will use the Gurobi Optimization Tool [[3]](#3) to solve the ILP problem.
@@ -22,14 +26,14 @@ The WASP paper describes three techniques to adapt the execution plan to the sta
 *A visual representation of the WASP implementation, with components that we are implementing in this project depicted in green.*
 
 
-### Functional Requirements
+#### Functional Requirements
 
 * The system should be able to identify the bottlenecks and take the appropriate actions as mentioned below.
     * Reconfiguration due to computational resources - If the computational resources are the bottleneck for a particular operator, the algorithm should first attempt to scale up (increase resources within the same site), and then scale out (distribute the workload on a greater number of sites). On the other hand, if excess resources are allocated to an operator, the algorithm should scale down.
     * Reconfiguration due to bandwidth/latency - If the upstream bandwidth of a particular node is the bottleneck, the upstream node should limit the stream sent to that node. The plan should be restructured to utilize links with higher bandwidths.
 * Reconfiguration should be possible, not only at the start of each execution, but also when the execution is in progress.
 
-### Non-Functional Requirements
+#### Non-Functional Requirements
 
 * Data quality - No data degradation (no throwing away parts of the stream if it cannot be processed fast enough or sacrificing accuracy, only as last resort).
 * Streaming Data - The system should handle data that continuously flows to it at different speeds.
@@ -38,7 +42,7 @@ The WASP paper describes three techniques to adapt the execution plan to the sta
 * Processing Guarantees - The submitted query shall be executed, and the result retrieved within a certain finite amount of time.
 * Flow Control - The system should be able to handle effectively the nodes work overload.
 
-## Evaluation
+#### Origianal Evalutaion Plan
 
 To evaluate the execution of the adaptive strategy, we submit a number of queries and measure how well it performs. The queries only consist of simple stateless tasks. 
 
@@ -51,6 +55,18 @@ We will use the same metrics as the paper, which are
 The baseline is the scheduler without reconfiguring any of the task placements after the initial schedule vs. WASP reconfiguring task placement based on collected metrics from the data centers.
 
 We use the Yahoo Streaming Benchmark (YSB) [[4]](#4) to asses our system under large workloads.
+
+### Adapted Design
+
+<!-- TODO Explain that flink wasn't very customizable in the scheduler hence we implemented our own scheduler -->
+
+## Execution Commands
+
+<!-- TODO Explain how to run tms and jms and query, say can also run individually in separate jvm for each but runner to make life easier -->
+
+## Adapted Evaluation
+
+With the new design, we also had to adapt our evaluation. Our new evaluation will run several benchmarks for queries of different sizes and different parallelism to identify how performance changes under these conditions when the scheduler uses adaptive or static scheduling. All the commands and detailed explanations of the different experiments, along with the results, are presented in the [experiments folder](/experiments/README.md).
 
 ## References 
 

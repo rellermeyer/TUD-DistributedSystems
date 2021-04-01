@@ -14,7 +14,7 @@ import random
 def main(argv):
     numTaskManagers = 1
     numConfigs = 1
-    numSlots = 3
+    numSlots = 5
 
     try:
         opts, args = getopt.getopt(sys.argv[1:], 'n:c:s:', ['n=', 'c=', 's='])
@@ -55,7 +55,7 @@ def main(argv):
             
             data[str(i)]['ipRate'] = ipRate
             data[str(i)]['numSlots'] = numSlots
-            prRate = data[str(i)]['prRate'] = min(ipRate, random.uniform(1, 1000))
+            prRate = data[str(i)]['prRate'] = random.uniform(1, 1000)
             data[str(i)]['opRate'] = min(prRate, opRate)
             # if (i != numConfigs-1):
             #     data[str(i)]['numSlots'] = random.randint(0, numSlots)

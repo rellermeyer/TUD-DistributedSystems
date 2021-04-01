@@ -16,7 +16,7 @@ class TaskSlot(val tmID: Int) extends Runnable {
   var task: Task = null
   var from: ArrayBuffer[DataInputStream] = ArrayBuffer.empty[DataInputStream]
   var to: ArrayBuffer[DataOutputStream] = ArrayBuffer.empty[DataOutputStream]
-  val bottleneckSimVal = 9000000
+  val bottleneckSimVal = 10000
   var bws: Array[Int] = null
   var prRate: Float = 0.0.toFloat
 
@@ -42,9 +42,11 @@ class TaskSlot(val tmID: Int) extends Runnable {
     printWithID("Data...")
     printWithID(
       bws
-        .map((x: Int) => (bottleneckSimVal / (x * (prRate).ceil.toInt)).max(1))
+        .map((x: Int) => (bottleneckSimVal / x).max((prRate).ceil.toInt))
         .mkString(" ")
     )
+    printWithID("bws: " + bws.mkString(" "))
+    printWithID("prRate: " + prRate)
     // Generate data
     printWithID("Amount of data left: " + state)
     val data = Array.fill[Int](state)(
@@ -58,7 +60,7 @@ class TaskSlot(val tmID: Int) extends Runnable {
         // Simulate actual processing rate and bandwidth
         // printWithID("Data sleep: " + (bottleneckSimVal / (bws(outputIndex) * (prRate).ceil.toInt)).max(1))
         Thread.sleep(
-          (bottleneckSimVal / (bws(outputIndex) * (prRate).ceil.toInt)).max(1)
+          (bottleneckSimVal / bws(outputIndex)).min((prRate).ceil.toInt)
         ) // sleep at least 1ms
         to(outputIndex).writeInt(data(i))
         state -= 1 // record how many elements have been sent so far
@@ -83,7 +85,7 @@ class TaskSlot(val tmID: Int) extends Runnable {
     var outputIndex = 0
     printWithID(
       bws
-        .map((x: Int) => (bottleneckSimVal / (x * (prRate).ceil.toInt)).max(1))
+        .map((x: Int) => (bottleneckSimVal / x).max((prRate).ceil.toInt))
         .mkString(" ")
     )
     while (from.length > 0) {
@@ -134,7 +136,7 @@ class TaskSlot(val tmID: Int) extends Runnable {
     printWithID("Reduce...")
     printWithID(
       bws
-        .map((x: Int) => (bottleneckSimVal / (x * (prRate).ceil.toInt)).max(1))
+        .map((x: Int) => (bottleneckSimVal / x).max((prRate).ceil.toInt))
         .mkString(" ")
     )
     var inputIndex = 0
@@ -173,9 +175,9 @@ class TaskSlot(val tmID: Int) extends Runnable {
       var index: Int = 0
       for (out <- to) {
         // Simulate actual bandwidth
-        // Thread.sleep(
-        //   (bottleneckSimVal / (bws(index) * (prRate).ceil.toInt)).max(1)
-        // ) // sleep at least 1msast 1ms
+        Thread.sleep(
+          (bottleneckSimVal / bws(index)).min((prRate).ceil.toInt)
+        )
         index += 1
         out.writeInt(state)
         out.writeInt(-1) // indicate end of stream

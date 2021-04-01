@@ -6,7 +6,6 @@ import java.io.PrintWriter
 import java.io.InputStreamReader
 import java.rmi.Naming
 import java.rmi.server.UnicastRemoteObject
-import scala.util.Random
 import java.net.Socket
 import java.io.DataOutputStream
 import java.io.DataInputStream
