@@ -1,5 +1,8 @@
 lazy val akkaHttpVersion = "10.2.4"
 lazy val akkaVersion    = "2.6.13"
+val akkaManagementVersion = "1.0.10"
+
+resolvers += Resolver.bintrayRepo("tanukkii007", "maven")
 
 lazy val root = (project in file(".")).
   settings(
@@ -18,10 +21,21 @@ lazy val root = (project in file(".")).
 
       "com.typesafe.akka" %% "akka-http-testkit"        % akkaHttpVersion % Test,
       "com.typesafe.akka" %% "akka-actor-testkit-typed" % akkaVersion     % Test,
-      "org.scalatest"     %% "scalatest"                % "3.1.4"         % Test
+      "org.scalatest"     %% "scalatest"                % "3.1.4"         % Test,
+
+      "com.typesafe.akka" %% "akka-cluster" % akkaVersion,
+      "com.typesafe.akka" %% "akka-cluster-sharding" % akkaVersion,
+      "com.typesafe.akka" %% "akka-discovery" % akkaVersion,
+      "com.typesafe.akka" %% "akka-cluster-typed" % akkaVersion,
+      "com.lightbend.akka.discovery" %% "akka-discovery-kubernetes-api" % akkaManagementVersion,
+      "com.lightbend.akka.management" %% "akka-management" % akkaManagementVersion,
+      "com.lightbend.akka.management" %% "akka-management-cluster-http" % akkaManagementVersion,
+      "com.lightbend.akka.management" %% "akka-management-cluster-bootstrap" % akkaManagementVersion,
+      "com.github.TanUkkii007" %% "akka-cluster-custom-downing" % "0.0.13"
     )
   )
 
 enablePlugins(UniversalPlugin)
 enablePlugins(JavaAppPackaging)
+enablePlugins(JavaServerAppPackaging)
 enablePlugins(DockerPlugin)

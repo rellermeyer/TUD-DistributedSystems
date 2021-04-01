@@ -11,9 +11,11 @@ import spray.json._
 
 import scala.io.StdIn
 import scala.concurrent.Future
+import ClusterListener._
 import spray.json.DefaultJsonProtocol
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.http.scaladsl.server.Directives
+import com.typesafe.config.ConfigFactory
 import org.tudelft.crdtgraph.OperationLogs._
 
 import scala.collection.mutable.{ArrayBuffer, HashMap}
@@ -80,8 +82,9 @@ trait JsonSupport extends SprayJsonSupport with DefaultJsonProtocol {
 }
 
 object WebServer extends Directives with JsonSupport {
+  var normalMessage = "Synchronizer not running"
   // needed to run the route
-  implicit val system = ActorSystem()
+  implicit val system = ActorSystem("crdt-graph")
   implicit val materializer = ActorMaterializer()
   // needed for the future map/flatmap in the end and future in fetchItem and saveOrder
   implicit val executionContext = system.dispatcher
@@ -90,9 +93,17 @@ object WebServer extends Directives with JsonSupport {
   val trueString = "true"
   val falseString = "false"
 
+  // Configloader
+  lazy val config = ConfigFactory.load()
+  var kubernetesActive = config.getBoolean("my-app.kubernetesActive")
+
 
   def main(args: Array[String]) {
-    Synchronizer.synchronize(ArrayBuffer[String]("http://localhost:8080", "http://localhost:8081", "http://localhost:8082", "https://webhook.site/03df0970-6f82-43b8-9d46-6e9684d05683"))
+    if (kubernetesActive) {
+        ClusterListener.startManager(system)
+    }
+
+    Synchronizer.synchronize(kubernetesActive, system, materializer)
 
     val route: Route = {
       //Route to add a vertex to the datastore. Returns true on success, false otherwise
@@ -209,16 +220,28 @@ object WebServer extends Directives with JsonSupport {
             var changes = DataStore.getLastChanges(0).toVector
             complete(changes.map(log => log.toJson))
           }
-        }
+        } ~
+          get {
+            pathPrefix("address") {
+              if (kubernetesActive) {
+                var message = "This is my address! \n"
+                message += ClusterListener.getSelfAddress(system)
+                message += "\nAnd these are the addresses I am broadcasting to: \n"
+                message += ClusterListener.getBroadcastAddresses(system) + "\n"
+
+                complete(message)
+              } else {
+                complete(StatusCodes.BadRequest, falseString)
+              }
+            }
+          }
+
     }
 
     val port = if (args.length > 0) args(0).toInt else 8080
     val bindingFuture = Http().bindAndHandle(route, "0.0.0.0", port)
-    println(s"Server online at http://localhost:" + port + "/\nPress RETURN to stop...")
-    //    StdIn.readLine() // let it run until user presses return
-    //    bindingFuture
-    //      .flatMap(_.unbind()) // trigger unbinding from the port
-    //      .onComplete(_ ⇒ system.terminate()) // and shutdown when done
+    println(s"Server online at http://localhost:" + port)
+
 
   }
 }

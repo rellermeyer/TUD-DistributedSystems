@@ -4,46 +4,64 @@ import spray.json._
 import DefaultJsonProtocol._
 import akka.http.scaladsl.model._
 import org.tudelft.crdtgraph.WebServer.OperationLogFormat
-import scala.collection.mutable.ArrayBuffer
+
+import scala.collection.mutable.{HashMap, ArrayBuffer}
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
-import scala.util.{ Failure, Success }
+
+import scala.util.{Failure, Success}
+import akka.stream.ActorMaterializer
+
 
 object Synchronizer {
-  implicit val system = ActorSystem()
-  import system.dispatcher
+  var sleepTime = 500
+  var maxFailCount = 20
+  var instancesCheckTime = 5
+  var hardcodedTargets = ArrayBuffer[String]("http://localhost:8080", "http://localhost:8081", "http://localhost:8082")
 
-  var hard_coded_targets = ArrayBuffer[String]()
-  var sleepTime = 10000
-  var maxFailCount = 100
 
-  def addMissingCounter(counters: ArrayBuffer[Int], targets: ArrayBuffer[String]): Unit = {
-    if(targets.length > counters.length) {
-      var diff = targets.length - counters.length
-      for(i <- 1 to diff) {
-        counters += 0
-      }
+  private var targets = ArrayBuffer[String]()
+  private var counters = HashMap[String, Int]()
+  private var failCounts = HashMap[String, Int]()
+
+  def synchronize(kubernetesActive: Boolean, mainSystem: ActorSystem, mainMaterializer: ActorMaterializer) = {
+    import mainSystem.dispatcher
+    implicit var system = mainSystem
+    if (kubernetesActive) {
+      checkForNewInstances(mainSystem)
+    } else {
+      targets = hardcodedTargets
     }
-  }
+    addMissingCounters()
 
-  def synchronize(targets: ArrayBuffer[String]) = {
     new Thread(new Runnable {
       def run: Unit = {
-        var counters = ArrayBuffer[Int]()
-        var failCount = ArrayBuffer[Int]()
-        while(true) {
-          addMissingCounter(counters, targets)
-          addMissingCounter(failCount, targets)
+        var instancesCheckCounter = 0
+        while (true) {
+          if (instancesCheckCounter >= instancesCheckTime) {
+            if(kubernetesActive) {
+              checkForNewInstances(mainSystem)
+            }
+            addMissingCounters()
+            removeFailingInstances()
+            instancesCheckCounter = 0
+            println("Performed instances check.")
+            println("New peers are: " + targets)
+          }
 
           // Send updates to all targets. Decide on what framework to use
-          for(i <- targets.indices) {
-            var data = DataStore.getLastChanges(counters(i))
-            if(data.nonEmpty) {
+          targets.foreach(target => {
+
+            var data = DataStore.getLastChanges(counters(target))
+            println("Synchronizing with: " + target)
+
+            if (data.nonEmpty) {
+              println("Exchanging " + data.length.toString + " operations.")
               var json = data.map(log => log.toJson(OperationLogFormat)).toVector.toJson(spray.json.DefaultJsonProtocol.vectorFormat)
               val responseFuture = Http().singleRequest(
                 HttpRequest(
                   method = HttpMethods.POST,
-                  uri = targets(i) + "/applychanges",
+                  uri = target + "/applychanges",
                   entity = HttpEntity(
                     ContentTypes.`application/json`, json.toString()
                   )
@@ -52,25 +70,62 @@ object Synchronizer {
 
               responseFuture
                 .onComplete {
-                  case Success(res) => counters(i) += data.length
-                  case Failure(_)   => failCount(i) += 1
-
+                  case Success(res) => {
+                    counters(target) += data.length
+                    failCounts(target) = 0
+                  }
+                  case Failure(_) => failCounts(target) += 1
                 }
+
+              //Release IO between sync calls
               Thread.sleep(10)
+            } else {
+              println("No new changes")
             }
-          }
+          })
 
-          for(i <- targets.indices) {
-            if(failCount(i) > maxFailCount) {
-              print("Target " + targets(i) + " has failed " + failCount(i) + " times to respond. Consider removing this target")
-              // Might add code to drop the target
-            }
-          }
-
-          // Make the thread sleep for 10 seconds
+          // Increment and sleep for n seconds (default: 10)
+          instancesCheckCounter += 1
           Thread.sleep(sleepTime)
         }
       }
     }).start
   }
+
+  private def addMissingCounters(): Unit = {
+    targets.foreach(target => {
+      if (!counters.contains(target)) {
+        counters(target) = 0
+      }
+    })
+    targets.foreach(target => {
+      if (!failCounts.contains(target)) {
+        failCounts(target) = 0
+      }
+    })
+  }
+
+  private def removeFailingInstances() = {
+    var toRemove = ArrayBuffer[String]()
+    targets.foreach(target => {
+      if (failCounts(target) > maxFailCount) {
+        println("Target " + target + " has failed " + failCounts(target) + " times to respond.")
+        println("Target " + target + " is removed from synchronization list.")
+        failCounts.remove(target)
+        counters.remove(target)
+        toRemove += target
+      }
+    })
+    targets --= toRemove
+  }
+
+  private def checkForNewInstances(mainSystem: ActorSystem) = {
+    val newAddresses = ClusterListener.getBroadcastAddresses(mainSystem)
+    newAddresses.foreach(address => {
+      if (!targets.contains(address)) {
+        targets += address
+      }
+    })
+  }
+
 }

@@ -7,9 +7,9 @@ import time
 newVertex = {"vertexName": "v1"}
 
 url = "http://localhost:"
-node1_port = "8080"
-node2_port = "8081"
-node3_port = "8082"
+node1_port = "7000"
+node2_port = "7001"
+node3_port = "7002"
 addvertex_endpoint = "/addvertex"
 lookupvertex_endpoint = "/lookupvertex"
 removevertex_endpoint = "/removevertex"
@@ -21,8 +21,8 @@ print(r1.text)
 
 if (r1.text == "true"):
     print("succesfully added vertex " + newVertex['vertexName'] + " to node on port " + node1_port)
-    print("waiting 10 seconds for synchronization")
-    time.sleep(10)
+    print("waiting 2 seconds for synchronization")
+    time.sleep(2)
 
     print("removing vertex " + newVertex['vertexName'] + " on node with port " + node2_port)
     r2 = requests.delete(url + node2_port + removevertex_endpoint, json=newVertex)
@@ -31,8 +31,8 @@ if (r1.text == "true"):
 
     if (r2.text == "true"):
         print("Succesfully deleted vertex " + newVertex['vertexName'] + " on node with port " + node2_port)
-        print("waiting 10 seconds for synchronization")
-        time.sleep(10)
+        print("waiting 2 seconds for synchronization")
+        time.sleep(2)
 
         print("removing vertex " + newVertex['vertexName'] + " on node with port " + node3_port)
         r3 = requests.delete(url + node3_port + removevertex_endpoint, json=newVertex)
