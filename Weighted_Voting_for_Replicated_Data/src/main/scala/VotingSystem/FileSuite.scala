@@ -1,10 +1,10 @@
 package VotingSystem
 
-import FileSystem.{ContainerResponse, DistributedSystem, FileSystemResponse, Representative}
+import FileSystem.{ContainerResponse, FileSystem, FileSystemResponse, Representative}
 
 import scala.util.control.Breaks.{break, breakable}
 
-class FileSuite (fileSystem: DistributedSystem, newSuiteId: Int){
+class FileSuite (fileSystem: FileSystem, newSuiteId: Int){
 
   case class FailResult(reason:String)
 
@@ -12,7 +12,16 @@ class FileSuite (fileSystem: DistributedSystem, newSuiteId: Int){
    * constructor
    */
   private val _suiteId: Int = newSuiteId
-  private val _fsResp:  Either[fileSystem.FailResult, FileSystemResponse] = fileSystem.collectRepresentatives(_suiteId)
+  private var _r: Int = -1
+  private var _w: Int = -1
+  private var _versionNumber = -1
+  private var _suiteInfo: Seq[Int] = Seq.empty[Int]
+
+  private var _inquiryResponse: Seq[ContainerResponse] = Seq.empty[ContainerResponse]
+
+  private var _hasInquired: Boolean = false
+  private var _hasIncremented: Boolean = false
+
 
   /**
    * accessor methods
@@ -23,12 +32,49 @@ class FileSuite (fileSystem: DistributedSystem, newSuiteId: Int){
    * Returning the latest container response, and checks if there are responses at all
    * @return latest containerResponse
    */
-  def inquiry(fsResp: FileSystemResponse): Either[FailResult, ContainerResponse] = {
+  def findLatest(fsResp: FileSystemResponse): Either[FailResult, ContainerResponse] = {
     if (fsResp.containerResponses.nonEmpty) {
-      Right(fsResp.containerResponses.maxBy(_.prefix.versionNumber))
+      Right(fsResp.containerResponses.maxBy(_.prefix.versionNumberTentative))
     }
     else {
       Left(FailResult("findLatest failed: no container responses present in file system response"))
+    }
+  }
+
+  def initiateInquiries(): Either[FailResult, Int] = {
+    val response = fileSystem.collectRepresentatives(_suiteId)
+
+    response match {
+      case Left(f) => Left(FailResult("inquiry failed:\n" + f.reason))
+      case Right(response) => {
+
+        if (!response._1.containerResponses.isEmpty) {
+          _inquiryResponse = response._1.containerResponses
+          val latest = findLatest(response._1)
+
+          latest match {
+            case Left(f) => Left(FailResult("inquiry failed:\n" + f.reason))
+            case Right(latest) => {
+              _r = latest.prefix.r
+              _w = latest.prefix.w
+              _versionNumber = latest.prefix.versionNumberTentative
+              _suiteInfo = latest.prefix.info
+
+              val quorum = collectReadQuorum(response._1.containerResponses)
+              quorum match {
+                case Left(f) => Left(FailResult("inquiry failed:\n" + f.reason))
+                case Right(quorum) => {
+                  _hasInquired = true
+                  Right(response._2)
+                }
+              }
+            }
+          }
+        }
+        else {
+          Left(FailResult("inquiry failed: no responses received"))
+        }
+      }
     }
   }
 
@@ -39,45 +85,40 @@ class FileSuite (fileSystem: DistributedSystem, newSuiteId: Int){
    * @param versionNumber
    * @return readCandidates
    */
-  def findReadQuorum(fsResp: FileSystemResponse, r: Int, versionNumber: Int): Either[FailResult, (Seq[ContainerResponse], Int)] = {
-    val currentReps: Seq[ContainerResponse] = fsResp.containerResponses.sortBy(_.latency)
+  def collectReadQuorum(responses: Seq[ContainerResponse]): Either[FailResult, (Seq[ContainerResponse], Int)] = {
+    val currentReps: Seq[ContainerResponse] = responses.sortBy(_.latency)
     var readCandidates: Seq[ContainerResponse] = Seq.empty[ContainerResponse]
     var totalWeight: Int = 0
 
     for (rep <- currentReps) {
       readCandidates = readCandidates :+ rep
       totalWeight += rep.weight
-      if (totalWeight >= r) {
-        return Right((readCandidates, readCandidates.last.latency))
+      if (totalWeight >= _r) {
+        return Right(readCandidates, readCandidates.last.latency)
       }
     }
     Left(FailResult("findReadQuorum failed: no quorum present"))
   }
 
-
-  //def copyRepresentative(source: Representative): Either[FailResult, (Representative, Int)] = {
-  //  val newCopy: Representative = Representative()
-  //}
-
-  // TODO: does this work as intended w.r.t. up to date copies?
   /**
    * Distinguishes the containers that meet the write quorum and are therefore writeCandidates
    * @param w
    * @param versionNumber
    * @return writeCandidates
    */
-  def findWriteQuorum(fsResp: FileSystemResponse, w: Int, versionNumber: Int): Either[FailResult, (Seq[ContainerResponse], Int)] = {
-    val currentReps: Seq[ContainerResponse] = fsResp.containerResponses.filter(_.prefix.versionNumber == versionNumber).sortBy(_.latency)
+  def collectWriteQuorum(responses: Seq[ContainerResponse]): Either[FailResult, (Seq[ContainerResponse], Int)] = {
+    val currentReps: Seq[ContainerResponse] = responses.filter(_.prefix.versionNumberTentative == _versionNumber).sortBy(_.latency)
     var writeCandidates: Seq[ContainerResponse] = Seq.empty[ContainerResponse]
     var totalWeight: Int = 0
+
     for (rep <- currentReps) {
       writeCandidates = writeCandidates :+ rep
       totalWeight += rep.weight
-      if (totalWeight >= w) {
+      if (totalWeight >= _w) {
         return Right(writeCandidates, writeCandidates.last.latency)
       }
     }
-    Left(FailResult("findWriteQuorum failed: no quorum present")) //TODO: own error class?
+    Left(FailResult("collectWriteQuorum failed: no quorum present"))
   }
 
 
@@ -91,11 +132,11 @@ class FileSuite (fileSystem: DistributedSystem, newSuiteId: Int){
   }
 
 
-  def findReadCandidate(readQuorum: Seq[ContainerResponse], versionNumber: Int): Either[FailResult, ContainerResponse] = {
+  def selectFastestCurrentRepresentative(responses: Seq[ContainerResponse]): Either[FailResult, ContainerResponse] = {
     var foundCandidate: Boolean = false
     var readCandidate: ContainerResponse = null
-    breakable { for (c <- readQuorum) {
-      if (c.prefix.versionNumber == versionNumber) {
+    breakable { for (c <- responses) {
+      if (c.prefix.versionNumberTentative == _versionNumber) {
         readCandidate = c
         foundCandidate = true
         break
@@ -105,7 +146,7 @@ class FileSuite (fileSystem: DistributedSystem, newSuiteId: Int){
       Right(readCandidate)
     }
     else {
-      Left(FailResult("findReadCandidate failed: no read candidate present in read quorum"))
+      Left(FailResult("selectFastestCurrentRepresentative failed: suitable candidate present in response set"))
     }
   }
 
@@ -117,36 +158,50 @@ class FileSuite (fileSystem: DistributedSystem, newSuiteId: Int){
    * @param
    * @return result
    */
-  def readSuite(): Either[FailResult, (Int, Int)] = {
-    _fsResp match {
-      case Left(f) => Left(FailResult("suiteRead failed:\n" + f.reason))
+  def read(): Either[FailResult, (Int, Int)] = {
+    var latency: Int = 0
+
+    if (!_hasInquired) {
+      val result = initiateInquiries()
+      result match {
+        case Left(f) => Left(FailResult("read failed:\n" + f.reason))
+        case Right(result) => latency = latency + result
+      }
+    }
+
+    val responses = fileSystem.collectRepresentatives(_suiteId)
+    var validResponses = Seq.empty[ContainerResponse]
+    responses match {
+      case Left(f) => Left(FailResult("read failed:\n" + f.reason))
       case Right(responses) => {
-        val current = inquiry(responses)
 
-        current match {
-          case Left(f) => Left(FailResult("suiteRead failed:\n" + f.reason))
-          case Right(current) => {
-            val quorum = findReadQuorum(responses, current.prefix.r, current.prefix.versionNumber)
+        for (c <- responses._1.containerResponses) {
+          if (_inquiryResponse.exists(e => e.cid == c.cid))
+            validResponses = validResponses :+ c
+        }
+      }
+    }
 
-            quorum match {
-              case Left(f) => Left(FailResult("suiteRead failed:\n" + f.reason))
-              case Right(quorum) => {
-                val readCandidate = findReadCandidate(quorum._1, current.prefix.versionNumber)
+    val quorum = collectReadQuorum(validResponses)
+    quorum match {
+      case Left(f) => Left(FailResult("read failed:\n" + f.reason))
+      case Right(quorum) => {
 
-                readCandidate match {
-                  case Left(f) => Left(FailResult("suiteRead failed:\n" + f.reason))
-                  case Right(readCandidate) => {
-                    val result = fileSystem.readRepresentative(readCandidate.cid, _suiteId)
+        latency = latency + quorum._2
+        val readCandidate = selectFastestCurrentRepresentative(quorum._1)
 
-                    result match {
-                      case Left(f) => Left(FailResult("suiteRead failed:\n" + f.reason))
-                      case Right(result) => {
-                        val latency: Int = quorum._2 + result._2
-                        Right(result._1, latency)
-                      }
-                    }
-                  }
-                }
+        readCandidate match {
+          case Left(f) => Left(FailResult("read failed:\n" + f.reason))
+          case Right(readCandidate) => {
+
+            val result = fileSystem.readRepresentative(readCandidate.cid, _suiteId)
+
+            result match {
+              case Left(f) => Left(FailResult("read failed:\n" + f.reason))
+              case Right(result) => {
+
+                latency = latency + result._2
+                Right(result._1, latency)
               }
             }
           }
@@ -163,35 +218,53 @@ class FileSuite (fileSystem: DistributedSystem, newSuiteId: Int){
    * @param
    * @return result
    */
-  def writeSuite(newContent: Int): Either[FailResult, Int] = {
-    _fsResp match {
-      case Left(f) => Left(FailResult("suiteWrite failed:\n" + f.reason))
+  def write(newContent: Int): Either[FailResult, Int] = {
+    var latency: Int = 0
+
+    if (!_hasInquired) {
+      val result = initiateInquiries()
+      result match {
+        case Left(f) => Left(FailResult("write failed:\n" + f.reason))
+        case Right(result) => latency = latency + result
+      }
+    }
+
+    val responses = fileSystem.collectRepresentatives(_suiteId)
+    var validResponses = Seq.empty[ContainerResponse]
+    responses match {
+      case Left(f) => Left(FailResult("write failed:\n" + f.reason))
       case Right(responses) => {
-        val current = inquiry(responses)
 
-        current match {
-          case Left(f) => Left(FailResult("suiteWrite failed:\n" + f.reason))
-          case Right(current) => {
-            val quorum = findWriteQuorum(responses, current.prefix.w, current.prefix.versionNumber)
+        for (c <- responses._1.containerResponses) {
+          if (_inquiryResponse.exists(e => e.cid == c.cid)) {
+            validResponses = validResponses :+ c
+          }
+        }
+      }
+    }
 
-            quorum match {
-              case Left(f) => Left(FailResult("suiteWrite failed:\n" + f.reason))
-              case Right(quorum) => {
-                var cids: Seq[Int] = Seq.empty[Int]
-                for (r <- quorum._1) {
-                  cids = cids :+ r.cid
-                }
-                val result = fileSystem.writeRepresentatives(cids, _suiteId, newContent)
+    val quorum = collectWriteQuorum(validResponses)
+    quorum match {
+      case Left(f) => Left(FailResult("write failed:\n" + f.reason))
+      case Right(quorum) => {
 
-                result match {
-                  case Left(f) => Left(FailResult("suiteWrite failed:\n" + f.reason))
-                  case Right(result) => {
-                    val latency: Int = quorum._2 + result
-                    Right(latency)
-                  }
-                }
-              }
+        latency = latency + quorum._2
+        var cids: Seq[Int] = Seq.empty[Int]
+        for (c <- quorum._1) {
+          cids = cids :+ c.cid
+        }
+
+        val result = fileSystem.writeRepresentatives(cids, _suiteId, newContent, !_hasIncremented)
+
+        result match {
+          case Left(f) => Left(FailResult("write failed:\n" + f.reason))
+          case Right(result) => {
+            latency = latency + result
+            if (!_hasIncremented) {
+              _hasIncremented = true
+              _versionNumber += 1
             }
+            Right(latency)
           }
         }
       }

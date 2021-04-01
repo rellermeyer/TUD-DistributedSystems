@@ -1,4 +1,4 @@
-import FileSystem.{Container, DistributedSystem, Representative}
+import FileSystem.{Container, FileSystem, Representative}
 import VotingSystem.FileSuiteManager
 
 object Temp {

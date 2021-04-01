@@ -1,6 +1,8 @@
 package FileSystem
 
-class Container(newLatency: Int) {
+import scala.util.Random
+
+class Container(newLatency: Int, newBlockingProb: Double) {
 
   /**
    * constructor
@@ -8,13 +10,13 @@ class Container(newLatency: Int) {
   case class FailResult(reason:String)
 
   private val _latency: Int = newLatency
-  private var _representatives: Seq[Representative] = scala.collection.immutable.Vector.empty
+  private val _blockingProb: Double = newBlockingProb
+  private var _representatives: Seq[Representative] = Seq.empty[Representative]
 
   /**
    * accessor methods
    */
   def latency: Int = _latency
-
 
   def representatives: Seq[Representative] = _representatives
 
@@ -26,7 +28,26 @@ class Container(newLatency: Int) {
    */
 
   def findRepresentative(suiteId: Int): Option[Representative] = {
-    _representatives.find(element => element.repId == suiteId)
+    val r: Random = scala.util.Random
+    val event: Double = r.nextDouble()
+    if (event >= _blockingProb) {
+      _representatives.find(element => element.repId == suiteId)
+    }
+    else {
+      None
+    }
+  }
+
+  def initTentativeContainer(): Unit = {
+    for (r <- _representatives) {
+      r.initTentativeRep()
+    }
+  }
+
+  def commitTentativeContainer(): Unit = {
+    for (r <- _representatives) {
+      r.commitTentativeRep()
+    }
   }
 
 
@@ -39,9 +60,9 @@ class Container(newLatency: Int) {
    * @return
    */
 
-  def createRepresentative(suiteId: Int, suiteR: Int, suiteW: Int, repWeight: Int): Either[FailResult, Unit] = {
-    if (findRepresentative(suiteId).isEmpty) {
-      val newRepresentative = Representative(suiteId: Int, suiteR: Int, suiteW: Int, repWeight: Int)
+  def createRepresentative(suiteId: Int, suiteR: Int, suiteW: Int, suiteInfo: Seq[Int], repWeight: Int): Either[FailResult, Unit] = {
+    if (!_representatives.exists(e => e.repId == suiteId)) {
+      val newRepresentative = Representative(suiteId: Int, suiteR: Int, suiteW: Int, suiteInfo: Seq[Int], repWeight: Int)
       _representatives = _representatives :+ newRepresentative
       Right()
     }
@@ -58,13 +79,13 @@ class Container(newLatency: Int) {
    * @return content
    */
 
-  def readRepresentative(suiteId: Int): Either[FailResult, Int] = {
+  def readRepresentative(suiteId: Int): Either[FailResult, (Int, Int)] = {
     val rep = findRepresentative(suiteId)
     if (rep.isDefined) {
-      Right(rep.get.content)
+      Right(rep.get.contentTentative, _latency)
     }
     else {
-      Left(FailResult("readRepresentative failed: no representative of file " + suiteId + " exists in container"))
+      Left(FailResult("readRepresentative failed: no representative of file " + suiteId + " could be found in container"))
     }
   }
 
@@ -77,15 +98,17 @@ class Container(newLatency: Int) {
    * @return
    */
 
-  def writeRepresentative(suiteId: Int, newContent: Int): Either[FailResult, Unit] = {
+  def writeRepresentative(suiteId: Int, newContent: Int, increment: Boolean): Either[FailResult, Unit] = {
     val rep = findRepresentative(suiteId)
     if (rep.isDefined) {
-      rep.get.content = newContent
-      rep.get.prefix.versionNumber += 1
+      rep.get.writeTentative(newContent)
+      if (increment) {
+        rep.get.incrementNumber()
+      }
       Right()
     }
     else {
-      Left(FailResult("writeRepresentative failed: no representative of file " + suiteId + " exists in container"))
+      Left(FailResult("writeRepresentative failed: no representative of file " + suiteId + " could be found in container"))
     }
   }
 }
@@ -94,8 +117,8 @@ class Container(newLatency: Int) {
  * companion object
  */
 object Container {
-  def apply(newLatency: Int): Container = {
-    val newContainer = new Container(newLatency)
+  def apply(newLatency: Int, newBlockingProb: Double): Container = {
+    val newContainer = new Container(newLatency, newBlockingProb)
     newContainer
   }
 }
