@@ -93,7 +93,7 @@ class TaskManager(val id: Int)
   }
 
   def terminateTask(taskID: Int): Unit = {
-    printWithID("Terminating task " + taskID)
+    // printWithID("Terminating task " + taskID)
     val taskSlot = taskSlots.get(taskID).get // should always exist
     taskSlot.stop()
   }

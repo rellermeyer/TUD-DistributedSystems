@@ -229,24 +229,24 @@ class JobManager(taskMgrsCount: Int, replan: Boolean)
     if (!ExecutionPlan.equalPlans(oldPlan, newPlan)) {
 
       // Halt all current executions
-      // for (op <- oldPlan) {
-      //   for ((tm, taskID) <- op) {
-      //     val tmi = Naming
-      //       .lookup("taskmanager" + tm)
-      //       .asInstanceOf[TaskManagerInterface]
-      //     tmi.terminateTask(taskID)
-      //   }
-      // }
-      // Thread.sleep(300) // allow the system to terminate completely
+      for (op <- oldPlan) {
+        for ((tm, taskID) <- op) {
+          val tmi = Naming
+            .lookup("taskmanager" + tm)
+            .asInstanceOf[TaskManagerInterface]
+          tmi.terminateTask(taskID)
+        }
+      }
+      Thread.sleep(300) // allow the system to terminate completely
 
       // Halt all current executions by stopping the sink, and letting the upstream neighbors react to the emerging SocketExceptions
-      val sink = oldPlan(oldPlan.length - 1)(0)
-      val tm = Naming
-        .lookup("taskmanager" + sink._1)
-        .asInstanceOf[TaskManagerInterface]
-      tm.terminateTask(taskID = sink._2)
+      // val sink = oldPlan(oldPlan.length - 1)(0)
+      // val tm = Naming
+      //   .lookup("taskmanager" + sink._1)
+      //   .asInstanceOf[TaskManagerInterface]
+      // tm.terminateTask(taskID = sink._2)
 
-      Thread.sleep(1000) // allow the system to terminate completely
+      // Thread.sleep(1000) // allow the system to terminate completely
 
       // Construct <migrateFrom> and <migrateTo>, by removing assignments that are present in both old and new plans.
       // Add these duplicates to <same>
@@ -434,7 +434,7 @@ class JobManager(taskMgrsCount: Int, replan: Boolean)
     val jsonParser = new JSONParser()
     var taskMgrCfgs = ArrayBuffer[ArrayBuffer[TaskManagerInfo]]()
     try {
-      val reader = new FileReader("config.json")
+      val reader = new FileReader("config-4.json")
       //Read JSON file
       val obj = jsonParser.parse(reader);
 
