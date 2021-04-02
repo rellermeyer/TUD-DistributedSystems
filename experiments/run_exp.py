@@ -211,4 +211,5 @@ if __name__ == "__main__":
         datetime.today().strftime("%Y%m%d_%H%M%S")
     with open(os.path.join(_SCRIPT_DIR, logs_name + ".csv"), "w") as f:
         f.write(log_str)
-    log_df.to_pickle(os.path.join(_SCRIPT_DIR, logs_name + ".pickle"))
+    log_df.to_pickle(os.path.join(_SCRIPT_DIR, logs_name + ".pickle"),
+                     protocol=4)
