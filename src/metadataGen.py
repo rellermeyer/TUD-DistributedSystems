@@ -14,6 +14,7 @@ from datetime import datetime
 
 _SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 
+
 def main(argv):
     numTaskManagers = 1
     numConfigs = 1
@@ -47,15 +48,18 @@ def main(argv):
                     bws[str(j)] = random.uniform(500, 3000)
                 else:
                     latencies[str(j)] = float(0)
-                    bws[str(j)] = 999999.0 # something bigger than the random prRate we generate
+                    # something bigger than the random prRate we generate
+                    bws[str(j)] = 999999.0
 
             data[str(i)]['latencies'] = latencies
             data[str(i)]['bandwidth'] = bws
 
             # opRate cannot be larger than ipRate
-            val1 = random.uniform(1, 1000); val2 = random.uniform(1,500)
-            ipRate = max(val1, val2); opRate = min(val1, val2)
-            
+            val1 = random.uniform(1, 1000)
+            val2 = random.uniform(1, 500)
+            ipRate = max(val1, val2)
+            opRate = min(val1, val2)
+
             data[str(i)]['ipRate'] = ipRate
             data[str(i)]['numSlots'] = numSlots
             prRate = data[str(i)]['prRate'] = random.uniform(1, 1000)
@@ -68,10 +72,11 @@ def main(argv):
 
         configs.append(data)
 
-        with open(os.path.join(_SCRIPT_DIR, "../src/configs/config-" + datetime.today().strftime("%Y%m%d_%H%M%S") + ".json"), "w") as configFile:
-            json.dump(configs, configFile)
+        with open(os.path.join(_SCRIPT_DIR, "../src/configs/config-" +
+                               datetime.today().strftime("%Y%m%d_%H%M%S") +
+                               ".json"), "w") as configFile:
+            json.dump(configs, configFile, indent=4, sort_keys=True)
 
 
 if __name__ == "__main__":
     main(sys.argv[1:])
- 
