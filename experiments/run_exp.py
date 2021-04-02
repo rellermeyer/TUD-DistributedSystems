@@ -9,6 +9,7 @@ Created on Thu Apr  1 21:45:45 2021
 import os
 import pandas as pd
 import subprocess
+from datetime import datetime
 
 parallelisms = [(7, 2, 1), (12, 7, 1), (17, 12, 1)]
 datasizes = [4000, 8000, 16000]
@@ -24,6 +25,34 @@ tms_count = 8
 _SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 
 
+def get_cfg_name():
+    """
+    Get the config file being used from JobManager.scala.
+
+    Parameters
+    ----------
+    size : int
+        Number of data elements to pass to the query.
+
+    Returns
+    -------
+    cfg_name : str
+        Name of the config file.
+
+    """
+    key = "      val reader = new FileReader(\"src/configs/"
+    with open(os.path.join(_SCRIPT_DIR, "../src/main/scala/jobmanager/"
+                           "JobManager.scala"), "r") as f:
+        lines = f.readlines()
+    for line in lines:
+        if key in line:
+            start = len(key)
+            end = line.find(".json\")")
+            cfg_name = line[start:end]
+            return cfg_name
+    return ""
+
+
 def change_datasize(size):
     """
     Change the datasize in SampleQueryRunner.scala.
@@ -36,7 +65,7 @@ def change_datasize(size):
     Returns
     -------
     lines : list
-        List of edited lines (str) from SampleQueryRunner,scala.
+        List of edited lines (str) from SampleQueryRunner.scala.
 
     """
     key = "    val dataSize = "
@@ -82,15 +111,6 @@ def change_parallelisms(prls):
         f.writelines(lines)
         f.truncate()
     return lines
-
-
-def run_job_manager(num_tms, replan, log_file=None):
-    os.chdir(os.path.join(_SCRIPT_DIR, "../"))
-    job_mgr_cmd = "sbt \"runMain jobmanager.JobManagerRunner " + \
-        str(num_tms) + " -" + ("" if replan else "no") + "replan\""
-    if (log_file is not None):
-        job_mgr_cmd += "> " + log_file
-    os.system(job_mgr_cmd)
 
 
 def run(num_tms, datasize, parallelisms, replan):
@@ -170,6 +190,8 @@ if __name__ == "__main__":
     log_df = pd.DataFrame(columns=["Num TMs", "DataSize", "Parallelisms",
                                    "Runtime (No Replan)", "Runtime (Replan)",
                                    "Num Replans", "Loss"])
+    cfg_name = get_cfg_name()
+
     for ds in datasizes:
         start = str(tms_count) + "," + str(ds) + ","
         for prl in parallelisms:
@@ -185,6 +207,8 @@ if __name__ == "__main__":
                 log_df.loc[len(log_df)] = [tms_count, ds, prl,
                                            runtime_noreplan, runtime_replan,
                                            num_replans, loss]
-    with open(os.path.join(_SCRIPT_DIR, "logs.csv"), "w") as f:
+    logs_name = "logs_" + cfg_name + "_" + \
+        datetime.today().strftime("%Y%m%d_%H%M%S")
+    with open(os.path.join(_SCRIPT_DIR, logs_name + ".csv"), "w") as f:
         f.write(log_str)
-    log_df.to_pickle(os.path.join(_SCRIPT_DIR, "logs.pickle"))
+    log_df.to_pickle(os.path.join(_SCRIPT_DIR, logs_name + ".pickle"))
