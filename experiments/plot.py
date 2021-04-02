@@ -18,7 +18,7 @@ _SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 
 
 def plt_runtime_vs_prl(df):
-    plt_dir = os.path.join(_SCRIPT_DIR, "../plots")
+    plt_dir = os.path.join(_SCRIPT_DIR, "../experiments/plots")
     if not os.path.isdir(plt_dir):
         os.mkdir(plt_dir)
     datasizes = log_df["DataSize"].unique()
@@ -69,7 +69,7 @@ def plt_runtime_vs_prl(df):
 
 
 def plt_runtime_vs_ds(df):
-    plt_dir = os.path.join(_SCRIPT_DIR, "../plots")
+    plt_dir = os.path.join(_SCRIPT_DIR, "../experiments/plots")
     if not os.path.isdir(plt_dir):
         os.mkdir(plt_dir)
     datasizes = log_df["DataSize"].unique()
@@ -113,7 +113,6 @@ def plt_runtime_vs_ds(df):
                             right=0.95,
                             hspace=0.2,
                             wspace=0.2)
-        plt.savefig("")
         plt.savefig(os.path.join(
             plt_dir, "rt-ds_prl" + str(sum(prl)) + ".svg"))
 

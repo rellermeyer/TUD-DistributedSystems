@@ -1,6 +1,19 @@
 # WASP - Benchmarks
 
-<!-- TODO Add final plots -->
+In order to run all the experiments at once (which will take several hours), run the following command
+
+```bash
+python3 experiments/run_exp.py
+```
+
+which will generate a .csv file of all the collected data and a .pickle log, which can then all be plotted with
+
+```bash
+python3 experiments/plot.py
+```
+
+and all the resulting plots will appear in the plots directory inside the experiments.
+
 ## Experiement 1
 
 ### Experimental Design
