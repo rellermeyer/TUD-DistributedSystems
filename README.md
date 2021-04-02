@@ -99,6 +99,11 @@ it in the command line when running the JobManger, with for example having a con
 ```bash
 sbt "runMain jobmanager.JobManagerRunner 8 -replan config-100.json"
 ```
+The different args for the JobManagerRunner explained are:
+
+1. **[num_tms]** - Specifying the number of task mangers to start (default: 0)
+2. **-[replan/noreplan]** - Whether to use adaptive replanning or static no replanning
+3. **[configFile]** - Using a specific config file for tm metrics (default: config-12.json)
 
 ## Adapted Evaluation
 

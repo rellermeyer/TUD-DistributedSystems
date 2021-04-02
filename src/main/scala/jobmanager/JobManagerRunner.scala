@@ -4,15 +4,15 @@ import java.rmi.registry.LocateRegistry;
 import taskmanager.TaskManager
 import scala.annotation.switch
 
+/*
+ *  Create global registry for the JobManager and TaskManagers to connect to.
+ *  args: [num_tms] -[replan/noreplan] [configFile]
+ *    num_tms: Int for number of task managers
+ *    replan/noreplan: run without or with replanning when config changes
+ *    configFile: String with file name of config file in config dir (default: config-12.json)
+ */
 object JobManagerRunner {
   def main(args: Array[String]): Unit = {
-    /*
-     *  Create global registry for the JobManager and TaskManagers to connect to.
-     *  args: [num_tms] -[replan/noreplan]
-     *    num_tms: Int for number of task managers
-     *    replan/noreplan: run without or with replanning when config changes
-     *  configFile: String with file name of conf file (default: config-12.json)
-     */
     val registryPort = 1099
     val registry = LocateRegistry.createRegistry(registryPort)
     println("Registry running on port " + registryPort)
