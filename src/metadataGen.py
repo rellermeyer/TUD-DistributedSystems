@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import os
 import sys
 import json
 import getopt
@@ -10,6 +11,7 @@ import random
 # -c INT: number of configurations
 # -s INT: number of slots per task manager
 
+_SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 
 def main(argv):
     numTaskManagers = 1
@@ -65,7 +67,7 @@ def main(argv):
 
         configs.append(data)
 
-        with open("config.json", "w") as configFile:
+        with open(os.path.join(_SCRIPT_DIR, "../src/configs/config.json"), "w") as configFile:
             json.dump(configs, configFile)
 
 
