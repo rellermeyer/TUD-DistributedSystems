@@ -113,7 +113,6 @@ def plt_runtime_vs_ds(df):
                             right=0.95,
                             hspace=0.2,
                             wspace=0.2)
-        plt.savefig("")
         plt.savefig(os.path.join(
             plt_dir, "rt-ds_prl" + str(sum(prl)) + ".svg"))
 
