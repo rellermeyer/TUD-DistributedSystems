@@ -3,14 +3,13 @@ package taskmanager
 import java.rmi.registry.LocateRegistry;
 import jobmanager.JobManagerInterface
 
+/*
+ * Create a new JVM instance for each Task Manager (via a new terminal invocation of it)
+ * Lookup the Job Manager's RMI registry, call its register() function to receive a unique id,
+ * and register with that id (bind to the registry)
+ *
+ */
 object TaskManagerRunner {
-  /*
-   * Create a new JVM instance for each Task Manager (via a new terminal invocation of it)
-   * Lookup the Job Manager's RMI registry, call its register() function to receive a unique id,
-   *  and register with that id (bind to the registry)
-   *
-   * Terminal command `sbt "runMain taskmanager.TaskManager"`
-   */
   def main(args: Array[String]): Unit = {
     val registry = LocateRegistry.getRegistry(1099)
 
@@ -24,10 +23,5 @@ object TaskManagerRunner {
 
     registry.bind(taskManagerName, taskManager)
     println("TaskManager " + id + " bound!")
-
-    // sys.ShutdownHookThread {
-    //   println("Unregistering taskmanager" + id)
-    //   registry.unbind(taskManagerName)
-    // }
   }
 }

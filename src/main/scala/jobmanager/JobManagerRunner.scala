@@ -51,10 +51,5 @@ object JobManagerRunner {
     } else {
       println("No additional taskmanagers started")
     }
-
-    // sys.ShutdownHookThread {
-    //   println("Unregistering JobManager")
-    //   registry.unbind(jobManagerName)
-    // }
   }
 }

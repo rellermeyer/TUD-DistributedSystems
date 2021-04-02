@@ -19,12 +19,7 @@ class TaskSlot(val tmID: Int) extends Runnable {
   val bottleneckSimVal = 10000
   var bws: Array[Int] = null
   var prRate: Float = 0.0.toFloat
-
-  // @volatile var terminateFlag: Boolean =
-  //   false // used to terminate the sink task
-
   var state: Int = 0
-
   var curThread: Thread = null
 
   def run(): Unit = {
@@ -47,6 +42,7 @@ class TaskSlot(val tmID: Int) extends Runnable {
     )
     printWithID("bws: " + bws.mkString(" "))
     printWithID("prRate: " + prRate)
+
     // Generate data
     printWithID("Amount of data left: " + state)
     val data = Array.fill[Int](state)(
@@ -58,10 +54,9 @@ class TaskSlot(val tmID: Int) extends Runnable {
     for (i <- data.indices) {
       try {
         // Simulate actual processing rate and bandwidth
-        // printWithID("Data sleep: " + (bottleneckSimVal / (bws(outputIndex) * (prRate).ceil.toInt)).max(1))
         Thread.sleep(
           (bottleneckSimVal / bws(outputIndex)).min((prRate).ceil.toInt)
-        ) // sleep at least 1ms
+        )
         to(outputIndex).writeInt(data(i))
         state -= 1 // record how many elements have been sent so far
         outputIndex = (outputIndex + 1) % to.length

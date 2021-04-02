@@ -235,15 +235,6 @@ class JobManager(taskMgrsCount: Int, replan: Boolean, configFile: String)
       }
       Thread.sleep(300) // allow the system to terminate completely
 
-      // Halt all current executions by stopping the sink, and letting the upstream neighbors react to the emerging SocketExceptions
-      // val sink = oldPlan(oldPlan.length - 1)(0)
-      // val tm = Naming
-      //   .lookup("taskmanager" + sink._1)
-      //   .asInstanceOf[TaskManagerInterface]
-      // tm.terminateTask(taskID = sink._2)
-
-      // Thread.sleep(1000) // allow the system to terminate completely
-
       // Construct <migrateFrom> and <migrateTo>, by removing assignments that are present in both old and new plans.
       // Add these duplicates to <same>
       for (op <- newPlan.indices) {
@@ -270,18 +261,6 @@ class JobManager(taskMgrsCount: Int, replan: Boolean, configFile: String)
         combinedPlan(i) = same(i) ++ newPlan(i)
       }
       job.plan = combinedPlan // Update the job's plan for future replanning
-
-      // println("same")
-      // ExecutionPlan.printPlan(same)
-
-      // println("migrateFrom")
-      // ExecutionPlan.printPlan(oldPlan)
-
-      // println("migrateTo")
-      // ExecutionPlan.printPlan(newPlan)
-
-      // println("combined")
-      // ExecutionPlan.printPlan(combinedPlan)
 
       // Assign input and output rates for each taskManager based on the new execution plan
       assignRates(combinedPlan)
@@ -388,12 +367,6 @@ class JobManager(taskMgrsCount: Int, replan: Boolean, configFile: String)
         })
 
         taskManagers(assignment._1).ipRate = bwSum.min(opSum)
-
-        // Assign the min of the ipRate and a randomly generated number to the processing rate
-        // taskManagers(assignment._1).prRate =
-        //   taskManagers(assignment._1).ipRate.min(Random.nextInt(1000))
-
-        // DONT RECALCULATE PRRATE
 
         // Assign min of prRate and sum of outgoing bandwidths to the opRate
         var sum: Float = 0
