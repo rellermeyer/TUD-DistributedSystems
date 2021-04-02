@@ -5,6 +5,7 @@ import sys
 import json
 import getopt
 import random
+from datetime import datetime
 
 # Generate all the metadata on performance for the taskmanager to be used as configs with WASP,
 # -n INT: number of task managers
@@ -67,7 +68,7 @@ def main(argv):
 
         configs.append(data)
 
-        with open(os.path.join(_SCRIPT_DIR, "../src/configs/config.json"), "w") as configFile:
+        with open(os.path.join(_SCRIPT_DIR, "../src/configs/config-" + datetime.today().strftime("%Y%m%d_%H%M%S") + ".json"), "w") as configFile:
             json.dump(configs, configFile)
 
 
