@@ -64,11 +64,6 @@ def main(argv):
             data[str(i)]['numSlots'] = numSlots
             prRate = data[str(i)]['prRate'] = random.uniform(1, 1000)
             data[str(i)]['opRate'] = min(prRate, opRate)
-            # if (i != numConfigs-1):
-            #     data[str(i)]['numSlots'] = random.randint(0, numSlots)
-            #     assignedSlots += data[str(i)]['numSlots']
-            # else:
-            #     data[str(i)]['numSlots'] = random.randint(max(0, numSlots - assignedSlots), numSlots)
 
         configs.append(data)
 
