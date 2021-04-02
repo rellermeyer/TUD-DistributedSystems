@@ -11,6 +11,7 @@ object JobManagerRunner {
      *  args: [num_tms] -[replan/noreplan]
      *    num_tms: Int for number of task managers
      *    replan/noreplan: run without or with replanning when config changes
+     *  configFile: String with file name of conf file (default: config-12.json)
      */
     val registryPort = 1099
     val registry = LocateRegistry.createRegistry(registryPort)
@@ -18,6 +19,7 @@ object JobManagerRunner {
 
     var replan: Boolean = true
     var numTms = 1
+    var configFile = "src/configs/config-12.json"
     if (args.length > 1) {
       numTms = Integer.parseInt(args(0))
       args(1) match {
@@ -26,8 +28,11 @@ object JobManagerRunner {
         case _           => replan = true
       }
     }
+    if (args.length > 2)
+      configFile = "src/configs/" + args(2)
+    println("Using config File: " + configFile.substring(12))
 
-    val jobManager = new JobManager(numTms, replan)
+    val jobManager = new JobManager(numTms, replan, configFile)
     val jobManagerName = "jobmanager"
 
     registry.bind(jobManagerName, jobManager)

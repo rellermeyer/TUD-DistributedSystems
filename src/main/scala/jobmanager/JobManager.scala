@@ -13,7 +13,7 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
-class JobManager(taskMgrsCount: Int, replan: Boolean)
+class JobManager(taskMgrsCount: Int, replan: Boolean, configFile: String)
     extends UnicastRemoteObject
     with JobManagerInterface {
   var taskManagerIdCounter = -1
@@ -434,7 +434,7 @@ class JobManager(taskMgrsCount: Int, replan: Boolean)
     val jsonParser = new JSONParser()
     var taskMgrCfgs = ArrayBuffer[ArrayBuffer[TaskManagerInfo]]()
     try {
-      val reader = new FileReader("src/configs/config-12.json")
+      val reader = new FileReader(configFile)
       //Read JSON file
       val obj = jsonParser.parse(reader);
 
