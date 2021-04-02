@@ -23,6 +23,7 @@ object SyncNode {
   case object TimerKey extends Event
 
   sealed trait Request extends Event with CborSerializable
+  case class MakeBad() extends Request
   case class Save(nodeId: Int, roundId: Int, replyTo: ActorRef[SyncNode.Event]) extends Request
   case class RegisterMyID(messageId: Int, nodeId: Int, reply: ActorRef[SyncNode.Event]) extends Request
   case class SelectedActiveID(messageId: Int, selectedId: Int, selectedAddress: ActorRef[SyncNode.Event], reply: ActorRef[SyncNode.Event]) extends Request
@@ -84,6 +85,8 @@ object SyncNode {
     var value: Int = 0
     val active: Boolean = r.nextDouble() <= p
     var light: Boolean = false
+
+    var good = true
 
     // synchronization
     var roundID: Int = 2
@@ -310,6 +313,9 @@ object SyncNode {
               case _ => println("I have not been implemented")
             }
           }
+          Behaviors.same
+        case MakeBad() =>
+          good = false
           Behaviors.same
       }
     }

@@ -26,6 +26,11 @@ object App {
       if (cluster.selfMember.hasRole("decider")) {
         ctx.spawn(LargeCoBeRa(10), "LargeCoBeRa")
       }
+      if (cluster.selfMember.hasRole("badnode")) {
+        val node = SyncNode(id, 1, ctx.self)
+        val spawnedNode = ctx.spawn(node, s"BadNode$id")
+        spawnedNode ! SyncNode.MakeBad()
+      }
       Behaviors.receiveSignal[Nothing] {
         case (ctx, PostStop) =>
           ctx.log.info("Some node has stopped")
@@ -52,6 +57,9 @@ object App {
       for (i <- 1 to 10) {
         startUp("node", 0, i)
       }
+
+      startUp("badnode", 0, 20)
+
     } else {
       require(args.length == 3, "Usage: role port")
       startUp(args(0), args(1).toInt, args(2).toInt)
