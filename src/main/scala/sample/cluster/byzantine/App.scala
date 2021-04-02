@@ -58,7 +58,7 @@ object App {
         startUp("node", 0, i)
       }
 
-      startUp("badnode", 0, 20)
+      startUp("badnode", 0, 11)
 
     } else {
       require(args.length == 3, "Usage: role port")

@@ -114,9 +114,21 @@ object SyncNode {
     def handle_3a(): Unit = {
       if (light) {
         largeCoreBa(0) ! LargeCoBeRa.RegisterLightNode(nodeId)
-        val (selectedId, selectedAddress) = activeNodes.toList(r.nextInt(activeNodes.size))
-        activeNodes.foreach(entry =>
-          sendMessageByReference(entry._2, SelectedActiveID(seqNum, selectedId, selectedAddress, ctx.self)))
+        if (good) {
+          val (selectedId, selectedAddress) = activeNodes.toList(r.nextInt(activeNodes.size))
+          activeNodes.foreach(entry =>
+            sendMessageByReference(entry._2, SelectedActiveID(seqNum, selectedId, selectedAddress, ctx.self))
+          )
+        } else {
+          var (selectedId, selectedAddress) = activeNodes.toList(nodeId)
+          activeNodes.foreach(entry =>
+            // Poison other nodes by sending our own (bad) id many times (n * a times, as in the paper)
+            for (i <- 1 to selectedNodes.size * activeNodes.size) {
+              sendMessageByReference(entry._2, SelectedActiveID(seqNum, selectedId, selectedAddress, ctx.self))
+            }
+          )
+        }
+
       }
       else
         broadCastSaves()
