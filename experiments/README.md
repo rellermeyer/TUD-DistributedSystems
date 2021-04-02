@@ -49,7 +49,11 @@ For the runs adjust the size of the data for the query by changing `val dataSize
 
 This experiment measures the performance of the adaptive scheduler when different parallelism for each operator is used. We compare running the original physical without replanning (when the bandwidths change every 10 seconds between the task managers) and compare it to replanning the physical plan when the bandwidth changes (or not replanning it when the optimal plan with the new bandwidths is the exact same).
 
-In the setup, we are running 8 task managers, each having 5 abailable task slots, the query will run with 3 operators (map, map, and reduce) with varying parallelism, and the data size will remain constant at 4000 (ensure that the `val dataSize` in the [SampleQueryRunner](/src/main/scala/jobmanager/SampleQueryRunner.scala) on line 12 is set equal to 4000).
+In the setup, we are running 8 task managers, each having 5 abailable task slots, the query will run with 3 operators (map, map, and reduce) with varying parallelism, and the data size will remain constant at 4000 (ensure that the `val dataSize` in the [SampleQueryRunner](/src/main/scala/jobmanager/SampleQueryRunner.scala) on line 12 is set equal to 4000). The different parallelisms tested are [totalparallelism, operator parallelism]: 
+
+- `10 (7,2,1)`
+- `20 (12,7,1)`
+- `30 (17,12,1)`  
 
 ### Execution Commands
 
