@@ -1,24 +1,22 @@
 package FileSystem
 
-class FileSystem(numContainers: Int, latencies: Seq[Int], newBlockingProbs: Seq[Double]) {
+class FileSystem(/*numContainers: Int, latencies: Seq[Int], newBlockingProbs: Seq[Double]*/) {
 
   /**
-   * Constructor
+   * Case class for handling failed method calls
+   * @param reason a textual explanation of the reason for failure
    */
-
-
-
   case class FailResult(reason:String)
 
+  /**
+   * Private class field
+   */
   private var _containers: Either[FailResult, Seq[Container]] = Left(FailResult("no containers have been instantiated"))
 
   /**
-   * Initialize a number of new containers
-   * New containers can be added to existing set
-   * @param numContainers
-   * @param latencies
+   * Set tentative state for each container at the start of a new transaction
+   * @return either failure or nothing
    */
-
   def initTentativeSystem(): Either[FailResult, Unit] = {
     _containers match {
       case Left(f) => Left(FailResult("setTentativeSystemState():\n" + f.reason))
@@ -31,6 +29,10 @@ class FileSystem(numContainers: Int, latencies: Seq[Int], newBlockingProbs: Seq[
     }
   }
 
+  /**
+   * Set definitive state for each container when committing a transaction
+   * @return either failure or nothing
+   */
   def commitTentativeSystem(): Either[FailResult, Unit] = {
     _containers match {
       case Left(f) => Left(FailResult("setTentativeSystemState():\n" + f.reason))
@@ -43,6 +45,13 @@ class FileSystem(numContainers: Int, latencies: Seq[Int], newBlockingProbs: Seq[
     }
   }
 
+  /**
+   * Initialize a number of new containers. New containers can be added to existing set
+   * @param numContainers the number of new containers
+   * @param latencies the latencies of the new containers
+   * @param blockingProbs the blocking probabilities of the new containers
+   * @return either failure or nothing
+   */
   def createContainers(numContainers: Int, latencies: Seq[Int], blockingProbs: Seq[Double]): Either[FailResult, Unit] = {
     if (numContainers != latencies.length || numContainers != blockingProbs.length) {
       Left(FailResult("createContainers failed: number of latencies or blocking probabilities does not match number of containers"))
@@ -58,24 +67,25 @@ class FileSystem(numContainers: Int, latencies: Seq[Int], newBlockingProbs: Seq[
   }
 
   /**
-   * Initialize a new file suite on all existing containers
-   * representative weights are assigned in order in which they are passed
-   * @param suiteId
-   * @param suiteR
-   * @param suiteW
-   * @param repWeights
+   * Initialize a new file suite representative on each container.
+   * Representative weights are assigned in order in which they are passed
+   * @param suiteId Id of the new file suite
+   * @param suiteR r value of the new file suite
+   * @param suiteW w value of the new file suite
+   * @param repWeights voting weights for each new rep.
+   * @return either failure or nothing
    */
   def createRepresentatives(suiteId: Int, suiteR: Int, suiteW: Int, repWeights: Seq[Int]): Either[FailResult, Unit] = {
     _containers match {
       case Left(f) => Left(FailResult("createRepresentatives failed:\n" + f.reason))
-      case Right(c) => {
-        if (repWeights.length != c.length) {
+      case Right(containers) => {
+        if (repWeights.length != containers.length) {
           Left(FailResult("createRepresentatives failed: number of weights (" + repWeights.length +
-            ") does not match number of containers (" + c.length + ")"))
+            ") does not match number of containers (" + containers.length + ")"))
         }
         else {
-          for (cid <- c.indices) {
-            val result = c(cid).createRepresentative(suiteId, suiteR, suiteW, repWeights, repWeights(cid))
+          for (cid <- containers.indices) {
+            val result = containers(cid).createRepresentative(suiteId, suiteR, suiteW, repWeights, repWeights(cid))
             result match {
               case Left(f) => return Left(FailResult("createRepresentatives failed:\n" + f.reason))
               case Right(r) => {}
@@ -87,12 +97,17 @@ class FileSystem(numContainers: Int, latencies: Seq[Int], newBlockingProbs: Seq[
     }
   }
 
+  /**
+   * Delete the reps. belonging to a file suite in each container
+   * @param suiteId ID of the file suite that is to be deleted
+   * @return either failure or nothing
+   */
   def deleteRepresentatives(suiteId: Int): Either[FailResult, Unit] = {
     _containers match {
       case Left(f) => Left(FailResult("deleteRepresentatives failed:\n" + f.reason))
-      case Right(c) => {
-        for (cid <- c.indices) {
-          val result = c(cid).deleteRepresentative(suiteId)
+      case Right(containers) => {
+        for (container <- containers) {
+          val result = container.deleteRepresentative(suiteId)
           result match {
             case Left(f) => return Left(FailResult("deleteRepresentatives failed:\n" + f.reason))
             case Right(r) => {}
@@ -104,9 +119,10 @@ class FileSystem(numContainers: Int, latencies: Seq[Int], newBlockingProbs: Seq[
   }
 
   /**
-   * Poll all containers for a quorum, gather corresponding latencies and weights
-   * @param suiteId
-   * @return
+   * Request representatives belonging to a specific file suite from each container
+   * A container may refrain from responding if it does not hold the rep., or if it blocks
+   * @param suiteId ID of the requested file suite
+   * @return either failure of a series of responses from containers that hold a corresponding representative
    */
   def collectRepresentatives(suiteId: Int): Either[FailResult, (Seq[ContainerResponse], Int)] = {
     var latency: Int = 0
@@ -139,18 +155,18 @@ class FileSystem(numContainers: Int, latencies: Seq[Int], newBlockingProbs: Seq[
 
 
   /**
-   * Reading the content of the representative
-   * @param containerId
-   * @param suiteId
-   * @return content
+   * Read the content of a representative held by a specific container
+   * @param containerId ID of the addressed container
+   * @param suiteId ID of the rep. to be read
+   * @return either failure or a tuple containing the content and latency for the addressed container
    */
   def readRepresentative(containerId: Int, suiteId: Int): Either[FailResult, (Int, Int)] = {
     _containers match {
       case Left(f) => Left(FailResult("readRepresentative failed:\n" + f.reason))
-      case Right(c) => {
+      case Right(containers) => {
 
-        if (containerId >= 0 && containerId < c.length) {
-          val result = c(containerId).readRepresentative(suiteId)
+        if (containerId >= 0 && containerId < containers.length) {
+          val result = containers(containerId).readRepresentative(suiteId)
           result match {
 
             case Left(f) => Left(FailResult("readRepresentatives failed:\n" + f.reason))
@@ -165,14 +181,14 @@ class FileSystem(numContainers: Int, latencies: Seq[Int], newBlockingProbs: Seq[
   }
 
   /**
-   * Writing content to the representative
-   * @param containerIds
-   * @param suiteId
-   * @param newContent
-   * @return
+   * Write new content to reps. held by a set of containers. May fail if a single representative cannot be found
+   * @param containerIds set of containers that are addressed
+   * @param suiteId ID of the rep. that is to be written to
+   * @param newContent new integer content that is to be written
+   * @param increment flag to determine if version number should be incremented
+   * @return either failure or the latency for this container
    */
-
-  def writeRepresentatives(containerIds: Seq[Int], suiteId: Int, newContent: Int, increment: Boolean): Either[FailResult, Int] = {
+   def writeRepresentatives(containerIds: Seq[Int], suiteId: Int, newContent: Int, increment: Boolean): Either[FailResult, Int] = {
     var latency: Int = 0
 
     _containers match {
@@ -183,9 +199,9 @@ class FileSystem(numContainers: Int, latencies: Seq[Int], newBlockingProbs: Seq[
           val result = c(cid).writeRepresentative(suiteId, newContent, increment)
           result match {
             case Left(f) => return Left(FailResult("writeRepresentatives failed:\n" + f.reason))
-            case Right(r) => {
-              if (c(cid).latency > latency) {
-                latency = c(cid).latency
+            case Right(result) => {
+              if (result > latency) {
+                latency = result
               }
             }
           }
@@ -201,7 +217,7 @@ class FileSystem(numContainers: Int, latencies: Seq[Int], newBlockingProbs: Seq[
  */
 object FileSystem {
   def apply(numContainers: Int, latencies: Seq[Int], newFailProbs: Seq[Double]): FileSystem = {
-    val newSystem = new FileSystem(numContainers, latencies, newFailProbs)
+    val newSystem = new FileSystem()
     newSystem.createContainers(numContainers, latencies, newFailProbs)
     newSystem
   }

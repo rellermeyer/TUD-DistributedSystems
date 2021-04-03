@@ -11,10 +11,15 @@ import scala.util.control.Breaks.{break, breakable}
 
 object Experiment {
 
+  /**
+   * Output path
+   */
   val outputPath: String = "C:\\Users\\blok_\\Desktop\\Consistency.csv"
 
+  /**
+   * File system parameters
+   */
   val numContainers: Int = 5
-
   val latencies: Seq[Seq[Int]] = Seq(Seq(1, 1, 1, 1, 1))
   val blockingProbs: Seq[Seq[Double]] = Seq(Seq(0.00, 0.00, 0.00, 0.00, 0.00),
                                             Seq(0.05, 0.05, 0.05, 0.05, 0.05),
@@ -28,14 +33,21 @@ object Experiment {
                                             Seq(0.45, 0.45, 0.45, 0.45, 0.45),
                                             Seq(0.50, 0.50, 0.50, 0.50, 0.50))
 
+  /**
+   * Testbench parameters
+   */
   val readPortions: Seq[Double] = Seq(0.5)
   val transactionLengths: Seq[Int] = Seq(1)
   val numTransactions: Int = 10000
 
+  /**
+   * file suite parameters
+   */
   val suiteId: Int = 1
   val suiteRWPairs: Seq[(Int, Int)] = Seq((1, 5), (2, 4), (3, 3), (4, 2), (5, 1))
   val repWeights: Seq[Seq[Int]] = Seq(Seq(1, 1, 1, 1, 1))
 
+  // Perform statistical experiment
   def main(args: Array[String]): Unit = {
 
     val r: Random = scala.util.Random
@@ -64,6 +76,7 @@ object Experiment {
     )
     records += csvColumns
 
+    // For every combination of parameters
     for (latency <- latencies;
          blockingProb <- blockingProbs;
          readPortion <- readPortions;
@@ -129,9 +142,9 @@ object Experiment {
         }
       }
 
+      // Calculate statistical results
       val readPercentage: Double = readPortion * 100.0
       val writePercentage: Double = 100.0 - readPercentage
-      val readWriteRatio: Double = readPortion / (1.0 - readPortion)
       val readWriteRatioString: String = readPortion + "/" + (1.0 - readPortion)
       val avgLatency: Double = totalLatency.toDouble / successCount.toDouble
       val successCallPercentage: Double = (successCount.toDouble / (numTransactions.toDouble * transactionLength.toDouble)) * 100.0
@@ -140,6 +153,7 @@ object Experiment {
       val abortPercentage: Double = 100.0 - commitPercentage
       val consistencyPercentage: Double = (consistencyCount.toDouble / (consistencyCount.toDouble + inconsistencyCount.toDouble)) * 100.0
 
+      // Gather results in ListBuffer in String format
       records += Array(
         latency.toString,
         blockingProb.toString,
@@ -179,6 +193,8 @@ object Experiment {
         "consistency percentage: " + consistencyPercentage + "\n\n"
       )
     }
+
+    // Write results to CSV file
     try {
       csvWriter.writeAll(records.toList.asJava)
     }

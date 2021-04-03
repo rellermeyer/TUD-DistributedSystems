@@ -3,7 +3,7 @@ package FileSystem
 class Prefix(suiteR: Int, suiteW: Int, suiteInfo: Seq[Int]){
 
   /**
-   * constructor
+   * private class fields
    */
   private var _versionNumber: Int = 0
   private var _versionNumberTentative: Int = 0
@@ -14,21 +14,26 @@ class Prefix(suiteR: Int, suiteW: Int, suiteInfo: Seq[Int]){
   /**
    * accessor methods
    */
-  //def versionNumber: Int = _versionNumber
   def versionNumberTentative: Int = _versionNumberTentative
   def r: Int = _r
   def w: Int = _w
   def info: Seq[Int] = _info
 
   /**
-   * mutator methods
+   * mutator method
    */
   def versionNumberTentative_=(newNumber: Int): Unit =  _versionNumberTentative = newNumber
 
+  /**
+   * Set tentative version number at the start of a new transaction
+   */
   def initTentativePrefix(): Unit = {
     _versionNumberTentative = _versionNumber
   }
 
+  /**
+   * Set definitive version number when committing a transaction
+   */
   def commitTentativePrefix(): Unit = {
     _versionNumber = _versionNumberTentative
   }

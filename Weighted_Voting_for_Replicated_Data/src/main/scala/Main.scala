@@ -1,6 +1,8 @@
 import FileSystem.FileSystem
 import VotingSystem.FileSuiteManager
 
+import scala.util.Try
+
 object Main {
   def main(args: Array[String]): Unit = {
 
@@ -8,29 +10,63 @@ object Main {
     var manager: FileSuiteManager = null
     var numContainers = -1
 
-    //    UI (user interface):
+    /**
+     * UI flags
+     */
     var exited = false
     var showedTutorial = false
     var createdFileSystem = false
     var createdSuite = false
 
 
-    // Retrieving input from the user
-    def getUserChoice(): Int = {
+    /**
+     * Retreive Integer input from the user
+     * @return user input
+     */
+    def getUserChoiceInt(): Int = {
+      var validNum = false
+
       if (!showedTutorial) {
         println("(!) Your input: (Keep in mind that for all user inputs, values as specified are required!)")
         showedTutorial = true
       }
-      val inputInt = scala.io.StdIn.readInt()
-      inputInt
+
+      while (!validNum) {
+        val inputInt = scala.io.StdIn.readLine()
+        if (Try(inputInt.toInt).isSuccess) {
+          validNum = true
+          return inputInt.toInt
+        }
+        else {
+          println("Please enter an Integer value")
+        }
+      }
+      return -1
     }
 
+    /**
+     * Retreive Double input from the user
+     * @return user input
+     */
     def getUserChoiceDouble(): Double = {
-      val inputDouble = scala.io.StdIn.readDouble()
-      inputDouble
+      var validNum = false
+
+      while (!validNum) {
+        val inputDouble = scala.io.StdIn.readLine()
+        if (Try(inputDouble.toDouble).isSuccess) {
+          validNum = true
+          return inputDouble.toDouble
+        }
+        else {
+          println("Please enter a Double value")
+        }
+      }
+      0.0
     }
 
-    // Create containers menu:
+    /**
+     * Provide interactive UI for creating containers, instantiate FileSystem and FileSuiteManager
+     */
     def createFileSystemUI(): Unit = {
       var exitSetup = false
       var latencies = Seq.empty[Int]
@@ -40,7 +76,7 @@ object Main {
         println("(!) Creating file system menu - Choose an event:")
         println("(-)  1: Add a container")
         println("(-)  0: Stop adding containers")
-        val menu_integer = getUserChoice()
+        val menu_integer = getUserChoiceInt()
 
         if (menu_integer == 0) {
           if (latencies.isEmpty) {
@@ -62,7 +98,7 @@ object Main {
         }
         else if (menu_integer == 1) {
           println("(!) Enter latency of the new container:")
-          latencies = latencies :+ getUserChoice()
+          latencies = latencies :+ getUserChoiceInt()
           println("(!) Enter blocking probability of the new container:")
           blockingProbs = blockingProbs :+ getUserChoiceDouble()
         }
@@ -72,19 +108,21 @@ object Main {
       }
     }
 
-    // Create a suite menu:
+    /**
+     * Provide interactive UI for instantiating new file suites
+     */
     def createSuiteUI() : Unit = {
       println("(!) What is the ID of the new file?")
-      val suiteID = getUserChoice()
+      val suiteID = getUserChoiceInt()
       println("(!) What is the r value of the file suite?")
-      val suiteR = getUserChoice()
+      val suiteR = getUserChoiceInt()
       println("(!) What is the w value of the file suite?")
-      val suiteW = getUserChoice()
+      val suiteW = getUserChoiceInt()
       var repWeights = Seq.empty[Int]
 
       for (i <- 0 until numContainers) {
         println("(!) What is the weight of the representative in container " + i + "?")
-        val newWeight = getUserChoice()
+        val newWeight = getUserChoiceInt()
         repWeights = repWeights :+ newWeight
       }
       val result = manager.create(suiteID, suiteR, suiteW, repWeights)
@@ -97,9 +135,12 @@ object Main {
       }
     }
 
+    /**
+     * Provide interactive UI for deleting file suites
+     */
     def deleteSuiteUI() : Unit = {
       println("(!) What is the ID of the file you want to delete?")
-      val suiteID = getUserChoice()
+      val suiteID = getUserChoiceInt()
 
       val result = manager.delete(suiteID)
       result match {
@@ -111,23 +152,27 @@ object Main {
       }
     }
 
-    // Read suite menu
+    /**
+     * Provide interactive UI for reading from file suites
+     */
     def readSuiteUI() : Unit = {
       println("(!) What is the ID of the file you want to read?")
-      val suiteID = getUserChoice()
+      val suiteID = getUserChoiceInt()
       val result = manager.read(suiteID)
       result match {
-        case Left(f) => println("Could not read file suite:\n" + f.reason)
+        case Left(f) => println("Could not read file suite:\n" + f.reason + "\n")
         case Right(r) => println("Content of file " + suiteID + " is " + r._1 + ". Latency: " + r._2 + "\n")
       }
     }
 
-    // Write a suite menu
+    /**
+     * Provide interactive UI for writing to file suites
+     */
     def writeSuiteUI(): Unit = {
       println("(!) What is the ID of the file you want to write to?")
-      val suiteID = getUserChoice()
+      val suiteID = getUserChoiceInt()
       println("(!) What is the integer content you want to write to file " + suiteID + "?")
-      val newContent = getUserChoice()
+      val newContent = getUserChoiceInt()
       val result = manager.write(suiteID, newContent)
       result match {
         case Left(f) => println("Could not write to file suite:\n" + f.reason + "\n")
@@ -136,6 +181,9 @@ object Main {
       }
     }
 
+    /**
+     * Provide interactive UI for user control of transactions
+     */
     def startTransactionUI(): Unit = {
       var endedTransaction: Boolean = false
       manager.begin()
@@ -147,7 +195,7 @@ object Main {
         println("(-)  3: Commit transaction")
         println("(-)  4: Abort transaction")
 
-        val userChoice = getUserChoice()
+        val userChoice = getUserChoiceInt()
 
         if (userChoice == 1) {
           readSuiteUI()
@@ -169,7 +217,9 @@ object Main {
       }
     }
 
-    // Main menu:
+    /**
+     * Provide interactive main menu UI
+     */
     while (!exited) {
       println("(!) Main menu - Choose an event:")
       println("(-)  1: Create new file system")
@@ -182,7 +232,7 @@ object Main {
       }
       println("(-)  0: Quit")
 
-      val userChoice = getUserChoice()
+      val userChoice = getUserChoiceInt()
 
       if (userChoice == 0) {
         exited = true
@@ -204,6 +254,5 @@ object Main {
         println("(E) Please enter a valid number!\n")
       }
     }
-    // end UI
   }
 }

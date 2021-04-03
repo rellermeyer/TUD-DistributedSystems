@@ -6,17 +6,20 @@ import scala.util.control.Breaks.{break, breakable}
 
 class FileSuite (fileSystem: FileSystem, newSuiteId: Int){
 
+  /**
+   * Case class for handling failed method calls
+   * @param reason a textual explanation of the reason for failure
+   */
   case class FailResult(reason:String)
 
   /**
-   * constructor
+   * Private class fields
    */
   private val _suiteId: Int = newSuiteId
   private var _r: Int = -1
   private var _w: Int = -1
   private var _versionNumber = -1
   private var _suiteInfo: Seq[Int] = Seq.empty[Int]
-
   private var _inquiryResponse: Seq[ContainerResponse] = Seq.empty[ContainerResponse]
 
   private var _hasInquired: Boolean = false
@@ -24,13 +27,14 @@ class FileSuite (fileSystem: FileSystem, newSuiteId: Int){
 
 
   /**
-   * accessor methods
+   * accessor method
    */
   def suiteId: Int = _suiteId
 
   /**
-   * Returning the latest container response, and checks if there are responses at all
-   * @return latest containerResponse
+   * Return a most up-to-date container response from a set of responses. May fail if there are no responses at all
+   * @param responses the set of responses from containers
+   * @return either failure or one response that is up-to-date
    */
   def findLatest(responses: Seq[ContainerResponse]): Either[FailResult, ContainerResponse] = {
     if (responses.nonEmpty) {
@@ -41,6 +45,11 @@ class FileSuite (fileSystem: FileSystem, newSuiteId: Int){
     }
   }
 
+  /**
+   * Inquire with the file system what representatives of a file suite can be found
+   * Then set FileSuite fields to most up-to-date values if a read quorum can be established
+   * @return either failure or the latency of the latest response
+   */
   def initiateInquiries(): Either[FailResult, Int] = {
     val response = fileSystem.collectRepresentatives(_suiteId)
 
@@ -80,10 +89,9 @@ class FileSuite (fileSystem: FileSystem, newSuiteId: Int){
 
 
   /**
-   * Distinguishes the containers that meet the read quorum and are therefore readCandidates
-   * @param r
-   * @param versionNumber
-   * @return readCandidates
+   * Gather responses from containers to establish a read quorum
+   * @param responses responses from the inquiry
+   * @return either failure or a tuple of the containers that satisfy the quorum and the latency of gathering the quorum
    */
   def collectReadQuorum(responses: Seq[ContainerResponse]): Either[FailResult, (Seq[ContainerResponse], Int)] = {
     val currentReps: Seq[ContainerResponse] = responses.sortBy(_.latency)
@@ -101,10 +109,9 @@ class FileSuite (fileSystem: FileSystem, newSuiteId: Int){
   }
 
   /**
-   * Distinguishes the containers that meet the write quorum and are therefore writeCandidates
-   * @param w
-   * @param versionNumber
-   * @return writeCandidates
+   * Gather responses from containers to establish a write quorum
+   * @param responses responses from the inquiry
+   * @return either failure or a tuple of the containers that satisfy the quorum and the latency of gathering the quorum
    */
   def collectWriteQuorum(responses: Seq[ContainerResponse]): Either[FailResult, (Seq[ContainerResponse], Int)] = {
     val currentReps: Seq[ContainerResponse] = responses.filter(_.prefix.versionNumberTentative == _versionNumber).sortBy(_.latency)
@@ -121,7 +128,14 @@ class FileSuite (fileSystem: FileSystem, newSuiteId: Int){
     Left(FailResult("collectWriteQuorum failed: no quorum present"))
   }
 
-
+  /**
+   * Instantiate a new file suite in the file system
+   * @param suiteId ID of the new suite
+   * @param suiteR r value of the new suite
+   * @param suiteW w value of the new suite
+   * @param repWeights rep. weights of the reps. of the new suite
+   * @return either failure or nothing
+   */
   def createFileSuite(suiteId: Int, suiteR: Int, suiteW: Int, repWeights: Seq[Int]): Either[FailResult, Unit] = {
     val result = fileSystem.createRepresentatives(suiteId, suiteR, suiteW, repWeights)
 
@@ -131,6 +145,11 @@ class FileSuite (fileSystem: FileSystem, newSuiteId: Int){
     }
   }
 
+  /**
+   * Delete a file suite residing in the file system
+   * @param suiteId ID of the suite to be deleted
+   * @return either failure or nothing
+   */
   def deleteFileSuite(suiteId: Int): Either[FailResult, Unit] = {
     val result = fileSystem.deleteRepresentatives(suiteId)
 
@@ -140,6 +159,11 @@ class FileSuite (fileSystem: FileSystem, newSuiteId: Int){
     }
   }
 
+  /**
+   * Find the representative in a read quorum that is both up-to-date, and with the lowest container latency
+   * @param responses container responses in a read quorum
+   * @return either failure or the fastest current representative
+   */
   def selectFastestCurrentRepresentative(responses: Seq[ContainerResponse]): Either[FailResult, ContainerResponse] = {
     var foundCandidate: Boolean = false
     var readCandidate: ContainerResponse = null
@@ -160,11 +184,9 @@ class FileSuite (fileSystem: FileSystem, newSuiteId: Int){
 
 
   /**
-   * Function that finds the most suitable read response by first checking all container responses,
-   * then computing the reading quorum, check if the container responses meet the reading quorum
-   * and thus are suitable read candidates. Lastly pick the candidate with the lowest response time.
-   * @param
-   * @return result
+   * Read the content of a file suite
+   * Initiate inquiries first if not already done so, then gather a read quorum and find a suitable read candidate
+   * @return either failure or a tuple containing file suite content and total latency
    */
   def read(): Either[FailResult, (Int, Int)] = {
     var latency: Int = 0
@@ -220,11 +242,9 @@ class FileSuite (fileSystem: FileSystem, newSuiteId: Int){
 
 
   /**
-   * Function that finds the most suitable write response by first checking all container responses,
-   * then computing the writing quorum, check if the container responses meet the writing quorum
-   * and thus are suitable write candidates. Lastly pick the candidate with the lowest response time.
-   * @param
-   * @return result
+   * Write new content to a file suite
+   * Initiate inquiries first if not already done so, then gather a write quorum and write to all members
+   * @return either failure or the total latency
    */
   def write(newContent: Int): Either[FailResult, Int] = {
     var latency: Int = 0
