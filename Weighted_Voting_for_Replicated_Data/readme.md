@@ -24,6 +24,8 @@ simplified file system for a single user.
 The application can be run through an `sbt` shell
 by using the command `run`. 
 
+For information on `sbt` go to https://www.scala-sbt.org/1.0/docs/Getting-Started.html 
+
 Through the UI one of the
 following main classes can be selected:
 
