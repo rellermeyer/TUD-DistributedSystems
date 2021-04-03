@@ -67,10 +67,10 @@ def main(argv):
 
         configs.append(data)
 
-        with open(os.path.join(_SCRIPT_DIR, "../src/configs/config-" +
-                               datetime.today().strftime("%Y%m%d_%H%M%S") +
-                               ".json"), "w") as configFile:
-            json.dump(configs, configFile, indent=4, sort_keys=True)
+    with open(os.path.join(_SCRIPT_DIR, "../src/configs/config-" +
+                            datetime.today().strftime("%Y%m%d_%H%M%S") +
+                            ".json"), "w") as configFile:
+        json.dump(configs, configFile, indent=4, sort_keys=True)
 
 
 if __name__ == "__main__":
