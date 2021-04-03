@@ -15,6 +15,7 @@ parallelisms = [(7, 2, 1), (12, 7, 1), (17, 12, 1)]
 datasizes = [4000, 8000, 16000]
 repeats = 10
 tms_count = 8
+cfg_name = "config-12"
 
 # parallelisms = [(7, 2, 1)]
 # datasizes = [4000, 8000]
@@ -113,7 +114,7 @@ def change_parallelisms(prls):
     return lines
 
 
-def run(num_tms, datasize, parallelisms, replan):
+def run(num_tms, datasize, parallelisms, replan, cfg_file):
     """
     Run the experiment with the supplied parameters
 
@@ -146,7 +147,8 @@ def run(num_tms, datasize, parallelisms, replan):
     pwd = os.getcwd()
     os.chdir(os.path.join(_SCRIPT_DIR, "../"))
     job_mgr_args = "runMain jobmanager.JobManagerRunner " + \
-        str(num_tms) + " -" + ("" if replan else "no") + "replan"
+        str(num_tms) + " -" + ("" if replan else "no") + \
+        "replan " + cfg_file + ".json"
     jm = subprocess.Popen(["sbt", job_mgr_args], stdout=subprocess.PIPE)
     jm_logs = ""
 
@@ -190,16 +192,17 @@ if __name__ == "__main__":
     log_df = pd.DataFrame(columns=["Num TMs", "DataSize", "Parallelisms",
                                    "Runtime (No Replan)", "Runtime (Replan)",
                                    "Num Replans", "Loss"])
-    cfg_name = get_cfg_name()
+    # cfg_name = get_cfg_name()
 
     for ds in datasizes:
         start = str(tms_count) + "," + str(ds) + ","
         for prl in parallelisms:
             for i in range(repeats):
                 line = start + str(prl).replace(",", "") + ","
-                runtime_noreplan, _, _ = run(tms_count, ds, prl, False)
+                runtime_noreplan, _, _ = run(
+                    tms_count, ds, prl, False, cfg_name)
                 runtime_replan, num_replans, loss = run(tms_count, ds, prl,
-                                                        True)
+                                                        True, cfg_name)
                 line = line + str(runtime_noreplan) + "," + \
                     str(runtime_replan) + "," + str(num_replans) + "," + \
                     str(loss) + "\n"
