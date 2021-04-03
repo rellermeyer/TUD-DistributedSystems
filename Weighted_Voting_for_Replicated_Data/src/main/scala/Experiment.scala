@@ -11,20 +11,31 @@ import scala.util.control.Breaks.{break, breakable}
 
 object Experiment {
 
-  val outputPath: String = "C:\\Users\\blok_\\Desktop\\Results.csv"
+  val outputPath: String = "C:\\Users\\blok_\\Desktop\\Consistency.csv"
 
   val numContainers: Int = 5
 
-  val latencies: Seq[Seq[Int]] = Seq(Seq(1, 2, 4, 8, 16))
-  val blockingProbs: Seq[Seq[Double]] = Seq(Seq(0.00, 0.10, 0.00, 0.10, 0.10))//, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30, 0.35, 0.40, 0.45, 0.50)
+  val latencies: Seq[Seq[Int]] = Seq(Seq(1, 1, 1, 1, 1))
+  val blockingProbs: Seq[Seq[Double]] = Seq(Seq(0.00, 0.00, 0.00, 0.00, 0.00),
+                                            Seq(0.05, 0.05, 0.05, 0.05, 0.05),
+                                            Seq(0.10, 0.10, 0.10, 0.10, 0.10),
+                                            Seq(0.15, 0.15, 0.15, 0.15, 0.15),
+                                            Seq(0.20, 0.20, 0.20, 0.20, 0.20),
+                                            Seq(0.25, 0.25, 0.25, 0.25, 0.25),
+                                            Seq(0.30, 0.30, 0.30, 0.30, 0.30),
+                                            Seq(0.35, 0.35, 0.35, 0.35, 0.35),
+                                            Seq(0.40, 0.40, 0.40, 0.40, 0.40),
+                                            Seq(0.45, 0.45, 0.45, 0.45, 0.45),
+                                            Seq(0.50, 0.50, 0.50, 0.50, 0.50))
 
-  val readPortions: Seq[Double] = Seq(0.5)
+  val readPortions: Seq[Double] = Seq(0.5)//Seq(0.05, 0.10, 0.15, 0.20, 0.25, 0.30, 0.35, 0.40, 0.45, 0.50,
+                                    //  0.55, 0.60, 0.65, 0.70, 0.75, 0.80, 0.85, 0.90, 0.95)
   val transactionLengths: Seq[Int] = Seq(1)
   val numTransactions: Int = 10000
 
   val suiteId: Int = 1
-  val suiteRWPairs: Seq[(Int, Int)] = Seq((9, 11))
-  val repWeights: Seq[Seq[Int]] = Seq(Seq(4, 4, 4, 4, 4))
+  val suiteRWPairs: Seq[(Int, Int)] = Seq((1, 5), (2, 4), (3, 3), (4, 2), (5, 1))
+  val repWeights: Seq[Seq[Int]] = Seq(Seq(1, 1, 1, 1, 1))//Seq(Seq(1, 2, 3, 4, 5), Seq(3, 3, 3, 3, 3), Seq(5, 4, 3, 2, 1))
 
   def main(args: Array[String]): Unit = {
 
@@ -39,6 +50,7 @@ object Experiment {
       "blocking probability",
       "read percentage",
       "write percentage",
+      "read/write ratio",
       "transaction length",
       "transaction count",
       "r",
@@ -66,11 +78,14 @@ object Experiment {
       var successCount: Int = 0
       var commitCount: Int = 0
       var totalLatency: Int = 0
-      var consintencyCount: Int = 0
-      var fileContent: Int = -1
+      var consistencyCount: Int = 0
+      var inconsistencyCount: Int = 0
+      var committedContent: Int = -1
+      var tentativeContent: Int = -1
 
       for (i <- 0 until numTransactions) {
         var aborted: Boolean = false
+        tentativeContent = committedContent
 
         manager.begin()
         breakable { for (j <- 0 until transactionLength) {
@@ -81,11 +96,17 @@ object Experiment {
               case Right(r) => {
                 successCount += 1
                 totalLatency += r._2
+                if (r._1 == tentativeContent) {
+                  consistencyCount += 1
+                }
+                else {
+                  inconsistencyCount += 1
+                }
               }
             }
           }
           else {
-            val result = manager.write(suiteId, 1)
+            val result = manager.write(suiteId, tentativeContent + 1)
             result match {
               case Left(f) => {
                 manager.abort()
@@ -93,6 +114,7 @@ object Experiment {
                 break
               }
               case Right(r) => {
+                tentativeContent += 1
                 successCount += 1
                 totalLatency += r
               }
@@ -103,25 +125,48 @@ object Experiment {
 
         if (!aborted) {
           commitCount += 1
+          committedContent = tentativeContent
           manager.commit()
         }
       }
 
+      val readPercentage: Double = readPortion * 100.0
+      val writePercentage: Double = 100.0 - readPercentage
+      val readWriteRatio: Double = readPortion / (1.0 - readPortion)
+      val readWriteRatioString: String = readPortion + "/" + (1.0 - readPortion)
       val avgLatency: Double = totalLatency.toDouble / successCount.toDouble
       val successCallPercentage: Double = (successCount.toDouble / (numTransactions.toDouble * transactionLength.toDouble)) * 100.0
       val failCallPercentage: Double = 100.0 - successCallPercentage
       val commitPercentage: Double = (commitCount.toDouble / numTransactions.toDouble) * 100.0
       val abortPercentage: Double = 100.0 - commitPercentage
-//      val transactionSuccessPercentage = (transactionSuccess.toDouble / numTransactions.toDouble) * 100
-//      records += Array(blockingProb.toString, readPortion.toString, rw._1.toString, rw._2.toString,
-//        successPercentage.toString , failPercentage.toString , avgLatency.toString, transactionSuccessPercentage.toString)
+      val consistencyPercentage: Double = (consistencyCount.toDouble / (consistencyCount.toDouble + inconsistencyCount.toDouble)) * 100.0
+
+      records += Array(
+        latency.toString,
+        blockingProb.toString,
+        readPercentage.toString,
+        writePercentage.toString,
+        readWriteRatioString,
+        transactionLength.toString,
+        numTransactions.toString,
+        rw._1.toString,
+        rw._2.toString,
+        weights.toString(),
+        successCallPercentage.toString,
+        failCallPercentage.toString,
+        commitPercentage.toString,
+        abortPercentage.toString,
+        avgLatency.toString,
+        consistencyPercentage.toString
+      )
 
       println(
         "Experiment statistics: " + "\n" +
         "latencies: " + latency + "\n" +
         "blocking probability: " + blockingProb + "\n" +
-        "read percentage: " + readPortion * 100.0 + "\n" +
-        "write percentage: " + (1.0 - readPortion) * 100 + "\n" +
+        "read percentage: " + readPercentage + "\n" +
+        "write percentage: " + writePercentage + "\n" +
+        "read/write ratio: " + readWriteRatioString + "\n" +
         "transaction length: " + transactionLength + "\n" +
         "transaction count: " + numTransactions + "\n" +
         "r: " + rw._1 + "\n" +
@@ -132,7 +177,7 @@ object Experiment {
         "transaction commit percentage: " + commitPercentage + "\n" +
         "transaction abort percentage: " + abortPercentage + "\n" +
         "average call latency: " + avgLatency + "\n" +
-        "consistency percentage: TODO" + "\n\n"
+        "consistency percentage: " + consistencyPercentage + "\n\n"
       )
     }
     try {

@@ -92,31 +92,27 @@ class FileSystem(numContainers: Int, latencies: Seq[Int], newBlockingProbs: Seq[
    * @param suiteId
    * @return
    */
-  def collectRepresentatives(suiteId: Int): Either[FailResult, (FileSystemResponse, Int)] = {
+  def collectRepresentatives(suiteId: Int): Either[FailResult, (Seq[ContainerResponse], Int)] = {
     var latency: Int = 0
 
     _containers match {
       case Left(f) => Left(FailResult("collectSuite failed:\n" + f.reason))
       case Right(c) => {
 
-        val response: FileSystemResponse = FileSystemResponse()
+        var responses: Seq[ContainerResponse] = Seq.empty[ContainerResponse]
         var rep: Option[Representative] = None
 
         for (cid <- c.indices) {
           rep = c(cid).findRepresentative(suiteId)
           if (rep.isDefined) {
-            response.addResponse(ContainerResponse(cid, c(cid).latency, rep.get.weight, rep.get.prefix))
+            responses = responses :+ ContainerResponse(cid, c(cid).latency, rep.get.weight, rep.get.prefix)
             if (c(cid).latency > latency) {
               latency = c(cid).latency
             }
           }
-          else {
-            return Left(FailResult("collectSuite failed: representative of file " + suiteId +
-              " could not be found in container " + cid))
-          }
         }
-        if (response.containerResponses.nonEmpty) {
-          Right(response, latency)
+        if (responses.nonEmpty) {
+          Right(responses, latency)
         }
         else {
           Left(FailResult("collectSuite failed: no representatives could be found"))

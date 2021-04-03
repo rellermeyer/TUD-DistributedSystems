@@ -1,6 +1,6 @@
 package VotingSystem
 
-import FileSystem.{ContainerResponse, FileSystem, FileSystemResponse, Representative}
+import FileSystem.{ContainerResponse, FileSystem, Representative}
 
 import scala.util.control.Breaks.{break, breakable}
 
@@ -32,9 +32,9 @@ class FileSuite (fileSystem: FileSystem, newSuiteId: Int){
    * Returning the latest container response, and checks if there are responses at all
    * @return latest containerResponse
    */
-  def findLatest(fsResp: FileSystemResponse): Either[FailResult, ContainerResponse] = {
-    if (fsResp.containerResponses.nonEmpty) {
-      Right(fsResp.containerResponses.maxBy(_.prefix.versionNumberTentative))
+  def findLatest(responses: Seq[ContainerResponse]): Either[FailResult, ContainerResponse] = {
+    if (responses.nonEmpty) {
+      Right(responses.maxBy(_.prefix.versionNumberTentative))
     }
     else {
       Left(FailResult("findLatest failed: no container responses present in file system response"))
@@ -48,8 +48,8 @@ class FileSuite (fileSystem: FileSystem, newSuiteId: Int){
       case Left(f) => Left(FailResult("inquiry failed:\n" + f.reason))
       case Right(response) => {
 
-        if (!response._1.containerResponses.isEmpty) {
-          _inquiryResponse = response._1.containerResponses
+        if (!response._1.isEmpty) {
+          _inquiryResponse = response._1
           val latest = findLatest(response._1)
 
           latest match {
@@ -60,7 +60,7 @@ class FileSuite (fileSystem: FileSystem, newSuiteId: Int){
               _versionNumber = latest.prefix.versionNumberTentative
               _suiteInfo = latest.prefix.info
 
-              val quorum = collectReadQuorum(response._1.containerResponses)
+              val quorum = collectReadQuorum(response._1)
               quorum match {
                 case Left(f) => Left(FailResult("inquiry failed:\n" + f.reason))
                 case Right(quorum) => {
@@ -175,7 +175,7 @@ class FileSuite (fileSystem: FileSystem, newSuiteId: Int){
       case Left(f) => Left(FailResult("read failed:\n" + f.reason))
       case Right(responses) => {
 
-        for (c <- responses._1.containerResponses) {
+        for (c <- responses._1) {
           if (_inquiryResponse.exists(e => e.cid == c.cid))
             validResponses = validResponses :+ c
         }
@@ -235,7 +235,7 @@ class FileSuite (fileSystem: FileSystem, newSuiteId: Int){
       case Left(f) => Left(FailResult("write failed:\n" + f.reason))
       case Right(responses) => {
 
-        for (c <- responses._1.containerResponses) {
+        for (c <- responses._1) {
           if (_inquiryResponse.exists(e => e.cid == c.cid)) {
             validResponses = validResponses :+ c
           }
