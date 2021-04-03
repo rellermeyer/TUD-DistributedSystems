@@ -7,6 +7,8 @@ import akka.cluster.typed.{Cluster, Leave}
 import com.typesafe.config.ConfigFactory
 import sample.cluster.CborSerializable
 
+import java.io.{BufferedWriter, FileWriter, PrintWriter}
+
 object App {
   sealed trait Event extends CborSerializable
   case class cycleOutcome(nodeId: Int, valueX: Int) extends Event
@@ -52,6 +54,10 @@ object App {
   }
 
   def main(args: Array[String]) = {
+    val pw = new PrintWriter("evaluation_output.csv")
+    val bw = new BufferedWriter(new FileWriter("evaluation_output.csv", true))
+    bw.write("nodeId,roundId,good,seqNum,active,light,value\n")
+    bw.close()
     if (args.isEmpty) {
       startUp("decider", 25251, 0)
       for (i <- 1 to 10) {

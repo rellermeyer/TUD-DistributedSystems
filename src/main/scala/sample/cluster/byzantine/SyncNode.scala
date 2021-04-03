@@ -7,6 +7,7 @@ import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorRef, Behavior}
 import sample.cluster.CborSerializable
 
+import java.io.{BufferedWriter, FileWriter}
 import scala.{:+, ::}
 import scala.collection.mutable
 
@@ -92,7 +93,6 @@ object SyncNode {
     var roundID: Int = 2
     var outstandingMessageIDs: List[Int] = List.empty
     var seqNum: Int = 0
-    var saveNodes: Set[Int] = Set.empty
 
     // savemap -> roundID -> set[nodeIDs]
     var saveMap: mutable.Map[Int, Set[Int]] = mutable.Map.empty[Int, Set[Int]]
@@ -105,6 +105,7 @@ object SyncNode {
     def selectClogNNodes(): Int = math.round(C * math.log(numberOfNodes)).toInt
 
     def sendMessageByReference(ref: ActorRef[Event], message: Event): Unit = {
+      println(s"Node $nodeId which is $good good is sending a message, so seqNum is $seqNum.")
       outstandingMessageIDs = outstandingMessageIDs :+ seqNum
       seqNum = seqNum + 1
       ref ! message
@@ -120,11 +121,11 @@ object SyncNode {
             sendMessageByReference(entry._2, SelectedActiveID(seqNum, selectedId, selectedAddress, ctx.self))
           )
         } else {
-          var (selectedId, selectedAddress) = activeNodes.toList(nodeId)
+          val (selectedId, selectedAddress) = activeNodes.toList(r.nextInt(activeNodes.size))
           activeNodes.foreach(entry =>
             // Poison other nodes by sending our own (bad) id many times (n * a times, as in the paper)
             for (i <- 1 to selectedNodes.size * activeNodes.size) {
-              sendMessageByReference(entry._2, SelectedActiveID(seqNum, selectedId, selectedAddress, ctx.self))
+              sendMessageByReference(entry._2, SelectedActiveID(seqNum, nodeId, selectedAddress, ctx.self))
             }
           )
         }
@@ -203,10 +204,17 @@ object SyncNode {
     }
 
     def handle_6_take_majority(): Unit = {
+      println(s"I am node $nodeId and my coreBAResult is $coreBAResult.")
       readyOut = if (selectedNodes.size >= low - T) coreBAResult.values.groupBy(entry => entry._1).maxBy(_._2.size)._1 else readyOut
       value = if (readyOut == 1) coreBAResult.values.groupBy(entry => entry._2).maxBy(_._2.size)._1 else value
       println(s"I am node in handle 6 take majority $nodeId with $coreBAResult I am active: $active, I am light: $light")
       broadCastSaves()
+    }
+
+    def evaluation_report(): Unit = {
+      val bw = new BufferedWriter(new FileWriter("evaluation_output.csv", true))
+      bw.write(s"$nodeId,$roundID,$good,$seqNum,$active,$light,$value\n")
+      bw.close()
     }
 
     def handle_7_promise_agreement(): Unit = {
@@ -233,13 +241,14 @@ object SyncNode {
           // terminate
           //                    ctx.stop(self)
           root ! App.cycleOutcome(nodeId = nodeId, valueX = value)
-        } else if (p < (1 / (C * math.log(numberOfNodes)))) {
-          // reset and perform with double p
-          println(s"resetting from step 2 $nodeId")
-        } else {
-          // perform Byzantine Agreement
         }
-      } else readyOut = 0
+      }
+      else if (p < (1 / (C * math.log(numberOfNodes)))) {
+        // reset and perform with double p
+        println(s"resetting from step 2 $nodeId")
+      } else {
+        // perform Byzantine Agreement
+      }
     }
 
     Behaviors.withTimers { timers =>
@@ -306,9 +315,10 @@ object SyncNode {
           Behaviors.same
         case Save(senderId, senderRoundID, senderAddress) =>
           saveMap(senderRoundID) = saveMap.getOrElse(senderRoundID, Set.empty) + senderId
-//          println(s"I am $nodeId, this is round $roundID saved nodes ${saveMap(roundID).size}/$numberOfNodes")
+          println(s"I am $nodeId, this is round $roundID saved nodes ${saveMap(roundID).size}/$numberOfNodes")
           if (saveMap(roundID).size == numberOfNodes) {
-//            println(s"---------- DONE WITH ROUND $nodeId:$roundID ----------")
+            println(s"---------- DONE WITH ROUND $nodeId:$roundID ----------")
+            evaluation_report()
             resetSaveNodes(roundID)
             roundID = roundID + 1
             roundID match {
