@@ -97,6 +97,20 @@ object Main {
       }
     }
 
+    def deleteSuiteUI() : Unit = {
+      println("(!) What is the ID of the file you want to delete?")
+      val suiteID = getUserChoice()
+
+      val result = manager.delete(suiteID)
+      result match {
+        case Left(f) => println("Could not delete file:\n" + f.reason + "\n")
+        case Right(r) => {
+          createdSuite = true
+          println("Successfully deleted file with id " + suiteID + "\n")
+        }
+      }
+    }
+
     // Read suite menu
     def readSuiteUI() : Unit = {
       println("(!) What is the ID of the file you want to read?")
@@ -181,7 +195,7 @@ object Main {
         createSuiteUI()
       }
       else if (userChoice == 3 && createdFileSystem && createdSuite) {
-        startTransactionUI()
+        deleteSuiteUI()
       }
       else if (userChoice == 4 && createdFileSystem && createdSuite) {
         startTransactionUI()
