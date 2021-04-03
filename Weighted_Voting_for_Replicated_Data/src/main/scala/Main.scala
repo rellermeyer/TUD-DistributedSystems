@@ -37,14 +37,14 @@ object Main {
       var blockingProbs = Seq.empty[Double]
 
       while (!exitSetup) {
-        println("(!) Creating File System menu - Choose an event:")
+        println("(!) Creating file system menu - Choose an event:")
         println("(-)  1: Add a container")
         println("(-)  0: Stop adding containers")
         val menu_integer = getUserChoice()
 
         if (menu_integer == 0) {
           if (latencies.isEmpty) {
-            println("(!) No File System was created, returning to main menu\n")
+            println("(!) No containers were created, so no file system could be created. Returning to main menu\n")
           }
           else {
             fileSystem = FileSystem(latencies.length, latencies, blockingProbs)
@@ -58,12 +58,12 @@ object Main {
             createdFileSystem = true
           }
           exitSetup = true
-          println("(!) Left menu for creating containers\n")
+          println("(!) Left menu for creating a file system\n")
         }
         else if (menu_integer == 1) {
-          println("(!) Enter latency of new container:")
+          println("(!) Enter latency of the new container:")
           latencies = latencies :+ getUserChoice()
-          println("(!) Enter blocking probability of new container:")
+          println("(!) Enter blocking probability of the new container:")
           blockingProbs = blockingProbs :+ getUserChoiceDouble()
         }
         else {
@@ -158,7 +158,7 @@ object Main {
     // Main menu:
     while (!exited) {
       println("(!) Main menu - Choose an event:")
-      println("(-)  1: Create new File System")
+      println("(-)  1: Create new file system")
       if (createdFileSystem) {
         println("(-)  2: Create new file")
       }
