@@ -96,6 +96,27 @@ class FileSuiteManager (newFileSystem: FileSystem){
       case Right(r) => Right()
     }
   }
+
+  def delete(fileId: Int): Either[FailResult, Unit] = {
+    var fileSuiteMonitor: FileSuite = null
+    val findResult = findMonitor(fileId)
+    if (findResult.isEmpty) {
+      fileSuiteMonitor = new FileSuite(_fileSystem, fileId)
+      _fileSuiteMonitors = _fileSuiteMonitors :+ fileSuiteMonitor
+    }
+    else {
+      fileSuiteMonitor = findResult.get
+    }
+    val result = fileSuiteMonitor.deleteFileSuite(fileId)
+
+    result match {
+      case Left(f) => {
+        abort()
+        Left(FailResult("delete failed:\n" + f.reason))
+      }
+      case Right(r) => Right()
+    }
+  }
 }
 
 object FileSuiteManager {

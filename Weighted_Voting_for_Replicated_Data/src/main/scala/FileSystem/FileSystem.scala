@@ -67,22 +67,38 @@ class FileSystem(numContainers: Int, latencies: Seq[Int], newBlockingProbs: Seq[
    */
   def createRepresentatives(suiteId: Int, suiteR: Int, suiteW: Int, repWeights: Seq[Int]): Either[FailResult, Unit] = {
     _containers match {
-      case Left(f) => Left(FailResult("createSuite failed:\n" + f.reason))
+      case Left(f) => Left(FailResult("createRepresentatives failed:\n" + f.reason))
       case Right(c) => {
         if (repWeights.length != c.length) {
-          Left(FailResult("createSuite failed: number of weights (" + repWeights.length +
+          Left(FailResult("createRepresentatives failed: number of weights (" + repWeights.length +
             ") does not match number of containers (" + c.length + ")"))
         }
         else {
           for (cid <- c.indices) {
             val result = c(cid).createRepresentative(suiteId, suiteR, suiteW, repWeights, repWeights(cid))
             result match {
-              case Left(f) => return Left(FailResult("createSuite failed:\n" + f.reason))
+              case Left(f) => return Left(FailResult("createRepresentatives failed:\n" + f.reason))
               case Right(r) => {}
             }
           }
           Right()
         }
+      }
+    }
+  }
+
+  def deleteRepresentatives(suiteId: Int): Either[FailResult, Unit] = {
+    _containers match {
+      case Left(f) => Left(FailResult("deleteRepresentatives failed:\n" + f.reason))
+      case Right(c) => {
+        for (cid <- c.indices) {
+          val result = c(cid).deleteRepresentative(suiteId)
+          result match {
+            case Left(f) => return Left(FailResult("deleteRepresentatives failed:\n" + f.reason))
+            case Right(r) => {}
+          }
+        }
+        Right()
       }
     }
   }

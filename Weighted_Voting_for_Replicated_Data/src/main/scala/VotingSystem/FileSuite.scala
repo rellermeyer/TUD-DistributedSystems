@@ -126,11 +126,19 @@ class FileSuite (fileSystem: FileSystem, newSuiteId: Int){
     val result = fileSystem.createRepresentatives(suiteId, suiteR, suiteW, repWeights)
 
     result match {
-      case Left(f) => Left(FailResult("createFSuite failed:\n" + f.reason))
+      case Left(f) => Left(FailResult("createFileSuite failed:\n" + f.reason))
       case Right(r) => Right()
     }
   }
 
+  def deleteFileSuite(suiteId: Int): Either[FailResult, Unit] = {
+    val result = fileSystem.deleteRepresentatives(suiteId)
+
+    result match {
+      case Left(f) => Left(FailResult("deleteFileSuite failed:\n" + f.reason))
+      case Right(r) => Right()
+    }
+  }
 
   def selectFastestCurrentRepresentative(responses: Seq[ContainerResponse]): Either[FailResult, ContainerResponse] = {
     var foundCandidate: Boolean = false

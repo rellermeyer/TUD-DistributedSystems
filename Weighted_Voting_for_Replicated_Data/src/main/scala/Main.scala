@@ -163,7 +163,8 @@ object Main {
         println("(-)  2: Create new file")
       }
       if (createdFileSystem && createdSuite) {
-        println("(-)  3: Start new transaction")
+        println("(-)  3: Delete file")
+        println("(-)  4: Start new transaction")
       }
       println("(-)  0: Quit")
 
@@ -180,6 +181,9 @@ object Main {
         createSuiteUI()
       }
       else if (userChoice == 3 && createdFileSystem && createdSuite) {
+        startTransactionUI()
+      }
+      else if (userChoice == 4 && createdFileSystem && createdSuite) {
         startTransactionUI()
       }
       else {

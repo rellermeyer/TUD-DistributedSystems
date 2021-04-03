@@ -71,7 +71,15 @@ class Container(newLatency: Int, newBlockingProb: Double) {
     }
   }
 
-
+  def deleteRepresentative(suiteId: Int): Either[FailResult, Unit] = {
+    if (_representatives.exists(e => e.repId == suiteId)) {
+      _representatives = representatives.filter(e => e.repId != suiteId)
+      Right()
+    }
+    else {
+      Left(FailResult("deleteRepresentative failed: no representative of file " + suiteId + " exists"))
+    }
+  }
 
   /**
    * Returns the contents of a representative

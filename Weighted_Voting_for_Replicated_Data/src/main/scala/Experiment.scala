@@ -28,14 +28,13 @@ object Experiment {
                                             Seq(0.45, 0.45, 0.45, 0.45, 0.45),
                                             Seq(0.50, 0.50, 0.50, 0.50, 0.50))
 
-  val readPortions: Seq[Double] = Seq(0.5)//Seq(0.05, 0.10, 0.15, 0.20, 0.25, 0.30, 0.35, 0.40, 0.45, 0.50,
-                                    //  0.55, 0.60, 0.65, 0.70, 0.75, 0.80, 0.85, 0.90, 0.95)
+  val readPortions: Seq[Double] = Seq(0.5)
   val transactionLengths: Seq[Int] = Seq(1)
   val numTransactions: Int = 10000
 
   val suiteId: Int = 1
   val suiteRWPairs: Seq[(Int, Int)] = Seq((1, 5), (2, 4), (3, 3), (4, 2), (5, 1))
-  val repWeights: Seq[Seq[Int]] = Seq(Seq(1, 1, 1, 1, 1))//Seq(Seq(1, 2, 3, 4, 5), Seq(3, 3, 3, 3, 3), Seq(5, 4, 3, 2, 1))
+  val repWeights: Seq[Seq[Int]] = Seq(Seq(1, 1, 1, 1, 1))
 
   def main(args: Array[String]): Unit = {
 
