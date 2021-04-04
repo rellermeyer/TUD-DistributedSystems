@@ -14,7 +14,7 @@ import scala.collection.mutable
 object SyncNode {
   val SyncNodeServiceKey: ServiceKey[SyncNode.Event] = ServiceKey[SyncNode.Event]("SyncNodes")
 
-  private final val C = 2
+  private final val C = 3
   final val EPISOLON = 0.2
   final val T = 1
 
