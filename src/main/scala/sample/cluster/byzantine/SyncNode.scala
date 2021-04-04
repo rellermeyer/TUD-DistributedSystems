@@ -14,8 +14,8 @@ import scala.collection.mutable
 object SyncNode {
   val SyncNodeServiceKey: ServiceKey[SyncNode.Event] = ServiceKey[SyncNode.Event]("SyncNodes")
 
-  private final val C = 3
-  final val EPISOLON = 0.1
+  private final val C = 2
+  final val EPISOLON = 0.2
   final val T = 1
 
   sealed trait Event
@@ -38,6 +38,8 @@ object SyncNode {
   case class LargeCoreBaResponse(result: Int, resultValue: Int) extends Response
   case class LargeCoreBaFailure(throwable: Throwable) extends Response
   case class PromiseResponse(messageId: Int, readyOut: Int, valueOut: Int) extends Response
+
+  def log2(x: Double) = scala.math.log(x)/scala.math.log(2)
 
 
   def apply(nodeId: Int, numberOfNodes: Int, root: ActorRef[App.Event], good: Boolean): Behavior[SyncNode.Event] = Behaviors.setup { ctx =>
@@ -74,7 +76,7 @@ object SyncNode {
 
     // define the state of the actor
     val r = scala.util.Random
-    val p: Double = (C * math.log(numberOfNodes))/numberOfNodes
+    val p: Double = (C * log2(numberOfNodes))/numberOfNodes
     val low: Double = numberOfNodes - 2 * T - EPISOLON * numberOfNodes
     val high: Double = low + T
     val minA: Double = (1 - EPISOLON) * p * (numberOfNodes - T)
@@ -84,10 +86,9 @@ object SyncNode {
     var readyOut: Int = 0
     var readyIn: Int = 0
     var value: Int = 0
-    var active: Boolean = r.nextDouble() <= p
-    if(!good) {
-      active = true
-    }
+    println(s"p: $p")
+    val active: Boolean = if (!good) true else r.nextDouble() <= p
+
     var light: Boolean = false
 
     // synchronization
@@ -108,13 +109,14 @@ object SyncNode {
     def sendMessageByReference(ref: ActorRef[Event], message: Event): Unit = {
       outstandingMessageIDs = outstandingMessageIDs :+ seqNum
       seqNum = seqNum + 1
-      println(s"Node $nodeId which is $good good is sending a message, so seqNum is $seqNum.")
+//      println(s"Node $nodeId which is $good good is sending a message, so seqNum is $seqNum.")
       ref ! message
     }
 
     // handling functions
     def handle_3a(): Unit = {
       if (light) {
+        largeCoreBa(0) ! LargeCoBeRa.RegisterLightNode(nodeId)
         if (good) {
           val (selectedId, selectedAddress) = activeNodes.toList(r.nextInt(activeNodes.size))
           activeNodes.foreach(entry =>
@@ -128,6 +130,7 @@ object SyncNode {
               sendMessageByReference(entry._2, SelectedActiveID(seqNum, nodeId, selectedAddress, ctx.self))
             }
           )
+          broadCastSaves()
         }
       }
       else
@@ -232,15 +235,13 @@ object SyncNode {
     }
 
     def handle_7_promise_agreement_result(): Unit = {
-      if (promiseResponses.count(response => response._1 == 1) > T/numberOfNodes) {
-        readyOut = 1
-        if (readyOut == 1) {
-          value = promiseResponses.groupBy(entry => entry._2).maxBy(_._2.size)._1
-          println(s"I am node in handle 7 promise argeement $nodeId with $promiseResponses I am active: $active, I am light: $light, readyout: $readyOut, with value $value")
-          // terminate
-          evaluation_report()
-          root ! App.cycleOutcome(nodeId = nodeId, valueX = value)
-        }
+      if (promiseResponses.count(response => response._1 == 1) > T/numberOfNodes) readyOut = 1
+      if (readyOut == 1) value = promiseResponses.groupBy(entry => entry._2).maxBy(_._2.size)._1
+      if (readyOut == 1) {
+//        println(s"I am node in handle 7 promise argeement $nodeId with $promiseResponses I am active: $active, I am light: $light, readyout: $readyOut, with value $value")
+        // terminate
+        evaluation_report()
+        root ! App.cycleOutcome(nodeId = nodeId, valueX = value)
       }
       else if (p < (1 / (C * math.log(numberOfNodes)))) {
         // reset and perform with double p
@@ -291,6 +292,7 @@ object SyncNode {
           senderAddress ! Ack(seqNum)
           Behaviors.same
         case LargeCoreBaResponse(readyOutCoreBA, valueCoreBA) =>
+          println(s"coreba response: readyout $readyOutCoreBA, valueout $valueCoreBA")
           broadCastSaves()
           if (selectedNodes.size >= low && readyOutCoreBA != -1) readyOut = readyOutCoreBA
           else if (valueCoreBA != -1) value = valueCoreBA
@@ -319,8 +321,8 @@ object SyncNode {
           Behaviors.same
         case Save(senderId, senderRoundID, senderAddress) =>
           saveMap(senderRoundID) = saveMap.getOrElse(senderRoundID, Set.empty) + senderId
-          println(s"I am $nodeId, this is round $roundID saved nodes ${saveMap(roundID).size}/$numberOfNodes")
-          if (saveMap(roundID).size == numberOfNodes) {
+          println(s"I am $nodeId, this is round $roundID saved nodes $saveMap ${saveMap.getOrElse(roundID, Set.empty).size}/$numberOfNodes")
+          if (saveMap.getOrElse(roundID, Set.empty).size == numberOfNodes) {
             println(s"---------- DONE WITH ROUND $nodeId:$roundID ----------")
             resetSaveNodes(roundID)
             roundID = roundID + 1

@@ -32,7 +32,7 @@ object LargeCoBeRa {
 
     val low: Double = numberOfNodes - 2 * T - EPISOLON * numberOfNodes
     val high: Double = low + T
-    var mode: Int = Random.nextInt()
+    val mode: Int = if (Random.nextBoolean()) 1 else 0
 
     Behaviors.receiveMessage {
       case PrepareCoreBA(segNum, senderID, readyIn, trusting, replyTo) =>
@@ -40,6 +40,7 @@ object LargeCoBeRa {
         replyTo ! SyncNode.Ack(segNum)
         Behaviors.same
       case AgreementSelectionPhaseOne(replyTo) =>
+        println(s"largecoreba${lightNodes.size} vs $high")
         if (lightNodes.size >= high) replyTo ! LargeCoreBaResponse(1, -1)
         else if (lightNodes.size >= low && lightNodes.size < high) replyTo ! LargeCoreBaResponse(mode, -1)
         else replyTo ! LargeCoreBaResponse(0, -1)
