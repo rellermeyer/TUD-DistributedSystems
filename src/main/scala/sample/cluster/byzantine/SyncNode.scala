@@ -126,7 +126,7 @@ object SyncNode {
           val (selectedId, selectedAddress) = activeNodes.toList(r.nextInt(activeNodes.size))
           activeNodes.foreach(entry =>
             // Poison other nodes by sending our own (bad) id many times (n * a times, as in the paper)
-            for (i <- 1 to selectedNodes.size * activeNodes.size) {
+            for (i <- 1 to 1/2 * numberOfNodes * activeNodes.size) {
               sendMessageByReference(entry._2, SelectedActiveID(seqNum, nodeId, selectedAddress, ctx.self))
             }
           )
