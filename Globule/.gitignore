@@ -1,0 +1,47 @@
+# Globule
+src/main/resources/application.conf
+master.log
+slave.log
+
+# sbt
+# (may want to keep parts of 'project')
+bin/
+project/project/
+project/target/
+project/build.properties
+target/
+build/
+
+# eclipse
+build
+.classpath
+.project
+.settings
+.worksheet
+
+# intellij idea
+*.log
+*.iml
+*.ipr
+*.iws
+.idea
+
+# mac
+.DS_Store
+
+# other?
+.history
+.scala_dependencies
+.cache
+.cache-main
+
+#general
+*.class
+
+project/build.properties
+project/target/*
+project/project/*
+
+python/*.csv
+node
+node/*
