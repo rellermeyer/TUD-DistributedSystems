@@ -40,7 +40,7 @@ object SyncNode {
   case class PromiseResponse(messageId: Int, readyOut: Int, valueOut: Int) extends Response
 
 
-  def apply(nodeId: Int, numberOfNodes: Int, root: ActorRef[App.Event]): Behavior[SyncNode.Event] = Behaviors.setup { ctx =>
+  def apply(nodeId: Int, numberOfNodes: Int, root: ActorRef[App.Event], good: Boolean): Behavior[SyncNode.Event] = Behaviors.setup { ctx =>
     val subscriptionAdapter = ctx.messageAdapter[Receptionist.Listing] {
       case SyncNode.SyncNodeServiceKey.Listing(workers) =>
         NodesUpdated(workers)
@@ -84,10 +84,11 @@ object SyncNode {
     var readyOut: Int = 0
     var readyIn: Int = 0
     var value: Int = 0
-    val active: Boolean = r.nextDouble() <= p
+    var active: Boolean = r.nextDouble() <= p
+    if(!good) {
+      active = true
+    }
     var light: Boolean = false
-
-    var good = true
 
     // synchronization
     var roundID: Int = 2
@@ -95,7 +96,7 @@ object SyncNode {
     var seqNum: Int = 0
 
     // savemap -> roundID -> set[nodeIDs]
-    var saveMap: mutable.Map[Int, Set[Int]] = mutable.Map.empty[Int, Set[Int]]
+    val saveMap: mutable.Map[Int, Set[Int]] = mutable.Map.empty[Int, Set[Int]]
 
     def resetSaveNodes(roundID: Int): Unit = saveMap(roundID) = Set.empty
     def broadCastSaves(): Unit = nodesReferences.foreach(ref => ref ! Save(nodeId, roundID, ctx.self))
@@ -105,16 +106,15 @@ object SyncNode {
     def selectClogNNodes(): Int = math.round(C * math.log(numberOfNodes)).toInt
 
     def sendMessageByReference(ref: ActorRef[Event], message: Event): Unit = {
-      println(s"Node $nodeId which is $good good is sending a message, so seqNum is $seqNum.")
       outstandingMessageIDs = outstandingMessageIDs :+ seqNum
       seqNum = seqNum + 1
+      println(s"Node $nodeId which is $good good is sending a message, so seqNum is $seqNum.")
       ref ! message
     }
 
     // handling functions
     def handle_3a(): Unit = {
       if (light) {
-        largeCoreBa(0) ! LargeCoBeRa.RegisterLightNode(nodeId)
         if (good) {
           val (selectedId, selectedAddress) = activeNodes.toList(r.nextInt(activeNodes.size))
           activeNodes.foreach(entry =>
@@ -129,7 +129,6 @@ object SyncNode {
             }
           )
         }
-
       }
       else
         broadCastSaves()
@@ -157,7 +156,7 @@ object SyncNode {
 
     def handle_3c(): Unit = {
       if (light) queryList
-        .filter(entry => activeNodes.contains(entry._1) && activeNodes.contains(entry._3))
+        .filter(entry => activeNodes.contains(entry._1) || activeNodes.contains(entry._3))
         .foreach(entry => sendMessageByReference(entry._4, QueryReply(seqNum, entry._1, ctx.self)))
       else
         broadCastSaves()
@@ -213,7 +212,7 @@ object SyncNode {
 
     def evaluation_report(): Unit = {
       val bw = new BufferedWriter(new FileWriter("evaluation_output.csv", true))
-      bw.write(s"$nodeId,$roundID,$good,$seqNum,$active,$light,$value\n")
+      bw.write(s"$nodeId,$roundID,$good,$seqNum,$active,$light,$value,$readyOut\n")
       bw.close()
     }
 
@@ -239,7 +238,7 @@ object SyncNode {
           value = promiseResponses.groupBy(entry => entry._2).maxBy(_._2.size)._1
           println(s"I am node in handle 7 promise argeement $nodeId with $promiseResponses I am active: $active, I am light: $light, readyout: $readyOut, with value $value")
           // terminate
-          //                    ctx.stop(self)
+          evaluation_report()
           root ! App.cycleOutcome(nodeId = nodeId, valueX = value)
         }
       }
@@ -248,6 +247,11 @@ object SyncNode {
         println(s"resetting from step 2 $nodeId")
       } else {
         // perform Byzantine Agreement
+        activeNodes.foreach(entry => {
+          nodesReferences.foreach(ref => sendMessageByReference(ref, Query(seqNum, entry._1, entry._2, nodeId, ctx.self)))
+        })
+        largeCoreBa(0) ! LargeCoBeRa.AgreementSelectionPhaseTwo(ctx.self)
+        evaluation_report()
       }
     }
 
@@ -318,7 +322,6 @@ object SyncNode {
           println(s"I am $nodeId, this is round $roundID saved nodes ${saveMap(roundID).size}/$numberOfNodes")
           if (saveMap(roundID).size == numberOfNodes) {
             println(s"---------- DONE WITH ROUND $nodeId:$roundID ----------")
-            evaluation_report()
             resetSaveNodes(roundID)
             roundID = roundID + 1
             roundID match {
@@ -335,9 +338,6 @@ object SyncNode {
               case _ => println("I have not been implemented")
             }
           }
-          Behaviors.same
-        case MakeBad() =>
-          good = false
           Behaviors.same
       }
     }

@@ -23,15 +23,14 @@ object App {
 
       if (cluster.selfMember.hasRole("node")) {
 //        ctx.spawn(Node(r.nextInt(100), 2), s"Node$id")
-        ctx.spawn(SyncNode(id, 10, ctx.self), s"Node$id")
+        ctx.spawn(SyncNode(id, 11, ctx.self, false), s"Node$id")
       }
       if (cluster.selfMember.hasRole("decider")) {
-        ctx.spawn(LargeCoBeRa(10), "LargeCoBeRa")
+        ctx.spawn(LargeCoBeRa(11), "LargeCoBeRa")
       }
       if (cluster.selfMember.hasRole("badnode")) {
-        val node = SyncNode(id, 1, ctx.self)
+        val node = SyncNode(id, 11, ctx.self, true)
         val spawnedNode = ctx.spawn(node, s"BadNode$id")
-        spawnedNode ! SyncNode.MakeBad()
       }
       Behaviors.receiveSignal[Nothing] {
         case (ctx, PostStop) =>
@@ -47,7 +46,7 @@ object App {
         case respawnNode(nodeId, p) =>
           println(s"Node $nodeId is going to respawn")
           cluster.manager ! Leave(cluster.selfMember.address)
-          ctx.spawn(SyncNode(nodeId, 10, ctx.self), s"Node$nodeId")
+          ctx.spawn(SyncNode(nodeId, 10, ctx.self, true), s"Node$nodeId")
           Behaviors.same
       }
     }
@@ -56,7 +55,7 @@ object App {
   def main(args: Array[String]) = {
     val pw = new PrintWriter("evaluation_output.csv")
     val bw = new BufferedWriter(new FileWriter("evaluation_output.csv", true))
-    bw.write("nodeId,roundId,good,seqNum,active,light,value\n")
+    bw.write("nodeId,roundId,good,seqNum,active,light,value,readyOut\n")
     bw.close()
     if (args.isEmpty) {
       startUp("decider", 25251, 0)
