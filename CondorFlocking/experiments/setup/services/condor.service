@@ -1,0 +1,11 @@
+[Unit]
+Description=Manage Java service
+
+[Service]
+WorkingDirectory=/home/in4391
+ExecStart=/usr/bin/java -Dconfig.file=application.conf -Dlogback.configurationFile=logback.xml -jar CondorFlocking-assembly-0.1.jar
+User=in4391
+Type=simple
+
+[Install]
+WantedBy=multi-user.target

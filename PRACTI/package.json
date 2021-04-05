@@ -1,0 +1,14 @@
+{
+  "name": "practi",
+  "version": "1.0.0",
+  "dependencies": {},
+  "devDependencies": {
+    "blob": "0.0.5",
+    "form-data": "^2.3.3",
+    "math": "0.0.3",
+    "node-fetch": "^2.3.0",
+    "request": "^2.88.0",
+    "request-promise": "^4.2.4",
+    "rimraf": "^2.6.3"
+  }
+}
