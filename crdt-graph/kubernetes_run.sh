@@ -1,5 +1,7 @@
 #!/bin/bash
 
+pkill kubectl -9
+
 cp src/main/resources/application.kubernetes.conf src/main/resources/application.conf
 
 minikube stop
@@ -7,7 +9,7 @@ minikube start
 kubectl delete -f k8s/crdt-graph-rbac.yml | echo "rbac already deleted!"
 kubectl delete -f k8s/crdt-graph-deployment.yml | echo "deployment already deleted!"
 kubectl delete -f k8s/crdt-graph-service.yml | echo "service already deleted!"
-eval $(minikube docker-env)
+eval $(minikube docker-env --shell bash)
 sbt docker:publishLocal
 # create serviceAccount and role
 kubectl create -f k8s/crdt-graph-rbac.yml
