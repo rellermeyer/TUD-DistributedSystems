@@ -18,9 +18,11 @@ import akka.http.scaladsl.server.Directives
 import com.typesafe.config.ConfigFactory
 import org.tudelft.crdtgraph.OperationLogs._
 
+import scala.collection.mutable.{ArrayBuffer, HashMap}
 
 //Custom case classes to parse vertices and arcs in post requests containing JSON
 final case class VertexCaseClass(vertexName: String)
+
 final case class ArcCaseClass(sourceVertex: String, targetVertex: String)
 
 //JSON formats used to parse the body of post requests
@@ -31,18 +33,25 @@ trait JsonSupport extends SprayJsonSupport with DefaultJsonProtocol {
   //OperationLog needs special format with custom write and read functions to parse it
   implicit object OperationLogFormat extends JsonFormat[OperationLog] {
     def write(obj: OperationLog): JsValue = {
-      JsObject(
-        ("opType", JsString(obj.opType)),
-        ("operationUuid", JsString(obj.operationUuid)),
-        ("timestamp", JsString(obj.timestamp)),
-        ("vertexName", JsString(obj.vertexName)),
-        ("vertexUuid", JsString(obj.vertexUuid)),
-        ("vertexUuids", JsArray(obj.vertexUuids.toVector.map(x => JsString(x)).toVector)),
-        ("sourceVertex", JsString(obj.sourceVertex)),
-        ("targetVertex", JsString(obj.targetVertex)),
-        ("arcUuid", JsString(obj.arcUuid)),
-        ("arcUuids", JsArray(obj.arcUuids.map((id:String) => JsString(id)).toVector))
-      )
+      var jsonMap = HashMap[String, JsValue]()
+      jsonMap("opType") = JsString(obj.opType).asInstanceOf[JsValue]
+      jsonMap("operationUuid") = JsString(obj.operationUuid).asInstanceOf[JsValue]
+      jsonMap("timestamp") = JsString(obj.timestamp).asInstanceOf[JsValue]
+      if (obj.vertexName != "")
+        jsonMap("vertexName") = JsString(obj.vertexName).asInstanceOf[JsValue]
+      if (obj.vertexUuid != "")
+        jsonMap("vertexUuid") = JsString(obj.vertexUuid).asInstanceOf[JsValue]
+      if (obj.vertexUuids.nonEmpty)
+        jsonMap("vertexUuids") = JsArray(obj.vertexUuids.toVector.map(x => JsString(x)).toVector).asInstanceOf[JsValue]
+      if (obj.sourceVertex != "")
+        jsonMap("sourceVertex") = JsString(obj.sourceVertex).asInstanceOf[JsValue]
+      if (obj.targetVertex != "")
+        jsonMap("targetVertex") = JsString(obj.targetVertex).asInstanceOf[JsValue]
+      if (obj.arcUuid != "")
+        jsonMap("arcUuid") = JsString(obj.arcUuid).asInstanceOf[JsValue]
+      if (obj.arcUuids.nonEmpty)
+        jsonMap("arcUuids") = JsArray(obj.arcUuids.map((id: String) => JsString(id)).toVector).asInstanceOf[JsValue]
+      JsObject(jsonMap.toMap)
     }
 
     def read(json: JsValue): OperationLog = json match {
@@ -51,13 +60,20 @@ trait JsonSupport extends SprayJsonSupport with DefaultJsonProtocol {
         log.opType = fields("opType").convertTo[String]
         log.operationUuid = fields("operationUuid").convertTo[String]
         log.timestamp = fields("timestamp").convertTo[String]
-        log.vertexName = fields("vertexName").convertTo[String]
-        log.vertexUuid = fields("vertexUuid").convertTo[String]
-        log.vertexUuids = fields("vertexUuids").convertTo[Array[String]]
-        log.sourceVertex = fields("sourceVertex").convertTo[String]
-        log.targetVertex = fields("targetVertex").convertTo[String]
-        log.arcUuid = fields("arcUuid").convertTo[String]
-        log.arcUuids = fields("arcUuids").convertTo[Array[String]]
+        if (fields.contains("vertexName"))
+          log.vertexName = fields("vertexName").convertTo[String]
+        if (fields.contains("vertexUuid"))
+          log.vertexUuid = fields("vertexUuid").convertTo[String]
+        if (fields.contains("vertexUuids"))
+          log.vertexUuids = fields("vertexUuids").convertTo[Array[String]]
+        if (fields.contains("sourceVertex"))
+          log.sourceVertex = fields("sourceVertex").convertTo[String]
+        if (fields.contains("targetVertex"))
+          log.targetVertex = fields("targetVertex").convertTo[String]
+        if (fields.contains("arcUuid"))
+          log.arcUuid = fields("arcUuid").convertTo[String]
+        if (fields.contains("arcUuids"))
+          log.arcUuids = fields("arcUuids").convertTo[Array[String]]
         log
       }
       case _ => deserializationError("Json is required")
@@ -90,20 +106,20 @@ object WebServer extends Directives with JsonSupport {
     Synchronizer.synchronize(kubernetesActive, system, materializer)
 
     val route: Route = {
-        //Route to add a vertex to the datastore. Returns true on success, false otherwise
-        //HTTP Post request in the following form: {"vertexName": "abc"}
-        //Only one vertex per request
-        post {
-          pathPrefix("addvertex") {
-            entity(as[VertexCaseClass]) { vertex =>
-              if (DataStore.addVertex(vertex.vertexName)) {
-                complete(trueString)
-              } else {
-                complete(StatusCodes.BadRequest, falseString)
-              }
+      //Route to add a vertex to the datastore. Returns true on success, false otherwise
+      //HTTP Post request in the following form: {"vertexName": "abc"}
+      //Only one vertex per request
+      post {
+        pathPrefix("addvertex") {
+          entity(as[VertexCaseClass]) { vertex =>
+            if (DataStore.addVertex(vertex.vertexName)) {
+              complete(trueString)
+            } else {
+              complete(StatusCodes.BadRequest, falseString)
             }
           }
-        } ~
+        }
+      } ~
         //Route to add a arc between to vertices to the datastore. Returns true on success, false otherwise
         //Source vertex that the new arc connects to need to exist beforehand, otherwise false is returned
         //HTTP Post request in the following form: {"sourceVertex":"xyz", "targetVertex":"abc"}
@@ -147,7 +163,7 @@ object WebServer extends Directives with JsonSupport {
             entity(as[ArcCaseClass]) { arc =>
               val src = arc.sourceVertex
               val dst = arc.targetVertex
-              if(DataStore.removeArc(src, dst)) {
+              if (DataStore.removeArc(src, dst)) {
                 complete(trueString)
               } else {
                 complete(StatusCodes.BadRequest, falseString)
@@ -155,16 +171,16 @@ object WebServer extends Directives with JsonSupport {
             }
           }
         } ~
-      //Route to synchronize changes between instances of the system.
-      //HTTP Post request with a JSON body with a serialized collection of OperationLog.
+        //Route to synchronize changes between instances of the system.
+        //HTTP Post request with a JSON body with a serialized collection of OperationLog.
         post {
           pathPrefix("applychanges") {
             entity(as[JsValue]) { oplog =>
               var logs = oplog.convertTo[Vector[OperationLog]]
-              if( DataStore.applyChanges(logs)){
+              if (DataStore.applyChanges(logs)) {
                 complete(trueString)
               }
-              else{
+              else {
                 complete(falseString)
               }
             }
@@ -176,7 +192,7 @@ object WebServer extends Directives with JsonSupport {
         get {
           pathPrefix("lookupvertex") {
             parameter("vertexName") { vertexName =>
-              if(DataStore.lookUpVertex(vertexName)){
+              if (DataStore.lookUpVertex(vertexName)) {
                 complete(trueString)
               } else {
                 complete(falseString)
@@ -190,7 +206,7 @@ object WebServer extends Directives with JsonSupport {
         get {
           pathPrefix("lookuparc") {
             parameter("sourceVertex", "targetVertex") { (sourceVertex, targetVertex) =>
-              if(DataStore.lookUpArc(sourceVertex, targetVertex)){
+              if (DataStore.lookUpArc(sourceVertex, targetVertex)) {
                 complete(trueString)
               } else {
                 complete(falseString)
@@ -198,11 +214,11 @@ object WebServer extends Directives with JsonSupport {
             }
           }
         } ~
-       //Route for debug purposes
+        //Route for debug purposes
         get {
-          pathPrefix("debug-get-changes")  {
+          pathPrefix("debug-get-changes") {
             var changes = DataStore.getLastChanges(0).toVector
-            complete(changes.map( log => log.toJson))
+            complete(changes.map(log => log.toJson))
           }
         } ~
           get {
