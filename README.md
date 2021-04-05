@@ -193,5 +193,66 @@ The system comes with the following integration tests:
 
 Both the kubernetes and sbt directory contain the same tests. The only difference between the two directories is the ports they run on.
 
+## Benchmarking
 
+This folder contains the benchmarking that is done in the report, to run the Neo4j tests, please install the corresponding Neo4j implementation on Kubernetes with the command:
+
+```
+helm install mygraph https://github.com/neo4j-contrib/neo4j-helm/releases/download/4.2.2-1/neo4j-4.2.2-1.tgz \
+    --set acceptLicenseAgreement=yes \
+    --set neo4jPassword=mySecretPassword \
+    --set core.numberOfServers=4 \
+    --set readReplica.numberOfServers=0
+```
+
+The folder features the following files:
+
+### `CrdtClient.py` and `Neo4jClient.py`
+
+These are the respective clients that bridge the benchmarking test to the CRDT graph implementation on Kubernetes and the Neo4j project on Kubernetes. 
+
+### Scalability
+
+This folder contains the operations that are run in the scalability tests and the results for both the CRDT-graph implementation and the Neo4j project. 
+
+### time_to_consistency
+
+This folder contains the operations that are run in the time to consistency tests and the results for both the CRDT-graph (with different synchronizer delays) and the Neo4j project. 
+
+### neo4j_test.py
+
+Features a port forwarding script to make connection with a leader node and a follower node. Please make sure the right pod is selected on port 7000 as the leader port. To find out which one is the leader, open a exec to a pod in kubernetes and run:
+
+```
+cypher-shell
+username: neo4j
+password: mySecretPassword
+:use system;
+:show databases;
+```
+
+It will print out:
+
+```
++---------------------------------------------------------------------------------------------------------------------------------------------------+
+| name     | address                                                               | role       | requestedStatus | currentStatus | error | default |
++---------------------------------------------------------------------------------------------------------------------------------------------------+
+| "neo4j"  | "mygraph-neo4j-core-0.mygraph2-neo4j.default.svc.cluster.local:7687" | "follower" | "online"        | "online"      | ""    | TRUE    |
+| "neo4j"  | "mygraph-neo4j-core-1.mygraph2-neo4j.default.svc.cluster.local:7687" | "leader"   | "online"        | "online"      | ""    | TRUE    |
++---------------------------------------------------------------------------------------------------------------------------------------------------+
+```
+
+Where one can see that `mygraph-neo4j-core-1` is the leader in the neo4j cluster and should be set accordingly in the `portforwarding.sh` script. 
+
+### `CrdtPreformanceTest.py`
+
+This is the script to run the scalability tests including a read heavy test and a write heavy test. The code needs to be adjusted to run either of the CRDT-graph implementation or Neo4j project tests. 
+
+### `TimeToConsistencyTest.py`
+
+This is the script to run the time to consistency test. The code needs to be adjusted to run either of the CRDT-graph implementation or Neo4j project tests. 
+
+### `GraphGenerator.py` 
+
+Generates a instruction set with operations that can be used in the aforementioned tests. 
 
