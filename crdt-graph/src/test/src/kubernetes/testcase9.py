@@ -10,9 +10,9 @@ vertex2 = {"vertexName": "v2"}
 arcv1_v2 = {"sourceVertex": "v1", "targetVertex": "v2"}
 
 url = "http://localhost:"
-node1_port = "8080"
-node2_port = "8081"
-node3_port = "8082"
+node1_port = "7000"
+node2_port = "7001"
+node3_port = "7002"
 addvertex_endpoint = "/addvertex"
 addarc_endpoint = "/addarc"
 lookupvertex_endpoint = "/lookupvertex"
@@ -31,15 +31,15 @@ print("adding arc between v1 and v2 on node with port " + node1_port)
 r1 = requests.post(url + node1_port + addarc_endpoint, json=arcv1_v2)
 print(r1.text)
 
-print("waiting 10 seconds for synchronization")
-time.sleep(10)
+print("waiting 2 seconds for synchronization")
+time.sleep(2)
 
 print("removing v1 on node with port " + node2_port)
 r2 = requests.delete(url + node2_port + removevertex_endpoint, json=vertex1)
 print(r2.text)
 
-print("waiting 10 seconds for synchronization")
-time.sleep(10)
+print("waiting 2 seconds for synchronization")
+time.sleep(2)
 
 print("looking up v1 on node with port " + node1_port)
 r1 = requests.get(url + node1_port + lookupvertex_endpoint + "?vertexName=v1")

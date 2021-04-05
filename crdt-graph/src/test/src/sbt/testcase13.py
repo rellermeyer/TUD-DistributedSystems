@@ -30,8 +30,8 @@ if(r1.text == "false"):
 
     if (r2.text == "true"):
         print("succesfully added vertex " + newVertex['vertexName'] + " to node on port " + node2_port)
-        print("waiting 10 seconds for synchronization")
-        time.sleep(10)
+        print("waiting 2 seconds for synchronization")
+        time.sleep(2)
 
 
         print("removing vertex " + newVertex['vertexName'] + " on node with port " + node1_port)
