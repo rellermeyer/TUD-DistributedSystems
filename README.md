@@ -26,7 +26,7 @@ sh ./kubernetes_run.sh
 
 This will automatically start kubernetes with 5 pods, on which on 3 of them the app will be running. When the script asks for it, give the container names of the 3 pods you would like to run the app on. 
 
-To change the number of pods/amount of pods on which the app will be running ..........
+To change the number of pods/amount of pods on which the app will be running modify the `replicas` number in the `crdt-graph-deployment.yml` file.
 
 
 
@@ -72,7 +72,7 @@ This project was build in Scala, and therefore follows the normal project struct
 
 
 
-## Main
+## Src
 ### `QuickstartApp.scala`
 
 This is the main file of the project. It is the HTTP server of the system. 
@@ -110,8 +110,6 @@ The vertex object is used by the Datastore and incorporates some functions about
 
 ### `ClusterListener.scala`
 
-Needs to be documented 
-
 This module is used as an interface with the kubernetes clusters. These functions include:
 * Starting a manager
 * Getting your own address
@@ -141,7 +139,8 @@ Enumeration of the different types of operations. These consist of:
 * `removeArc`
 
 
-## Test
+## Experiments
+### Functional Tests
 There are two different test directories. One directory is used to run the tests with kubernetes, and the other directory is used to run the tests with sbt.
 The tests are integration tests, and are simple python scripts. To run tests on a kubernetes instance, first change your directory to `crdt-graph` and start a kubernetes instance with the following command:
 
@@ -193,7 +192,7 @@ The system comes with the following integration tests:
 
 Both the kubernetes and sbt directory contain the same tests. The only difference between the two directories is the ports they run on.
 
-## Benchmarking
+### Benchmarking
 
 This folder contains the benchmarking that is done in the report, to run the Neo4j tests, please install the corresponding Neo4j implementation on Kubernetes with the command:
 
@@ -207,19 +206,19 @@ helm install mygraph https://github.com/neo4j-contrib/neo4j-helm/releases/downlo
 
 The folder features the following files:
 
-### `CrdtClient.py` and `Neo4jClient.py`
+#### `CrdtClient.py` and `Neo4jClient.py`
 
 These are the respective clients that bridge the benchmarking test to the CRDT graph implementation on Kubernetes and the Neo4j project on Kubernetes. 
 
-### Scalability
+#### Scalability
 
 This folder contains the operations that are run in the scalability tests and the results for both the CRDT-graph implementation and the Neo4j project. 
 
-### time_to_consistency
+#### time_to_consistency
 
 This folder contains the operations that are run in the time to consistency tests and the results for both the CRDT-graph (with different synchronizer delays) and the Neo4j project. 
 
-### neo4j_test.py
+#### neo4j_test.py
 
 Features a port forwarding script to make connection with a leader node and a follower node. Please make sure the right pod is selected on port 7000 as the leader port. To find out which one is the leader, open a exec to a pod in kubernetes and run:
 
@@ -244,15 +243,15 @@ It will print out:
 
 Where one can see that `mygraph-neo4j-core-1` is the leader in the neo4j cluster and should be set accordingly in the `portforwarding.sh` script. 
 
-### `CrdtPreformanceTest.py`
+#### `CrdtPreformanceTest.py`
 
 This is the script to run the scalability tests including a read heavy test and a write heavy test. The code needs to be adjusted to run either of the CRDT-graph implementation or Neo4j project tests. 
 
-### `TimeToConsistencyTest.py`
+#### `TimeToConsistencyTest.py`
 
 This is the script to run the time to consistency test. The code needs to be adjusted to run either of the CRDT-graph implementation or Neo4j project tests. 
 
-### `GraphGenerator.py` 
+#### `GraphGenerator.py` 
 
 Generates a instruction set with operations that can be used in the aforementioned tests. 
 
