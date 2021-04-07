@@ -1,0 +1,10 @@
+{
+  "numberOSDs": 2,
+  "numberObjects": 5,
+  "objectDistribution": {
+    "objectNameSeed": 42,
+    "objectSeed": 10,
+    "mean": 20,
+    "std": 1
+  }
+}
