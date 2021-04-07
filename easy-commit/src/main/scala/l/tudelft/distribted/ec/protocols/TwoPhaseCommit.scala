@@ -68,6 +68,7 @@ abstract class TwoPhaseCommit(
     case TransactionPrepareRequest(sender, _, transaction, _) => handlePrepareRequest(message, sender, transaction)
     case TransactionAbortResponse(sender, id, _) => handleAbortResponse(message, sender, id)
     case TransactionCommitRequest(sender, id, _) => handleCommitRequest(message, sender, id)
+    case _ => handleUnrecognizedMessage(message, protocolMessage)
   }
 
   /**
@@ -234,5 +235,15 @@ abstract class TwoPhaseCommit(
   def transactionPossible(transaction: Transaction): Boolean = transaction match {
     case RemoveDataTransaction(_, keyToRemove, _) => database.retrieve(keyToRemove).isDefined
     case StoreDataTransaction(_, _, _, _) => true
+  }
+
+  /**
+   * Handle an unrecognized message. Log that it was not recognized.
+   *
+   * @param protocolMessage the message that was not recognized.
+   * @param sender the sender of the protocolMessage
+   */
+  def handleUnrecognizedMessage(message: Message[Buffer], protocolMessage: ProtocolMessage) = {
+    // TODO print that a strange message was encountered
   }
 }

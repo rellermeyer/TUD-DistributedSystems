@@ -2,9 +2,13 @@ import React, {useEffect, useState} from 'react';
 import logo from './logo.svg';
 import './App.css';
 
+/**
+ * Top-level component which shows the cohorts and their state.
+ */
 function App() {
     const [network, setNetwork] = useState<Record<string, { value: string }>>();
 
+    // Setup the network to the cohorts.
     useEffect(() => {
         if (network === undefined) {
             fetch("/api/network").then(response => {
@@ -45,6 +49,10 @@ function App() {
     );
 }
 
+/**
+ * Input element to enter data to a cohort.
+ * @param param0  cohort: the address of the cohort.
+ */
 function CohortInput({cohort}: { cohort: string }): JSX.Element {
     const [id, setId] = useState<number>();
     const [data, setData] = useState<string>();
