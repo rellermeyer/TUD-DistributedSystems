@@ -1,0 +1,7 @@
+target
+datasets/*
+dataset-parts/*
+.git
+.idea
+README.md
+collector

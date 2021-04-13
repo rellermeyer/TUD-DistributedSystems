@@ -1,0 +1,17 @@
+*.class
+*.log
+
+.idea/
+.bsp/
+
+gossip_learning.iml
+
+.DS_Store
+
+docker-compose.yml
+dataset-parts/*
+
+collector/node_modules
+
+project
+target
