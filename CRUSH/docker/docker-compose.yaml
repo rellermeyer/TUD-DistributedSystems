@@ -1,0 +1,82 @@
+networks:
+  akka-network:
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.18.0.0/24
+services:
+  seed:
+    image: "crush:0.1"
+    entrypoint: "/opt/docker/bin/main"
+    command: "root 4"
+    environment:
+      CLUSTER_IP: 172.18.0.20
+      CLUSTER_PORT: 25520
+      CLUSTER_SEED_IP: 172.18.0.20
+    networks:
+      akka-network:
+        ipv4_address: 172.18.0.20
+
+
+  osd1:
+    depends_on: [seed]
+    tty: false
+    image: "crush:0.1"
+    entrypoint: "/opt/docker/bin/main"
+    command: "osd 0 4000"
+    environment:
+      CLUSTER_IP: ${CLUSTER_IP:-172.18.0.21}
+      CLUSTER_PORT: 25525
+      CLUSTER_SEED_IP: 172.18.0.20
+    networks:
+      akka-network:
+        ipv4_address: ${CLUSTER_IP:-172.18.0.21}
+
+
+
+  osd2:
+    depends_on: [seed]
+    tty: false
+    image: "crush:0.1"
+    entrypoint: "/opt/docker/bin/main"
+    command: "osd 1 4000"
+    environment:
+      CLUSTER_IP: ${CLUSTER_IP:-172.18.0.22}
+      CLUSTER_PORT: 25525
+      CLUSTER_SEED_IP: 172.18.0.20
+    networks:
+      akka-network:
+        ipv4_address: ${CLUSTER_IP:-172.18.0.22}
+
+
+
+  osd3:
+    depends_on: [seed]
+    tty: false
+    image: "crush:0.1"
+    entrypoint: "/opt/docker/bin/main"
+    command: "osd 2 4000"
+    environment:
+      CLUSTER_IP: ${CLUSTER_IP:-172.18.0.23}
+      CLUSTER_PORT: 25525
+      CLUSTER_SEED_IP: 172.18.0.20
+    networks:
+      akka-network:
+        ipv4_address: ${CLUSTER_IP:-172.18.0.23}
+
+  osd4:
+    depends_on: [ seed ]
+    tty: false
+    image: "crush:0.1"
+    entrypoint: "/opt/docker/bin/main"
+    command: "osd 3 4000"
+    environment:
+      CLUSTER_IP: ${CLUSTER_IP:-172.18.0.24}
+      CLUSTER_PORT: 25525
+      CLUSTER_SEED_IP: 172.18.0.20
+    networks:
+      akka-network:
+        ipv4_address: ${CLUSTER_IP:-172.18.0.24}
+
+
+
