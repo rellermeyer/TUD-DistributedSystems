@@ -1,0 +1,10 @@
+.idea/*
+.bsp/*
+target/*
+.vscode/*
+.metals/*
+.bloop/*
+.devcontainer/*
+project/*
+!/project/plugins.sbt
+.scalafmt.conf
