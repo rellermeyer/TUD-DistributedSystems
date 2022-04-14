@@ -1,0 +1,10 @@
+project/project
+project/target
+target/*
+.idea/*
+.vscode/*
+.bloop/*
+.metals/*
+.bsp/*
+project/.bloop/bloop.settings.json
+project/.bloop/tud-distributed-build.json
