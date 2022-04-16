@@ -1,0 +1,31 @@
+{
+    "avg": {
+        "n_nodes": 25.0,
+        "n_publishers": 2.0,
+        "n_subscribers": 12.0,
+        "n_brokers": 11.0,
+        "avg_wait_time": 75.568,
+        "std_wait_time": 41.966,
+        "traffic_sent_bytes": 4885459.6,
+        "recv_pubs": 2561.6,
+        "avg_recv_pubs": 213.468,
+        "std_recv_pubs": 139.808,
+        "miss_pubs": 0.8,
+        "avg_miss_pubs": 0.064,
+        "std_miss_pubs": 0.27799999999999997,
+        "avg_miss_rate": 0.0,
+        "traffic_sent": "4.66 MB",
+        "avg_traffic_sent": "954.19 KB"
+    },
+    "std": {
+        "avg_wait_time": 8.19,
+        "traffic_sent_bytes": 1929754.65,
+        "recv_pubs": 1060.67,
+        "avg_recv_pubs": 88.39,
+        "miss_pubs": 0.45,
+        "avg_miss_pubs": 0.04,
+        "avg_miss_rate": 0.0,
+        "traffic_sent": "1.84 MB",
+        "avg_traffic_sent": "376.91 KB"
+    }
+}

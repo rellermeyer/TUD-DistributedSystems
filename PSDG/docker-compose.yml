@@ -1,0 +1,231 @@
+version: "3.9"
+
+# Define the subscriber, publisher and broker services.
+# Follows the topology from the report.
+services:
+  
+  subscriber1:
+    build: .
+    command: java -jar ./target/PSDG-V1.0-jar-with-dependencies.jar --type client --ID 1 --BID 16 --mode subscriber
+    volumes:
+      - ${DIRECTORY_SAVE}:/tmp
+    networks:
+      broker_network:
+        ipv4_address: 192.168.2.1
+
+  subscriber2:
+    build: .
+    command: java -jar ./target/PSDG-V1.0-jar-with-dependencies.jar --type client --ID 2 --BID 16 --mode subscriber
+    volumes:
+      - ${DIRECTORY_SAVE}:/tmp
+    networks:
+      broker_network:
+        ipv4_address: 192.168.2.2
+
+  subscriber3:
+    build: .
+    command: java -jar ./target/PSDG-V1.0-jar-with-dependencies.jar --type client --ID 3 --BID 16 --mode subscriber
+    volumes:
+      - ${DIRECTORY_SAVE}:/tmp
+    networks:
+      broker_network:
+        ipv4_address: 192.168.2.3
+
+  subscriber4:
+    build: .
+    command: java -jar ./target/PSDG-V1.0-jar-with-dependencies.jar --type client --ID 4 --BID 17 --mode subscriber
+    volumes:
+      - ${DIRECTORY_SAVE}:/tmp
+    networks:
+      broker_network:
+        ipv4_address: 192.168.2.4
+
+  subscriber5:
+    build: .
+    command: java -jar ./target/PSDG-V1.0-jar-with-dependencies.jar --type client --ID 5 --BID 17 --mode subscriber
+    volumes:
+      - ${DIRECTORY_SAVE}:/tmp
+    networks:
+      broker_network:
+        ipv4_address: 192.168.2.5
+
+  subscriber6:
+    build: .
+    command: java -jar ./target/PSDG-V1.0-jar-with-dependencies.jar --type client --ID 6 --BID 17 --mode subscriber
+    volumes:
+      - ${DIRECTORY_SAVE}:/tmp
+    networks:
+      broker_network:
+        ipv4_address: 192.168.2.6
+
+  subscriber7:
+    build: .
+    command: java -jar ./target/PSDG-V1.0-jar-with-dependencies.jar --type client --ID 7 --BID 18 --mode subscriber
+    volumes:
+      - ${DIRECTORY_SAVE}:/tmp
+    networks:
+      broker_network:
+        ipv4_address: 192.168.2.7
+
+  subscriber8:
+    build: .
+    command: java -jar ./target/PSDG-V1.0-jar-with-dependencies.jar --type client --ID 8 --BID 18 --mode subscriber
+    volumes:
+      - ${DIRECTORY_SAVE}:/tmp
+    networks:
+      broker_network:
+        ipv4_address: 192.168.2.8
+
+  subscriber9:
+    build: .
+    command: java -jar ./target/PSDG-V1.0-jar-with-dependencies.jar --type client --ID 9 --BID 18 --mode subscriber
+    volumes:
+      - ${DIRECTORY_SAVE}:/tmp
+    networks:
+      broker_network:
+        ipv4_address: 192.168.2.9
+
+  subscriber10:
+    build: .
+    command: java -jar ./target/PSDG-V1.0-jar-with-dependencies.jar --type client --ID 10 --BID 19 --mode subscriber
+    volumes:
+      - ${DIRECTORY_SAVE}:/tmp
+    networks:
+      broker_network:
+        ipv4_address: 192.168.2.10
+
+  subscriber11:
+    build: .
+    command: java -jar ./target/PSDG-V1.0-jar-with-dependencies.jar --type client --ID 11 --BID 19 --mode subscriber
+    volumes:
+      - ${DIRECTORY_SAVE}:/tmp
+    networks:
+      broker_network:
+        ipv4_address: 192.168.2.11
+
+  subscriber12:
+    build: .
+    command: java -jar ./target/PSDG-V1.0-jar-with-dependencies.jar --type client --ID 12 --BID 19 --mode subscriber
+    volumes:
+      - ${DIRECTORY_SAVE}:/tmp
+    networks:
+      broker_network:
+        ipv4_address: 192.168.2.12
+
+  publisher13:
+    build: .
+    command: java -jar ./target/PSDG-V1.0-jar-with-dependencies.jar --type client --ID 13 --BID 20 --mode publisher
+    volumes:
+      - ${DIRECTORY_SAVE}:/tmp
+    networks:
+      broker_network:
+        ipv4_address: 192.168.2.13
+
+  publisher14:
+    build: .
+    command: java -jar ./target/PSDG-V1.0-jar-with-dependencies.jar --type client --ID 14 --BID 15 --mode publisher
+    volumes:
+      - ${DIRECTORY_SAVE}:/tmp
+    networks:
+      broker_network:
+        ipv4_address: 192.168.2.14
+
+  edgebroker15:
+    build: .
+    command: java -jar ./target/PSDG-V1.0-jar-with-dependencies.jar --type broker --ID 15 --NB 20
+    volumes:
+      - ${DIRECTORY_SAVE}:/tmp
+    networks:
+      broker_network:
+        ipv4_address: 192.168.2.15
+
+  edgebroker16:
+    build: .
+    command: java -jar ./target/PSDG-V1.0-jar-with-dependencies.jar --type broker --ID 16 --NB 23
+    volumes:
+      - ${DIRECTORY_SAVE}:/tmp
+    networks:
+      broker_network:
+        ipv4_address: 192.168.2.16
+
+  edgebroker17:
+    build: .
+    command: java -jar ./target/PSDG-V1.0-jar-with-dependencies.jar --type broker --ID 17 --NB 24
+    volumes:
+      - ${DIRECTORY_SAVE}:/tmp
+    networks:
+      broker_network:
+        ipv4_address: 192.168.2.17
+
+  edgebroker18:
+    build: .
+    command: java -jar ./target/PSDG-V1.0-jar-with-dependencies.jar --type broker --ID 18 --NB 23
+    volumes:
+      - ${DIRECTORY_SAVE}:/tmp
+    networks:
+      broker_network:
+        ipv4_address: 192.168.2.18
+
+  edgebroker19:
+    build: .
+    command: java -jar ./target/PSDG-V1.0-jar-with-dependencies.jar --type broker --ID 19 --NB 21
+    volumes:
+      - ${DIRECTORY_SAVE}:/tmp
+    networks:
+      broker_network:
+        ipv4_address: 192.168.2.19
+
+  edgebroker20:
+    build: .
+    command: java -jar ./target/PSDG-V1.0-jar-with-dependencies.jar --type broker --ID 20 --NB 21,15
+    volumes:
+      - ${DIRECTORY_SAVE}:/tmp
+    networks:
+      broker_network:
+        ipv4_address: 192.168.2.20
+
+  broker21:
+    build: .
+    command: java -jar ./target/PSDG-V1.0-jar-with-dependencies.jar --type broker --ID 21 --NB 20,19,22
+    volumes:
+      - ${DIRECTORY_SAVE}:/tmp
+    networks:
+      broker_network:
+        ipv4_address: 192.168.2.21
+
+  broker22:
+    build: .
+    command: java -jar ./target/PSDG-V1.0-jar-with-dependencies.jar --type broker --ID 22 --NB 21,23
+    volumes:
+      - ${DIRECTORY_SAVE}:/tmp
+    networks:
+      broker_network:
+        ipv4_address: 192.168.2.22
+
+  broker23:
+    build: .
+    command: java -jar ./target/PSDG-V1.0-jar-with-dependencies.jar --type broker --ID 23 --NB 22,16,18,24
+    volumes:
+      - ${DIRECTORY_SAVE}:/tmp
+    networks:
+      broker_network:
+        ipv4_address: 192.168.2.23
+
+  broker24:
+    build: .
+    command: java -jar ./target/PSDG-V1.0-jar-with-dependencies.jar --type broker --ID 24 --NB 23,17
+    volumes:
+      - ${DIRECTORY_SAVE}:/tmp
+    networks:
+      broker_network:
+        ipv4_address: 192.168.2.24
+
+# Define the network for the broker and client connections
+networks:
+  broker_network:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 192.168.0.0/16
+          gateway: 192.168.1.1
