@@ -169,3 +169,4 @@ tags
 .DS_Store
 
 # End of https://www.gitignore.io/api/vim,git,sbt,java,maven,scala,intellij
+B-Raft/src/.github/workflows/ci-test.yml

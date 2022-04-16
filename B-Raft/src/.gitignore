@@ -1,0 +1,9 @@
+../target/
+.idea/
+*.class
+*.log
+.DS_Store
+.java-version
+.idea
+src/null/
+experiments/resources/
