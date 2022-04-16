@@ -1,6 +1,5 @@
 package de.maxbundscherer.scala.raft.actors
 
-import akka.actor.{Actor, ActorLogging, ActorRef}
 import de.maxbundscherer.scala.raft.aggregates.Aggregate.BehaviorEnum.BehaviorEnum
 import de.maxbundscherer.scala.raft.aggregates.Aggregate._
 import de.maxbundscherer.scala.raft.aggregates.BRaftAggregate.GrantVote.GrantVoteSigned
@@ -8,13 +7,7 @@ import de.maxbundscherer.scala.raft.aggregates.BRaftAggregate.LogEntry
 import de.maxbundscherer.scala.raft.schnorr.Schnorr.{string_sign, string_verify}
 import de.maxbundscherer.scala.raft.utils.{Configuration, Hasher, RaftScheduler}
 
-import scala.collection.mutable.ArrayBuffer
-import scala.concurrent.ExecutionContext
-
-// TODO verify/sign more (or all?) messages?
 object BRaftNodeActor {
-
-  import akka.actor.Props
 
   val prefix: String = "BraftNodeActor"
 
@@ -27,25 +20,25 @@ object BRaftNodeActor {
 
   /**
     *
-    * @param lastHashCode          Int (last hashcode from data) (used in FOLLOWER and LEADER behavior)
-    * @param entryLog              ArrayBuffer[LogEntry] to keep track of all entries, in the order they arrive, and whether they
-    *                              are committed yet
-    * @param appendEntryResponseMap    Map (Int ->Set[String]) that links LogEntry indices to a set of nodes that have already
-    *                              written that log entry. Used to control when an entry is committed by the node.
-    * @param publicKey             PublicKey used by other nodes to verify messages
-    * @param privateKey            Private Key used by this node to sign messages
-    * @param hasher                Hasher (sha256)
-    * @param publicKeyStorage      Map(String -> BigInt) stores the public keys of all other nodes, used for verifying messages
-    *                              were not tampered with.
-    * @param term                  current Leader term
-    * @param byzantineActor        ??? TODO
-    * @param behaviour             Current behaviour this node is exhibiting (one of :
-    *                              UNINITIALIZED, FOLLOWER, CANDIDATE, LEADER, SLEEP)
-    * @param forceIamNotConsistent boolean to force an IamNotConsistent RPC to be sent.
-    *                              Used when a majority of nodes committed a LogEntry, but this node
-    *                              has not received it yet.
-    * @param voteRequestResponses  Map to track the Votes of each node in a Leader election (only for Leader state)
-    *                              Maps the node ID to GrantVoteSigned object
+    * @param lastHashCode           Int (last hashcode from data) (used in FOLLOWER and LEADER behavior)
+    * @param entryLog               ArrayBuffer[LogEntry] to keep track of all entries, in the order they arrive, and whether they
+    *                               are committed yet
+    * @param appendEntryResponseMap Map (Int ->Set[String]) that links LogEntry indices to a set of nodes that have already
+    *                               written that log entry. Used to control when an entry is committed by the node.
+    * @param publicKey              PublicKey used by other nodes to verify messages
+    * @param privateKey             Private Key used by this node to sign messages
+    * @param hasher                 Hasher (sha256)
+    * @param publicKeyStorage       Map(String -> BigInt) stores the public keys of all other nodes, used for verifying messages
+    *                               were not tampered with.
+    * @param term                   current Leader term
+    * @param byzantineActor         Whether this node is Byzantine, used in testing
+    * @param behaviour              Current behaviour this node is exhibiting (one of :
+    *                               UNINITIALIZED, FOLLOWER, CANDIDATE, LEADER, SLEEP)
+    * @param forceIamNotConsistent  boolean to force an IamNotConsistent RPC to be sent.
+    *                               Used when a majority of nodes committed a LogEntry, but this node
+    *                               has not received it yet.
+    * @param voteRequestResponses   Map to track the Votes of each node in a Leader election (only for Leader state)
+    *                               Maps the node ID to GrantVoteSigned object
     */
   case class BRaftNodeState(
                              var lastHashCode: BigInt = -1,
@@ -205,15 +198,6 @@ class BRaftNodeActor()(implicit val executionContext: ExecutionContext)
 
     case Heartbeat(lastHashCode, publicKeysStorage, term) =>
 
-      // TODO : we have to take care of the scenario when a leader crash is initiated and the leader changes behavior from leader
-      //  to sleep. In this period a new leader is elected and the publicKeyStorage and term will be updated accordingly. Only, as
-      //  as the node is asleep it does not receive these updates. Therefore we need to make sure that this node will become eventually
-      //  consistent i.e. has for the current term the right termID and publicKeyStorage to prevent inconsistent states.
-      //
-      //  Do we want to send the publicKeyStorage everytime in a heartbeat? Does seem a bit cumbersome.
-      //  Alternatively, we can change the behavior for a sleeping node as soon as it wakes up? But it is actually unaware who the
-      //  new leader is therefore we can't ask or send IAmInconsistent to the leader. We have to wait for a heartbeat.
-
       log.debug(s"Got heartbeat from (${sender().path.name}), own entrylog: ${state.entryLog}")
       log.debug(s"Got heartbeat from (${sender().path.name}), own data: ${state.data}")
 
@@ -222,18 +206,15 @@ class BRaftNodeActor()(implicit val executionContext: ExecutionContext)
       val hashCodeEqual = lastHashCode.equals(state.lastHashCode)
       val termEqual = this.state.term == term
       val pubKeyStorageEqual = this.state.publicKeyStorage.equals(publicKeysStorage)
-//      val waitingForAERs = this.state.entryLog.count(logEntry => !logEntry.committed) > 0
 
-      if (!hashCodeEqual || !pubKeyStorageEqual || this.state.forceIamNotConsistent || !termEqual
-//        || waitingForAERs
-      ) {
+      if (!hashCodeEqual || !pubKeyStorageEqual || this.state.forceIamNotConsistent || !termEqual) {
         this.state.forceIamNotConsistent = false
         var reason = ""
         if (!hashCodeEqual) reason += s"HashCode was not equal (was ${state.lastHashCode} expected $lastHashCode),"
         if (!termEqual) reason += s"Term was not equal(was ${term} expected ${this.state.term}), "
         if (!pubKeyStorageEqual) reason += s"PubKeyStorage was not equal(was ${this.state.publicKeyStorage.keys} expected ${publicKeysStorage.keys}), "
         if (this.state.forceIamNotConsistent) reason += s"Forcing Inconsistent to update values"
-//        if (waitingForAERs) reason += s"Waiting for Append Entries Responses"
+        //        if (waitingForAERs) reason += s"Waiting for Append Entries Responses"
         log.info(s"I am not consistent - request data from leader (reason: $reason)")
         sender ! IamNotConsistent
       }
@@ -322,17 +303,6 @@ class BRaftNodeActor()(implicit val executionContext: ExecutionContext)
 
     case BroadcastTerm(_, _) => //Ignore
 
-    case Heartbeat(_, _, term) =>
-
-    //      if (state.term < term) {
-    //        state.term = state.term - 1
-    //
-    //        changeBehavior(
-    //          fromBehavior = BehaviorEnum.CANDIDATE,
-    //          toBehavior = BehaviorEnum.FOLLOWER,
-    //          loggerMessage = s"Not enough votes (${state.voteCounter}/${state.majority})")
-    //      }
-
     case RequestVote =>
       val vote = Vote(granted = false, from = this.self.path.name, to = sender().path.name, term = this.state.term + 1)
       sender ! GrantVoteSigned(string_sign(this.state.privateKey, vote.toString), granted = false, vote)
@@ -358,10 +328,6 @@ class BRaftNodeActor()(implicit val executionContext: ExecutionContext)
             toBehavior = BehaviorEnum.LEADER,
             loggerMessage = s"Become leader - enough votes (${state.voteCounter}/${state.majority})"
           )
-
-          // TODO : as the leader is elected we want to broadcast all the publicKeys it has received during the
-          //  leader election of the nodes that have participated.
-
 
           log.info("Became leader, broadcasting term to all neighbours")
           state.neighbours.foreach({ neighbour =>
@@ -459,10 +425,6 @@ class BRaftNodeActor()(implicit val executionContext: ExecutionContext)
         sender ! WriteResponse(actorName = self.path.name, success = true, "Write successful in leader")
         handleReceivedEntry(LogEntry(key, value, newHash, signature))
         log.info(s"[SEND APR], ${System.currentTimeMillis()}, (key/value = $key->$value), (newHashCode = ${state.lastHashCode}), Leader is writing data")
-
-        // AppendEntriesResponse:
-        // TODO what to do here, entry is not committed/replicated yet
-        //      sender ! WriteSuccess(actorName = self.path.name)
       }
 
     case GetActualData =>
@@ -525,19 +487,15 @@ class BRaftNodeActor()(implicit val executionContext: ExecutionContext)
   def byzantineLeaderMatch(msg: Any): Unit = msg match {
 
     case AppendData(key, value, signature) =>
+      // Appends data without checking signatures
       log.info(s"Appending new data in Byzantine Leader Node: ($key -> $value)")
 
       // Create the hash and find the relevant public key
       val newHash = createIncrementalHash(key, value, state.lastHashCode)
-      val publicKey = state.publicKeyStorage(CLIENT_NAME)
 
       handleReceivedEntry(LogEntry(key, value, newHash, signature))
       log.info(s"Byzantine Leader is writing data ($key->$value) (newHashCode = ${newHash})\n " +
         s"Waiting for enough nodes to write before committing")
-
-      // AppendEntriesResponse:
-      // TODO what to do here, entry is not committed/replicated yet
-      //      sender ! WriteSuccess(actorName = self.path.name)
       sender ! WriteResponse(actorName = self.path.name, success = true, "Write successful in leader")
 
     case any =>
@@ -600,8 +558,6 @@ class BRaftNodeActor()(implicit val executionContext: ExecutionContext)
         s"signature: ${appendEntriesResponse.signature}")
 
       this.state.neighbours.foreach(node => node ! appendEntriesResponse)
-    } else {
-      // TODO inconsistent hash, but how to handle?
     }
   }
 
@@ -632,7 +588,7 @@ class BRaftNodeActor()(implicit val executionContext: ExecutionContext)
         if (newCommittedNeighboursSet.size >= state.majority && this.state.entryLog.size > index && hash == this.state.entryLog(index).hash) {
           // Check if we have 'old' entries that also need to be committed (as they inductively got enough
           // append entries responses)
-          val indicesToCommit = Range(0, index+1).filter(i => state.entryLog.size > i && !state.entryLog(i).committed)
+          val indicesToCommit = Range(0, index + 1).filter(i => state.entryLog.size > i && !state.entryLog(i).committed)
           log.info(s"enough nodes committed entry/entries at index $indicesToCommit, I am also committing this entry")
 
           indicesToCommit.foreach(f = commitEntry)
@@ -819,6 +775,5 @@ class BRaftNodeActor()(implicit val executionContext: ExecutionContext)
 
         state.behaviour = BehaviorEnum.UNINITIALIZED
     }
-
   }
 }

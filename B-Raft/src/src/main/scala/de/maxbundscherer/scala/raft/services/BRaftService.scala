@@ -145,7 +145,6 @@ class BRaftService(numberNodes: Int)(implicit actorSystem: ActorSystem,
           Left(msg)
         }
         case msg: IamNotTheLeader         => Right(msg)
-        // case IamNotConsistent             => null // TODO: do not return null
       }
     }).toVector
   }
